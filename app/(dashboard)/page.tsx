@@ -1,0 +1,94 @@
+import { createClient } from '@/lib/supabase/server';
+import { Presentation, Building2, Clock, CheckCircle2, TrendingUp, BarChart2 } from 'lucide-react';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
+
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect('/login');
+
+  let activeOlcutCount = 0;
+  let activeEylemCount = 0;
+  let totalBirimCount = 0;
+  let isAdmin = false;
+
+  try {
+    const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+    const role = profile?.rol?.toLowerCase() || '';
+    isAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+    
+    if (!isAdmin) {
+      redirect('/olcutler');
+    }
+
+    const { count: olcutCount } = await supabase.from('alt_olcutler').select('*', { count: 'exact', head: true });
+    activeOlcutCount = olcutCount || 0;
+
+    const { count: beklemedeCount } = await supabase.from('puko_degerlendirmeleri').select('*', { count: 'exact', head: true }).eq('durum', 'Beklemede');
+    activeEylemCount = beklemedeCount || 0;
+
+    const { count: tamamlandiCount } = await supabase.from('puko_degerlendirmeleri').select('*', { count: 'exact', head: true }).eq('durum', 'Onaylandı');
+    totalBirimCount = tamamlandiCount || 0;
+  } catch(e) { console.error(e) }
+
+  return (
+    <div className="p-8 max-w-7xl mx-auto animate-in fade-in duration-500">
+      
+      <div className="flex items-center justify-between mb-8 pb-4 border-b border-slate-200">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
+            <Presentation className="w-6 h-6 text-blue-600" />
+            Akreditasyon Panosu (Dashboard)
+          </h2>
+          <p className="text-slate-500 mt-1">Sistemin genel yürütme durumu ve birim istatistikleri.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex items-center justify-between transition-transform hover:-translate-y-1">
+          <div>
+            <p className="text-sm font-medium text-slate-500 mb-1">Tanımlı Ölçüt</p>
+            <h3 className="text-3xl font-bold text-slate-800">{activeOlcutCount}</h3>
+          </div>
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 flex items-center justify-center border border-blue-100">
+            <BarChart2 className="w-6 h-6 text-blue-600" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex items-center justify-between transition-transform hover:-translate-y-1">
+          <div>
+            <p className="text-sm font-medium text-slate-500 mb-1">Onay Bekleyenler</p>
+            <h3 className="text-3xl font-bold text-slate-800">{activeEylemCount}</h3>
+          </div>
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 flex items-center justify-center border border-amber-100">
+            <Clock className="w-6 h-6 text-amber-500" />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex items-center justify-between transition-transform hover:-translate-y-1">
+          <div>
+            <p className="text-sm font-medium text-slate-500 mb-1">Tamamlanan Ölçütler</p>
+            <h3 className="text-3xl font-bold text-slate-800">{totalBirimCount}</h3>
+          </div>
+          <div className="w-14 h-14 rounded-2xl bg-green-50 flex items-center justify-center border border-green-100">
+            <CheckCircle2 className="w-6 h-6 text-green-500" />
+          </div>
+        </div>
+      </div>
+
+      {/* Placeholder for future charts */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col items-center justify-center h-64 text-center">
+        <TrendingUp className="w-10 h-10 text-slate-300 mb-3" />
+        <h3 className="text-slate-800 font-semibold mb-1">Grafiksel Akreditasyon Özeti</h3>
+        <p className="text-sm text-slate-500 max-w-sm">Daha fazla veri girişi yapıldıktan sonra sistemdeki genel olgunluk seviyesi trendleri burada görüntülenecektir.</p>
+        <Link href="/olcutler" className="mt-4 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-medium rounded-lg transition-colors border border-slate-200">
+          Ölçütleri Görüntüle
+        </Link>
+      </div>
+
+    </div>
+  );
+}

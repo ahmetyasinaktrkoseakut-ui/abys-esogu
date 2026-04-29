@@ -1,0 +1,192 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase/client';
+import { CheckCircle2, FileText, CalendarDays, Settings, Search, TrendingUp, FileSignature, BarChart } from 'lucide-react';
+import Link from 'next/link';
+
+interface Step {
+  id: string; // The puko_asamasi or step id
+  title: string;
+  subtitle: string;
+  status: 'completed' | 'active' | 'pending';
+  progress: number;
+  icon: any;
+  colorClass: string;
+  barColorClass: string;
+  href: string;
+}
+
+export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: string, altOlcutId: string }) {
+  const [steps, setSteps] = useState<Step[]>([
+    {
+      id: 'kalite_el_kitabi',
+      title: '1. KALİTE EL KİTABI',
+      subtitle: 'Review/Update',
+      status: activeStepId === 'kalite_el_kitabi' ? 'active' : 'pending',
+      progress: 0,
+      icon: FileText,
+      colorClass: 'text-blue-700 bg-blue-600',
+      barColorClass: 'bg-blue-600',
+      href: `/olcutler/${altOlcutId}/kalite-el-kitabi`
+    },
+    {
+      id: 'planlama',
+      title: '2. PLANLAMA',
+      subtitle: 'Stratejik Planlama',
+      status: activeStepId === 'planlama' ? 'active' : 'pending',
+      progress: 0,
+      icon: CalendarDays,
+      colorClass: 'text-blue-700 bg-blue-500',
+      barColorClass: 'bg-blue-500',
+      href: `/olcutler/${altOlcutId}/planlama`
+    },
+    {
+      id: 'uygulama',
+      title: '3. UYGULAMA',
+      subtitle: 'Süreç Uygulama',
+      status: activeStepId === 'uygulama' ? 'active' : 'pending',
+      progress: 0,
+      icon: Settings,
+      colorClass: activeStepId === 'uygulama' ? 'text-emerald-700 bg-emerald-600' : 'text-emerald-600 bg-emerald-500',
+      barColorClass: 'bg-emerald-500',
+      href: `/olcutler/${altOlcutId}/uygulama`
+    },
+    {
+      id: 'kontrol',
+      title: '4. KONTROL ETME',
+      subtitle: 'Veri Toplama & Analiz',
+      status: activeStepId === 'kontrol' ? 'active' : 'pending',
+      progress: 0,
+      icon: Search,
+      colorClass: 'text-emerald-700 bg-emerald-500',
+      barColorClass: 'bg-emerald-500',
+      href: `/olcutler/${altOlcutId}/kontrol-etme`
+    },
+    {
+      id: 'onlem',
+      title: '5. İYİLEŞTİRME/ÖNLEM ALMA',
+      subtitle: 'Eylem Planları',
+      status: activeStepId === 'onlem' ? 'active' : 'pending',
+      progress: 0,
+      icon: TrendingUp,
+      colorClass: 'text-orange-600 bg-orange-500',
+      barColorClass: 'bg-orange-500',
+      href: `/olcutler/${altOlcutId}/iyilestirme`
+    },
+    {
+      id: 'olgunluk',
+      title: '6. OLGUNLUK DÜZEYİ',
+      subtitle: 'Seviye Puanlaması',
+      status: activeStepId === 'olgunluk' ? 'active' : 'pending',
+      progress: 0,
+      icon: BarChart,
+      colorClass: 'text-orange-600 bg-orange-400',
+      barColorClass: 'bg-orange-400',
+      href: `/olcutler/${altOlcutId}/olgunluk`
+    },
+    {
+      id: 'rapor',
+      title: '7. ÖZDEĞERLENDİRME RAPORU',
+      subtitle: 'Sistem Özeti',
+      status: activeStepId === 'rapor' ? 'active' : 'pending',
+      progress: 0,
+      icon: FileSignature,
+      colorClass: 'text-orange-600 bg-orange-500',
+      barColorClass: 'bg-orange-500',
+      href: `/olcutler/${altOlcutId}/ozdegerlendirme`
+    }
+  ]);
+
+  useEffect(() => {
+    async function fetchProgresses() {
+      try {
+        const { data } = await supabase
+          .from('puko_degerlendirmeleri')
+          .select('puko_asamasi, aciklama, kanit_dosyalari')
+          .eq('alt_olcut_id', altOlcutId);
+          
+        if (data && data.length > 0) {
+          setSteps(prevSteps => prevSteps.map(step => {
+            const row = data.find(r => r.puko_asamasi === step.id);
+            let progress = 0;
+            if (row) {
+              const hasText = row.aciklama && row.aciklama.length > 10;
+              const hasDoc = row.kanit_dosyalari && Array.isArray(row.kanit_dosyalari) && row.kanit_dosyalari.length > 0;
+              if (hasText || hasDoc) progress = 100;
+            }
+            return {
+              ...step,
+              progress,
+              status: activeStepId === step.id ? 'active' : (progress === 100 ? 'completed' : 'pending')
+            };
+          }));
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    fetchProgresses();
+  }, [altOlcutId, activeStepId]);
+
+  return (
+    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">
+      <div className="grid grid-cols-7 gap-3">
+        {steps.map((step) => {
+          const Icon = step.icon;
+          const isActive = step.status === 'active';
+          
+          return (
+            <Link href={step.href} key={step.id} className={`flex flex-col group block transition-all ${isActive ? 'scale-[1.02] transform' : 'hover:bg-slate-50'}`}>
+              <div className={`
+                flex-1 border rounded-lg flex flex-col overflow-hidden relative 
+                ${isActive ? 'border-2 shadow-md ' + step.colorClass.split(' ')[0] : 'border-slate-200'}
+              `}>
+                {/* Top colored thick border if active, otherwise just bg */}
+                <div className={`h-12 w-full flex items-center justify-center text-white ${step.colorClass.split(' ')[1]}`}>
+                     {step.status === 'completed' ? (
+                       <CheckCircle2 className="w-6 h-6" />
+                     ) : (
+                       <Icon className="w-6 h-6" />
+                     )}
+                </div>
+
+                <div className="p-3 bg-white text-center flex-1 flex flex-col justify-between">
+                  <div>
+                     <h3 className={`font-bold text-[10px] sm:text-xs tracking-tight ${isActive ? step.colorClass.split(' ')[0] : 'text-slate-700'}`}>
+                       {step.title}
+                     </h3>
+                     <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{step.subtitle}</p>
+                  </div>
+                  
+                  <div className="mt-3">
+                    <div className="flex justify-end text-[10px] font-bold text-slate-600 mb-1">
+                      {step.progress}%
+                    </div>
+                    <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full ${step.barColorClass}`} style={{ width: `${step.progress}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom Action Button representation */}
+                <div className={`p-1.5 text-[10px] font-bold text-center border-t cursor-pointer
+                  ${isActive 
+                    ? `text-white ${step.barColorClass}` 
+                    : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}
+                `}>
+                  {isActive ? 'Düzenle' : (step.status === 'completed' ? 'Düzenle' : 'Veri Gir')}
+                </div>
+                
+                {/* Arrow indicator if active */}
+                {isActive && (
+                  <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 w-4 h-4 rotate-45 border-r-2 border-b-2 bg-white" style={{ borderColor: 'inherit' }}></div>
+                )}
+              </div>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

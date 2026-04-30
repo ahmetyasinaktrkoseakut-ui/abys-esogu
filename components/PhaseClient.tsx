@@ -35,7 +35,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   const [isSaving, setIsSaving] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
-  const [ustBirimOnerileri, setUstBirimOnerileri] = useState<string[]>([]);
+  const [ustBirimOnerileri, setUstBirimOnerileri] = useState<any[]>([]);
   const t = useTranslations('Phase');
   
   // Onay / Ret Sistematiği
@@ -76,7 +76,9 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         setAciklama(pukoData.aciklama || '');
         // handle JSONB or Text array for kanit_dosyalari
         setDokumanlar(Array.isArray(pukoData.kanit_dosyalari) ? pukoData.kanit_dosyalari : []);
-        setUstBirimOnerileri(Array.isArray(pukoData.ust_birim_onerileri) ? pukoData.ust_birim_onerileri : []);
+        // handle string array backward compatibility
+        const oneriler = Array.isArray(pukoData.ust_birim_onerileri) ? pukoData.ust_birim_onerileri : [];
+        setUstBirimOnerileri(oneriler.map((o: any) => typeof o === 'string' ? { birim: '', oneri: o } : o));
       } else {
         setPukoId(null);
         setOnayDurumu('');
@@ -402,7 +404,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               </h3>
               {!isReadOnly && (
                 <button 
-                  onClick={() => setUstBirimOnerileri([...ustBirimOnerileri, ''])}
+                  onClick={() => setUstBirimOnerileri([...ustBirimOnerileri, { birim: '', oneri: '' }])}
                   className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -422,17 +424,31 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                     <div className="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-xs font-bold flex-shrink-0 mt-2">
                       {index + 1}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-500">Gönderilen Birim:</span>
+                        <input 
+                          disabled={isReadOnly}
+                          value={oneri.birim || ''}
+                          onChange={(e) => {
+                            const newOneriler = [...ustBirimOnerileri];
+                            newOneriler[index] = { ...newOneriler[index], birim: e.target.value };
+                            setUstBirimOnerileri(newOneriler);
+                          }}
+                          placeholder="Örn: Rektörlük, Kalite Koordinatörlüğü..."
+                          className="flex-1 bg-transparent border-b border-slate-200 focus:border-amber-400 py-1 text-sm font-semibold text-slate-800 outline-none disabled:opacity-80"
+                        />
+                      </div>
                       <textarea
                         disabled={isReadOnly}
-                        value={oneri}
+                        value={oneri.oneri || ''}
                         onChange={(e) => {
                           const newOneriler = [...ustBirimOnerileri];
-                          newOneriler[index] = e.target.value;
+                          newOneriler[index] = { ...newOneriler[index], oneri: e.target.value };
                           setUstBirimOnerileri(newOneriler);
                         }}
                         placeholder={t('suggestion_placeholder')}
-                        className="w-full bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700 resize-none outline-none disabled:bg-transparent"
+                        className="w-full bg-slate-50 rounded-lg p-3 text-sm text-slate-700 resize-none outline-none disabled:opacity-80 border border-slate-200 focus:border-amber-400"
                         rows={3}
                       />
                     </div>

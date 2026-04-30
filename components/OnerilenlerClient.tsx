@@ -54,7 +54,10 @@ export default function OnerilenlerClient() {
 
             // Sadece önerisi olan PUKO verilerini filtrele
             const pukoList = (pukoRes.data || []).filter((p: any) =>
-              Array.isArray(p.ust_birim_onerileri) && p.ust_birim_onerileri.length > 0 && p.ust_birim_onerileri.some((o: string) => o.trim() !== '')
+              Array.isArray(p.ust_birim_onerileri) && p.ust_birim_onerileri.length > 0 && p.ust_birim_onerileri.some((o: any) => {
+                if (typeof o === 'string') return o.trim() !== '';
+                return o && o.oneri && o.oneri.trim() !== '';
+              })
             );
 
             const birimMap: Record<string, string> = {};
@@ -132,9 +135,11 @@ export default function OnerilenlerClient() {
             htmlContent += `<h3>${olcut.kod} - ${olcut.olcut_adi}</h3>`;
             htmlContent += `<p style='font-size:12px; color: #4a5568;'><b>Gönderen Birim:</b> ${sorumluBirimAd}</p>`;
             htmlContent += `<div class='oneri-box'><ul>`;
-            puko.ust_birim_onerileri.forEach((oneri) => {
-              if (oneri.trim() !== '') {
-                htmlContent += `<li>${oneri}</li>`;
+            puko.ust_birim_onerileri.forEach((o: any) => {
+              const oneriText = typeof o === 'string' ? o : o.oneri;
+              const gonderilenBirim = typeof o === 'string' ? '' : o.birim;
+              if (oneriText && oneriText.trim() !== '') {
+                htmlContent += `<li>${gonderilenBirim ? `<b style="color: #c05621;">[Hedef: ${gonderilenBirim}]</b> ` : ''}${oneriText}</li>`;
               }
             });
             htmlContent += `</ul></div>`;
@@ -216,7 +221,10 @@ export default function OnerilenlerClient() {
                       const puko = getPukoForOlcut(olcut.id);
                       if (!puko) return null;
 
-                      const gecerliOneriler = puko.ust_birim_onerileri.filter(o => o.trim() !== '');
+                      const gecerliOneriler = puko.ust_birim_onerileri.filter((o: any) => {
+                        if (typeof o === 'string') return o.trim() !== '';
+                        return o && o.oneri && o.oneri.trim() !== '';
+                      });
                       if (gecerliOneriler.length === 0) return null;
 
                       const sorumluBirimAd = raporData.birimler[olcut.sorumlu_birim_id] || 'Bilinmeyen Birim';
@@ -233,14 +241,25 @@ export default function OnerilenlerClient() {
 
                           <div className="bg-amber-50/50 p-5 rounded-lg border border-amber-100">
                             <ul className="space-y-4">
-                              {gecerliOneriler.map((oneri, idx) => (
-                                <li key={idx} className="flex items-start gap-3">
-                                  <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-xs font-bold">
-                                    {idx + 1}
-                                  </span>
-                                  <p className="text-slate-800 leading-relaxed pt-0.5">{oneri}</p>
-                                </li>
-                              ))}
+                              {gecerliOneriler.map((o: any, idx: number) => {
+                                const oneriText = typeof o === 'string' ? o : o.oneri;
+                                const gonderilenBirim = typeof o === 'string' ? '' : o.birim;
+                                return (
+                                  <li key={idx} className="flex items-start gap-3">
+                                    <span className="flex-shrink-0 w-6 h-6 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-xs font-bold mt-1">
+                                      {idx + 1}
+                                    </span>
+                                    <div className="flex-1">
+                                      {gonderilenBirim && (
+                                        <p className="text-[11px] uppercase tracking-wider font-bold text-amber-700 mb-1 flex items-center gap-1">
+                                          Hedef Birim: <span className="text-slate-700">{gonderilenBirim}</span>
+                                        </p>
+                                      )}
+                                      <p className="text-slate-800 leading-relaxed">{oneriText}</p>
+                                    </div>
+                                  </li>
+                                );
+                              })}
                             </ul>
                           </div>
                         </div>

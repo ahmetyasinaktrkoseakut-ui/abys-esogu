@@ -156,13 +156,13 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
 
       if (showEylemPlanTablosu) {
         const toInsert = eylemler
-          .filter(e => !e.id || e.id === '')
+          .filter(e => !e.id)
           .map(e => {
             const { id, ...rest } = e;
             return { ...rest, alt_olcut_id: resolvedParams.id };
           });
           
-        const toUpdate = eylemler.filter(e => e.id && e.id !== '');
+        const toUpdate = eylemler.filter(e => e.id);
 
         if (toInsert.length > 0) {
           const { error: eInsertErr } = await supabase.from('eylem_planlari').insert(toInsert);

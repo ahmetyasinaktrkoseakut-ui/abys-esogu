@@ -468,7 +468,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                             tickLine={false}
                           />
                           <RechartsTooltip 
-                            formatter={(value: number) => [`${value} Yanıt`, 'Miktar']} 
+                            formatter={(value: any) => [`${value} Yanıt`, 'Miktar']} 
                             cursor={{fill: '#F1F5F9'}} 
                             contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                           />

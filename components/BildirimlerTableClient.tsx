@@ -5,6 +5,22 @@ import { Presentation, Activity, Calendar, Info, Hash, Upload, X, Loader2 } from
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
 
+const getAsamaSlug = (asama: string) => {
+  if (!asama) return 'kontrol-etme';
+  const lower = asama.toLowerCase();
+  const map: Record<string, string> = {
+    'kalite_el_kitabi': 'kalite-el-kitabi',
+    'planlama': 'planlama',
+    'uygulama': 'uygulama',
+    'kontrol': 'kontrol-etme',
+    'onlem': 'iyilestirme',
+    'önlem': 'iyilestirme',
+    'olgunluk': 'olgunluk',
+    'rapor': 'ozdegerlendirme'
+  };
+  return map[lower] || lower;
+};
+
 export default function BildirimlerTableClient({ initialData }: { initialData: any[] }) {
   const [data, setData] = useState(initialData);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -171,7 +187,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                     <td className="px-6 py-4">
                       <div 
                         className="flex items-center gap-2 cursor-pointer group"
-                        onClick={() => router.push(`/olcutler/${row.alt_olcut_id}/${row.puko_asamasi || 'kontrol'}`)}
+                        onClick={() => router.push(`/olcutler/${row.alt_olcut_id}/${getAsamaSlug(row.puko_asamasi)}`)}
                       >
                         <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
                           {row.alt_olcutler?.kod || '-'}

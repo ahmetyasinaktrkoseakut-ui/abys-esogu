@@ -5,6 +5,22 @@ import { Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
 
+const getAsamaSlug = (asama: string) => {
+  if (!asama) return 'kontrol-etme';
+  const lower = asama.toLowerCase();
+  const map: Record<string, string> = {
+    'kalite_el_kitabi': 'kalite-el-kitabi',
+    'planlama': 'planlama',
+    'uygulama': 'uygulama',
+    'kontrol': 'kontrol-etme',
+    'onlem': 'iyilestirme',
+    'önlem': 'iyilestirme',
+    'olgunluk': 'olgunluk',
+    'rapor': 'ozdegerlendirme'
+  };
+  return map[lower] || lower;
+};
+
 export default function NotificationBellClient({ userId, isAdmin }: { userId: string, isAdmin: boolean }) {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -137,7 +153,7 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
                 <div key={notif.id} 
                      onClick={() => {
                        setIsOpen(false);
-                       router.push(`/olcutler/${notif.alt_olcut_id}/${notif.puko_asamasi || 'kontrol'}`);
+                       router.push(`/olcutler/${notif.alt_olcut_id}/${getAsamaSlug(notif.puko_asamasi)}`);
                      }}
                      className="p-4 border-b border-slate-50 hover:bg-slate-50 transition-colors cursor-pointer">
                   <div className="flex justify-between items-start mb-1">

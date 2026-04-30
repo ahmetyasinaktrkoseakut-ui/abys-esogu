@@ -1,6 +1,7 @@
 import { HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/server';
+import { getTranslations } from 'next-intl/server';
 import LanguageSwitcher from './LanguageSwitcher';
 import NotificationBellClient from './NotificationBellClient';
 
@@ -35,6 +36,18 @@ export default async function Header() {
 
   const isAdmin = userRole.toLowerCase().includes('yonetici') || userRole.toLowerCase().includes('yönetici') || userRole.toLowerCase().includes('admin');
 
+  const tRoles = await getTranslations('Roles');
+  let translatedRole = tRoles('user');
+  const roleLower = userRole.toLowerCase();
+  
+  if (roleLower.includes('admin') && !roleLower.includes('unit')) {
+    translatedRole = tRoles('admin');
+  } else if (roleLower.includes('unit_admin') || roleLower.includes('birim')) {
+    translatedRole = tRoles('unit_admin');
+  } else if (isAdmin) {
+    translatedRole = tRoles('admin');
+  }
+
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-end px-8 z-10 sticky top-0">
       <div className="flex items-center gap-5">
@@ -53,7 +66,7 @@ export default async function Header() {
           </div>
           <div className="text-left flex flex-col justify-center">
             <p className="text-sm font-bold text-slate-800 leading-tight">{userName}</p>
-            <p className="text-[11px] text-slate-500 font-medium leading-tight">{userRole}</p>
+            <p className="text-[11px] text-slate-500 font-medium leading-tight">{translatedRole}</p>
           </div>
         </div>
       </div>

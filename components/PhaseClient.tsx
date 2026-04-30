@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Plus, Info, Save, Link as LinkIcon, Settings, CalendarDays, ExternalLink, Trash2 } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
 
@@ -35,6 +36,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [ustBirimOnerileri, setUstBirimOnerileri] = useState<string[]>([]);
+  const t = useTranslations('Phase');
   
   // Onay / Ret Sistematiği
   const [pukoId, setPukoId] = useState<string | null>(null);
@@ -175,7 +177,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         }
       }
 
-      alert('Değişiklikler başarıyla kaydedildi!');
+      alert(t('save_success'));
       fetchData(); 
 
     } catch (error: any) {
@@ -188,7 +190,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         else errMsg = JSON.stringify(error, Object.getOwnPropertyNames(error));
       }
       console.error('Save Error:', error);
-      alert(`Kaydetme Hatası: ${errMsg}`);
+      alert(`${t('save_error')}: ${errMsg}`);
     } finally {
       setIsSaving(false);
     }
@@ -220,7 +222,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
 
     } catch (error: any) {
       console.error('File upload error:', error);
-      alert(`Dosya yüklenemedi: ${error.message}`);
+      alert(`${t('upload_error')}: ${error.message}`);
     } finally {
       setUploadingDoc(false);
       // Reset input
@@ -229,7 +231,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   };
 
   const handleRemoveDoc = (index: number) => {
-    if (confirm("Bu dokümanı silmek istediğinize emin misiniz? (Kaydet butonuna bastığınızda veritabanında güncellenecektir)")) {
+    if (confirm(t('delete_confirm'))) {
         setDokumanlar(prev => prev.filter((_, i) => i !== index));
     }
   };
@@ -241,7 +243,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       const { error } = await supabase.from('puko_degerlendirmeleri').update({ durum: 'Onaylandı', red_nedeni: null }).eq('id', pukoId);
       if (error) throw error;
       setOnayDurumu('Onaylandı');
-      alert('Süreç başarıyla onaylandı.');
+      alert(t('approve_success'));
     } catch (err: any) {
       alert(`Onay sırasında hata: ${err.message}`);
     } finally {
@@ -251,7 +253,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
 
   const handleRejectSubmit = async () => {
     if (!pukoId || !rejectReason.trim()) {
-      alert("Lütfen red nedeni giriniz.");
+      alert(t('reject_empty'));
       return;
     }
     setIsActionSubmitting(true);
@@ -261,7 +263,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       setOnayDurumu('Reddedildi');
       setIsRejectModalOpen(false);
       setRejectReason('');
-      alert('Süreç reddedildi.');
+      alert(t('reject_success'));
     } catch (err: any) {
       alert(`Red işlemi sırasında hata: ${err.message}`);
     } finally {
@@ -279,8 +281,8 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col gap-2">
             <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
-              <span className="cursor-pointer hover:text-blue-600">Ana Sayfa</span> &gt; 
-              <span className="cursor-pointer hover:text-blue-600">Ölçütler</span> &gt;
+              <span className="cursor-pointer hover:text-blue-600">{t('home')}</span> &gt; 
+              <span className="cursor-pointer hover:text-blue-600">{t('criteria')}</span> &gt;
               <span className="text-slate-800">{[olcutDetay?.kod, olcutDetay?.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
             </div>
             <div className="flex items-center gap-2">
@@ -289,7 +291,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               </h2>
               <Info className="w-4 h-4 text-slate-400 cursor-pointer" />
             </div>
-            <p className="text-sm text-slate-500">Alt ölçüt ile ilgili {phaseTitle} süreci yönetimi.</p>
+            <p className="text-sm text-slate-500">{t('process_management_desc', { phaseTitle })}</p>
           </div>
           
           {isReadOnly && pukoId && (
@@ -306,14 +308,14 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                 disabled={isActionSubmitting || onayDurumu === 'Onaylandı'}
                 className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
               >
-                Onayla
+                {t('approve')}
               </button>
               <button 
                 onClick={() => setIsRejectModalOpen(true)}
                 disabled={isActionSubmitting || onayDurumu === 'Reddedildi'}
                 className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
               >
-                Reddet
+                {t('reject')}
               </button>
             </div>
           )}
@@ -327,14 +329,14 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           <div className="col-span-2 p-6 lg:border-r border-slate-200">
             <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-4 text-sm">
               <Settings className="w-4 h-4 text-blue-600" />
-              {phaseTitle} Süreci Açıklaması
-              {isReadOnly && <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200">Salt Okunur</span>}
+              {phaseTitle} {t('process_description')}
+              {isReadOnly && <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200">{t('readOnly')}</span>}
             </h3>
             <div className="w-full">
               <RichTextEditor content={aciklama} onChange={setAciklama} readOnly={isReadOnly} />
             </div>
             <div className="flex justify-end mt-2 text-xs text-slate-400">
-              Sözcük sayısı: {aciklama.replace(/<[^>]*>?/gm, '').split(/\s+/).filter(w => w.length > 0).length}
+              {t('word_count')} {aciklama.replace(/<[^>]*>?/gm, '').split(/\s+/).filter(w => w.length > 0).length}
             </div>
           </div>
 
@@ -342,21 +344,21 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
             <h3 className="flex items-center justify-between font-semibold text-slate-700 mb-4 text-sm">
               <span className="flex items-center gap-2">
                 <LinkIcon className="w-4 h-4 text-slate-500" />
-                İlgili Dokümanlar
+                {t('related_documents')}
               </span>
             </h3>
             
             <div className="space-y-3 mb-4">
               {dokumanlar.length === 0 ? (
                 <div className="text-sm text-slate-400 italic text-center py-4 bg-white border border-slate-200 border-dashed rounded-lg">
-                  Henüz doküman eklenmemiş.
+                  {t('no_document_yet')}
                 </div>
               ) : (
                 dokumanlar.map((doc, idx) => (
                   <div key={idx} className="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-lg shadow-sm group">
                     <div className="flex-1 overflow-hidden">
                       <p className="text-sm font-medium text-slate-700 truncate" title={doc.name}>{doc.name}</p>
-                      <p className="text-[11px] text-slate-500">{doc.size ? `${doc.size} KB` : 'Belgisiz Boyut'}</p>
+                      <p className="text-[11px] text-slate-500">{doc.size ? `${doc.size} KB` : t('unknown_size')}</p>
                     </div>
                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-blue-50 text-blue-600 rounded flex-shrink-0 hover:bg-blue-100" title="İndir/Gör">
@@ -384,7 +386,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               />
               <button disabled={uploadingDoc || isReadOnly} className="w-full py-2 border border-dashed border-blue-300 text-blue-600 text-sm font-medium rounded-lg bg-blue-50/50 hover:bg-blue-100/50 transition-colors flex items-center justify-center gap-2 disabled:opacity-50">
                 {uploadingDoc ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-                {uploadingDoc ? 'Yükleniyor...' : 'Doküman Ekle'}
+                {uploadingDoc ? t('loading') : t('add_document')}
               </button>
             </div>
             )}
@@ -396,7 +398,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
             <div className="flex items-center justify-between mb-4">
               <h3 className="flex items-center gap-2 font-semibold text-slate-800 text-sm">
                 <Plus className="w-4 h-4 text-amber-600 font-normal" />
-                Üst Birimler İçin Öneri
+                {t('suggestions_for_upper_units')}
               </h3>
               {!isReadOnly && (
                 <button 
@@ -404,14 +406,14 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                   className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  Yeni Öneri Ekle
+                  {t('add_new_suggestion')}
                 </button>
               )}
             </div>
             
             {ustBirimOnerileri.length === 0 ? (
               <div className="text-center py-6 bg-white border border-dashed border-slate-300 rounded-lg">
-                <p className="text-sm text-slate-500">Üst yönetime veya diğer birimlere sunulacak bir öneriniz varsa "Yeni Öneri Ekle" butonuna basınız.</p>
+                <p className="text-sm text-slate-500">{t('suggestion_empty_desc')}</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -429,7 +431,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                           newOneriler[index] = e.target.value;
                           setUstBirimOnerileri(newOneriler);
                         }}
-                        placeholder="Önerinizi buraya detaylıca yazın..."
+                        placeholder={t('suggestion_placeholder')}
                         className="w-full bg-transparent border-none focus:ring-0 p-0 text-sm text-slate-700 resize-none outline-none disabled:bg-transparent"
                         rows={3}
                       />
@@ -458,7 +460,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
             <div className="flex items-center justify-between mb-4">
               <h3 className="flex items-center gap-2 font-semibold text-slate-700 text-sm">
                 <CalendarDays className="w-4 h-4 text-blue-600 font-normal" />
-                Takvimli Eylem Planı (2023-2024)
+                {t('action_plan')}
               </h3>
               {!isReadOnly && (
               <button 
@@ -466,7 +468,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-semibold transition-colors"
               >
                 <Plus className="w-3.5 h-3.5" />
-                Yeni Eylem Ekle
+                {t('add_new_action')}
               </button>
               )}
             </div>
@@ -474,13 +476,13 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               <table className="w-full text-sm text-left border border-slate-200 rounded-lg overflow-hidden">
                 <thead className="bg-[#F8FAFC] text-slate-600 text-xs font-semibold whitespace-nowrap">
                   <tr>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '15%'}}>İyileştirme Alanı</th>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '20%'}}>Bulgular</th>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '18%'}}>Eylem / Faaliyet</th>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '12%'}}>Sorumlu Birim</th>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '10%'}}>Takvim</th>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '13%'}}>Başarı Göstergesi</th>
-                    <th className="px-4 py-3 border-b border-slate-200" style={{width: '12%'}}>İzleme</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '15%'}}>{t('headers.iyilestirme_alani')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '20%'}}>{t('headers.bulgular')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '18%'}}>{t('headers.eylem_faaliyet')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '12%'}}>{t('headers.sorumlu')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '10%'}}>{t('headers.takvim')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '13%'}}>{t('headers.basari_gostergesi')}</th>
+                    <th className="px-4 py-3 border-b border-slate-200" style={{width: '12%'}}>{t('headers.izleme')}</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white">
@@ -510,7 +512,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
             className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-colors shadow-sm disabled:opacity-70"
           >
             {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+            {isSaving ? t('saving') : t('save')}
           </button>
         </div>
         )}
@@ -524,28 +526,28 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                Kaydı Reddet
+                {t('reject_record')}
               </h3>
               <button 
                 onClick={() => setIsRejectModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 transition-colors"
                 disabled={isActionSubmitting}
               >
-                Kapat
+                {t('close')}
               </button>
             </div>
             
             <div className="p-6 space-y-4">
               <p className="text-sm text-slate-500 leading-relaxed">
-                Bu PUKÖ değerlendirmesini reddetmek üzeresiniz. Lütfen eksiklik için red nedeni giriniz.
+                {t('reject_description')}
               </p>
               
               <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700">Red Nedeni (<span className="text-red-500">*</span>)</label>
+                <label className="text-sm font-semibold text-slate-700">{t('reject_reason')} (<span className="text-red-500">*</span>)</label>
                 <textarea 
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Örn: Yüklenen kanıt dosyası eksik..."
+                  placeholder={t('reject_reason_placeholder')}
                   rows={4}
                   className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm resize-none"
                 />
@@ -558,7 +560,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                 disabled={isActionSubmitting}
                 className="px-5 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
               >
-                İptal
+                {t('cancel')}
               </button>
               <button 
                 onClick={handleRejectSubmit}
@@ -566,7 +568,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                 className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50"
               >
                 {isActionSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                Onayla & Reddet
+                {t('confirm_reject')}
               </button>
             </div>
           </div>

@@ -12,15 +12,15 @@ export default async function Header() {
   
   const { data: { user } } = await supabase.auth.getUser();
   if (user) {
-    const { data: profile } = await supabase
+    const { data: profile, error } = await supabase
       .from('profiller')
-      .select('rol, ad_soyad')
+      .select('rol')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
       
     if (profile) {
-      userRole = profile.rol || 'Personel (Birim Sorumlusu)';
-      userName = profile.ad_soyad || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Kullanıcı';
+      userRole = profile.rol || 'Personel';
+      userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Kullanıcı';
     } else {
       userRole = 'Personel';
       userName = user.user_metadata?.full_name || user.email?.split('@')[0] || 'Kullanıcı';
@@ -42,10 +42,17 @@ export default async function Header() {
   
   if (roleLower.includes('admin') && !roleLower.includes('unit')) {
     translatedRole = tRoles('admin');
-  } else if (roleLower.includes('unit_admin') || roleLower.includes('birim')) {
+  } else if (roleLower === 'birimsorumlusu' || roleLower.includes('unit_admin') || roleLower.includes('birim')) {
     translatedRole = tRoles('unit_admin');
   } else if (isAdmin) {
     translatedRole = tRoles('admin');
+  } else if (userRole && userRole.trim() !== '') {
+    // If we couldn't translate it with rules, try to use exactly what is in DB
+    if (roleLower === 'personel' || roleLower === 'user') {
+      translatedRole = tRoles('user');
+    } else {
+      translatedRole = userRole; 
+    }
   }
 
   return (

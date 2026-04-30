@@ -1,7 +1,7 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, usePathname } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 import { 
   Home, 
   FileText, 
@@ -20,6 +20,7 @@ import { LogoutButton } from './LogoutButton';
 
 export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
   const pathname = usePathname();
+  const t = useTranslations('Navigation');
 
   const getLinkClass = (path: string, exact: boolean = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
@@ -35,16 +36,16 @@ export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         <Link href="/" className={getLinkClass('/', true)}>
           <Home className="w-5 h-5 flex-shrink-0" />
-          Ana Sayfa
+          {t('dashboard')}
         </Link>
         <Link href="/olcutler" className={getLinkClass('/olcutler')}>
           <FileText className="w-5 h-5 flex-shrink-0" />
-          Ölçütler
+          {t('criteria')}
         </Link>
         {isAdmin && (
           <Link href="/izleme" className={getLinkClass('/izleme')}>
             <BarChart2 className="w-5 h-5 flex-shrink-0" />
-            İzleme
+            {t('tracking')}
           </Link>
         )}
 
@@ -52,31 +53,31 @@ export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
         <div className="pt-2">
           <Link href="/bildirimler" className={getLinkClass('/bildirimler')}>
             <Bell className="w-5 h-5 flex-shrink-0" />
-            Bildirimler
+            {t('notifications')}
           </Link>
           <Link href="/takvim" className={getLinkClass('/takvim')}>
             <Calendar className="w-5 h-5 flex-shrink-0" />
-            Takvim
+            {t('calendar')}
           </Link>
           <Link href="/raporlar" className={getLinkClass('/raporlar')}>
             <LineChart className="w-5 h-5 flex-shrink-0" />
-            Raporlar
+            {t('reports')}
           </Link>
           {isAdmin && (
             <>
               <Link href="/onerilenler" className={getLinkClass('/onerilenler')}>
                 <Lightbulb className="w-5 h-5 flex-shrink-0" />
-                Önerilenler
+                {t('suggestions')}
               </Link>
               <Link href="/dokumanlar" className={getLinkClass('/dokumanlar')}>
                 <FolderOpen className="w-5 h-5 flex-shrink-0" />
-                Dokümanlar
+                {t('documents')}
               </Link>
             </>
           )}
           <Link href="/iletisim" className={getLinkClass('/iletisim')}>
             <MessageSquare className="w-5 h-5 flex-shrink-0" />
-            İletişim
+            {t('communication')}
           </Link>
         </div>
       </nav>
@@ -85,7 +86,7 @@ export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
         {isAdmin && (
           <Link href="/atamalar" className={getLinkClass('/atamalar')}>
             <Settings className="w-5 h-5 flex-shrink-0" />
-            Admin / Atamalar
+            Admin / {t('assignments')}
           </Link>
         )}
         <LogoutButton />

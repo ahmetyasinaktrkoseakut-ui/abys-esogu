@@ -44,7 +44,6 @@ export default async function BildirimlerPage() {
       const { data } = await supabase
         .from('puko_degerlendirmeleri')
         .select('*, alt_olcutler(kod, olcut_adi)')
-        .eq('durum', 'Reddedildi')
         .in('alt_olcut_id', allowedAltOlcutIds)
         .order('olusturulma_tarihi', { ascending: false });
 
@@ -59,7 +58,7 @@ export default async function BildirimlerPage() {
         <p className="text-sm text-slate-500">
           {isAdmin 
             ? 'Onayınızı bekleyen personel PUKÖ kanıt girişleri aşağıda listelenmektedir.'
-            : 'Yöneticiler tarafından revize edilmesi için geri gönderilmiş (Reddedilmiş) PUKÖ girişleriniz.'}
+            : 'Gönderdiğiniz PUKÖ veri girişlerinizin güncel durumları (Beklemede, Onaylandı, Reddedildi).'}
         </p>
       </div>
       

@@ -2,27 +2,29 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Calendar as CalendarIcon, Info, ChevronRight, Building, Users } from 'lucide-react';
-import Link from 'next/link';
+import { Loader2, Calendar as CalendarIcon, Building, Users, CalendarDays, ExternalLink } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 
-interface TakvimKaydi {
-  id: string;
-  puko_asamasi: string;
-  baslangic_tarihi: string;
-  bitis_tarihi: string;
+interface EylemPlani {
+  id: number;
+  takvim: string;
+  iyilestirme_alani: string;
+  bulgular: string;
+  eylem_faaliyet: string;
+  sorumlu: string;
+  basari_gostergesi: string;
+  izleme_durumu: string;
   alt_olcut_id: string;
-  alt_olcut_kodu: string;
-  alt_olcut_adi: string;
-  ana_baslik_kodu: string;
-  ana_baslik_adi: string;
-  birim_adi: string;
+  alt_olcutler?: {
+    kod: string;
+    olcut_adi: string;
+  };
 }
 
 export default function TakvimClient() {
-  const [kayitlar, setKayitlar] = useState<TakvimKaydi[]>([]);
+  const [kayitlar, setKayitlar] = useState<EylemPlani[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [userRole, setUserRole] = useState('');
-  const [userBirim, setUserBirim] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -31,55 +33,62 @@ export default function TakvimClient() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: profile } = await supabase.from('profiller').select('rol, birim_id').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = profile?.rol?.toLowerCase() || '';
-        setUserRole(role);
-        setUserBirim(profile?.birim_id || '');
+        const userIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+        setIsAdmin(userIsAdmin);
 
-        // Fetch all necessary data
-        const { data: pukoData } = await supabase
-          .from('puko_degerlendirmeleri')
-          .select('id, puko_asamasi, baslangic_tarihi, bitis_tarihi, alt_olcut_id')
-          .in('puko_asamasi', ['planlama', 'uygulama'])
-          .not('baslangic_tarihi', 'is', null);
+        let query = supabase
+          .from('eylem_planlari')
+          .select('*')
+          .order('id', { ascending: false });
 
-        const { data: altOlcutler } = await supabase.from('alt_olcutler').select('id, kod, olcut_adi, ana_baslik_id, sorumlu_birim_id');
-        const { data: anaBasliklar } = await supabase.from('ana_basliklar').select('id, kod, baslik_adi');
-        const { data: birimler } = await supabase.from('birimler').select('id, ad');
+        if (!userIsAdmin) {
+          // Personel: Sadece atandığı ölçütlerin eylem planlarını görebilir
+          const { data: atamalar } = await supabase
+            .from('kullanici_olcut_atamalari')
+            .select('alt_olcut_id')
+            .eq('user_id', user.id);
 
-        if (!pukoData || !altOlcutler || !anaBasliklar) return;
-
-        let formattedData: TakvimKaydi[] = pukoData.map(p => {
-          const altOlcut = altOlcutler.find(a => a.id === p.alt_olcut_id);
-          const anaBaslik = anaBasliklar.find(ab => ab.id === altOlcut?.ana_baslik_id);
-          const birim = birimler?.find(b => b.id === altOlcut?.sorumlu_birim_id);
-
-          return {
-            id: p.id,
-            puko_asamasi: p.puko_asamasi,
-            baslangic_tarihi: p.baslangic_tarihi,
-            bitis_tarihi: p.bitis_tarihi,
-            alt_olcut_id: p.alt_olcut_id,
-            alt_olcut_kodu: altOlcut?.kod || '',
-            alt_olcut_adi: altOlcut?.olcut_adi || '',
-            ana_baslik_kodu: anaBaslik?.kod || '',
-            ana_baslik_adi: anaBaslik?.baslik_adi || '',
-            birim_adi: birim?.ad || 'Bilinmeyen Birim',
-            sorumlu_birim_id: altOlcut?.sorumlu_birim_id
-          };
-        });
-
-        // Filter based on role
-        const isAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
-        if (!isAdmin) {
-          // Personnel sees only their unit's data
-          formattedData = formattedData.filter((item: any) => item.sorumlu_birim_id === profile?.birim_id);
+          if (atamalar && atamalar.length > 0) {
+            const allowedAltOlcutIds = atamalar.map(a => a.alt_olcut_id);
+            query = query.in('alt_olcut_id', allowedAltOlcutIds);
+          } else {
+            setKayitlar([]);
+            setIsLoading(false);
+            return;
+          }
         }
 
-        // Sort by start date
-        formattedData.sort((a, b) => new Date(a.baslangic_tarihi).getTime() - new Date(b.baslangic_tarihi).getTime());
+        const { data, error: eylemErr } = await query;
+        if (eylemErr) throw eylemErr;
+        
+        if (data && data.length > 0) {
+          // İlişkisel foreign key hatasından (PGRST200) kaçınmak için alt_olcutler tablosunu manuel fetch edip JS'de birleştiriyoruz.
+          const altOlcutIds = [...new Set(data.map(item => item.alt_olcut_id))];
+          const { data: olcutlerData } = await supabase
+            .from('alt_olcutler')
+            .select('id, kod, olcut_adi')
+            .in('id', altOlcutIds);
 
-        setKayitlar(formattedData);
+          const olcutMap: Record<string, any> = {};
+          if (olcutlerData) {
+            olcutlerData.forEach(o => {
+              olcutMap[o.id] = { kod: o.kod, olcut_adi: o.olcut_adi };
+            });
+          }
+
+          // Filtreleme yapalım, sadece geçerli verisi olanları gösterelim
+          const filteredData = data
+            .filter((item: any) => item.takvim || item.iyilestirme_alani || item.eylem_faaliyet)
+            .map((item: any) => ({
+              ...item,
+              alt_olcutler: olcutMap[item.alt_olcut_id] || { kod: '?', olcut_adi: 'Bilinmeyen Ölçüt' }
+            }));
+            
+          setKayitlar(filteredData as EylemPlani[]);
+        }
+
       } catch (error) {
         console.error("Takvim fetch error:", error);
       } finally {
@@ -90,109 +99,103 @@ export default function TakvimClient() {
     fetchData();
   }, []);
 
-  const isAdmin = userRole.includes('yonetici') || userRole.includes('yönetici') || userRole.includes('admin');
-
   if (isLoading) {
     return <div className="h-[calc(100vh-100px)] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;
   }
 
-  // Format date correctly
-  const formatDate = (dateString: string) => {
-    if (!dateString) return 'Belirsiz';
-    const d = new Date(dateString);
-    return d.toLocaleDateString('tr-TR', { day: '2-digit', month: 'short', year: 'numeric' });
-  };
-
   return (
     <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
-      <div className="mb-8">
+      <div className="mb-8 flex flex-col gap-2">
         <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
           <CalendarIcon className="w-8 h-8 text-blue-600" />
-          Takvim Modülü
+          Takvimli Eylem Planları
         </h1>
-        <p className="text-slate-500 mt-2 flex items-center gap-2">
+        <p className="text-slate-500 flex items-center gap-2">
           {isAdmin ? (
-            <><Building className="w-4 h-4" /> Kurumsal düzeyde tüm planlama ve uygulama süreçlerinin takvimi.</>
+            <><Building className="w-4 h-4" /> Kurumsal düzeyde tüm ölçütlere ait girilen takvimli eylem planları.</>
           ) : (
-            <><Users className="w-4 h-4" /> Biriminize atanan ölçütlerin planlama ve uygulama takvimi.</>
+            <><Users className="w-4 h-4" /> Biriminize atanan ölçütler için oluşturulmuş takvimli eylem planları.</>
           )}
         </p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         {kayitlar.length === 0 ? (
-          <div className="p-12 text-center flex flex-col items-center">
+          <div className="p-16 text-center flex flex-col items-center">
             <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-4">
-              <CalendarIcon className="w-10 h-10" />
+              <CalendarDays className="w-10 h-10" />
             </div>
-            <h3 className="text-xl font-bold text-slate-700 mb-2">Henüz Takvim Kaydı Yok</h3>
+            <h3 className="text-xl font-bold text-slate-700 mb-2">Henüz Eylem Planı Bulunmuyor</h3>
             <p className="text-slate-500 max-w-md">
-              Planlama veya Uygulama sekmelerine başlangıç ve bitiş tarihleri girildiğinde bu alanda otomatik olarak listelenecektir.
+              Ölçütler menüsünden Planlama sekmesine giderek bir Takvimli Eylem Planı oluşturduğunuzda burada listelenecektir.
             </p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider font-semibold border-b border-slate-200">
-                  <th className="p-4 pl-6">Tarih Aralığı</th>
-                  <th className="p-4">Aşama</th>
-                  <th className="p-4">Ana Başlık</th>
-                  <th className="p-4">Alt Ölçüt</th>
-                  {isAdmin && <th className="p-4">Sorumlu Birim</th>}
-                  <th className="p-4 pr-6 text-right">İşlem</th>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="p-4 pl-6 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Tarih</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">Ölçüt</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">İyileştirme Alanı</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">Bulgular</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">Eylem / Faaliyet</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Sorumlu Birim</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Başarı Göstergesi</th>
+                  <th className="p-4 pr-6 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">İzleme</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {kayitlar.map((kayit) => (
-                  <tr key={kayit.id} className="hover:bg-blue-50/50 transition-colors group">
-                    <td className="p-4 pl-6">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-slate-800 text-sm">
-                          {formatDate(kayit.baslangic_tarihi)}
-                        </span>
-                        {kayit.bitis_tarihi && (
-                          <span className="text-xs text-slate-500 flex items-center gap-1 mt-0.5">
-                            Bitiş: {formatDate(kayit.bitis_tarihi)}
-                          </span>
-                        )}
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <span className={`inline-flex px-2.5 py-1 rounded-md text-[11px] font-bold uppercase tracking-wider ${
-                        kayit.puko_asamasi === 'planlama' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
-                      }`}>
-                        {kayit.puko_asamasi}
+                  <tr key={kayit.id} className="hover:bg-slate-50/50 transition-colors group">
+                    <td className="p-4 pl-6 align-top">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-blue-50 text-blue-700 whitespace-pre-wrap max-w-[150px]">
+                        {kayit.takvim || '-'}
                       </span>
                     </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2 max-w-[200px]">
-                        <span className="text-xs font-bold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">{kayit.ana_baslik_kodu}</span>
-                        <span className="text-sm text-slate-600 truncate" title={kayit.ana_baslik_adi}>{kayit.ana_baslik_adi}</span>
-                      </div>
-                    </td>
-                    <td className="p-4">
-                      <div className="flex items-center gap-2 max-w-[300px]">
-                        <span className="text-xs font-bold text-blue-400 bg-blue-50 px-1.5 py-0.5 rounded">{kayit.alt_olcut_kodu}</span>
-                        <span className="text-sm font-semibold text-slate-700 truncate" title={kayit.alt_olcut_adi}>{kayit.alt_olcut_adi}</span>
-                      </div>
-                    </td>
-                    {isAdmin && (
-                      <td className="p-4">
-                        <span className="text-xs font-medium text-slate-600 flex items-center gap-1.5">
-                          <Building className="w-3.5 h-3.5 text-slate-400" />
-                          {kayit.birim_adi}
+                    <td className="p-4 align-top">
+                      <div className="flex flex-col gap-1.5 max-w-[200px]">
+                        <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded w-max">
+                          {kayit.alt_olcutler?.kod || 'Bilinmeyen Kod'}
                         </span>
-                      </td>
-                    )}
-                    <td className="p-4 pr-6 text-right">
-                      <Link 
-                        href={`/olcutler/${kayit.alt_olcut_id}/${kayit.puko_asamasi}`}
-                        className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Detaya Git"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </Link>
+                        <Link 
+                          href={`/olcutler/${kayit.alt_olcut_id}/planlama`}
+                          className="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors flex items-start gap-1 group/link"
+                        >
+                          <span className="line-clamp-2" title={kayit.alt_olcutler?.olcut_adi}>{kayit.alt_olcutler?.olcut_adi || 'Kriter Adı Yok'}</span>
+                          <ExternalLink className="w-3 h-3 mt-1 opacity-0 group-hover/link:opacity-100 transition-opacity shrink-0" />
+                        </Link>
+                      </div>
+                    </td>
+                    <td className="p-4 align-top">
+                      <p className="text-sm font-medium text-slate-800 whitespace-pre-wrap max-w-[200px]">
+                        {kayit.iyilestirme_alani || '-'}
+                      </p>
+                    </td>
+                    <td className="p-4 align-top">
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap max-w-[200px]">
+                        {kayit.bulgular || '-'}
+                      </p>
+                    </td>
+                    <td className="p-4 align-top">
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap max-w-[200px]">
+                        {kayit.eylem_faaliyet || '-'}
+                      </p>
+                    </td>
+                    <td className="p-4 align-top">
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap max-w-[150px]">
+                        {kayit.sorumlu || '-'}
+                      </p>
+                    </td>
+                    <td className="p-4 align-top">
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap max-w-[150px]">
+                        {kayit.basari_gostergesi || '-'}
+                      </p>
+                    </td>
+                    <td className="p-4 pr-6 align-top">
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap max-w-[150px]">
+                        {kayit.izleme_durumu || '-'}
+                      </p>
                     </td>
                   </tr>
                 ))}

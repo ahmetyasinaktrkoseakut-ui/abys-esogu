@@ -1,0 +1,27 @@
+{
+  "Navigation": {
+    "dashboard": "لوحة القيادة",
+    "criteria": "المعايير",
+    "assignments": "المهام",
+    "documents": "المستندات",
+    "tracking": "تتبع",
+    "suggestions": "المقترحات",
+    "tasks": "مهامي",
+    "departments": "الأقسام",
+    "calendar": "التقويم",
+    "reports": "التقارير",
+    "notifications": "الإشعارات",
+    "settings": "الإعدادات",
+    "communication": "التواصل",
+    "profile": "الملف الشخصي",
+    "logout": "تسجيل خروج"
+  },
+  "Common": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "loading": "جار التحميل...",
+    "success": "نجاح",
+    "error": "خطأ",
+    "readOnly": "للقراءة فقط"
+  }
+}

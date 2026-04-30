@@ -1,0 +1,27 @@
+{
+  "Navigation": {
+    "dashboard": "Ana Sayfa",
+    "criteria": "Ölçütler",
+    "assignments": "Atamalar",
+    "documents": "Dökümanlar",
+    "tracking": "İzleme",
+    "suggestions": "Önerilenler",
+    "tasks": "Görevlerim",
+    "departments": "Birimler",
+    "calendar": "Takvim",
+    "reports": "Raporlar",
+    "notifications": "Bildirimler",
+    "settings": "Ayarlar",
+    "communication": "İletişim",
+    "profile": "Profil",
+    "logout": "Çıkış Yap"
+  },
+  "Common": {
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "loading": "Yükleniyor...",
+    "success": "Başarılı",
+    "error": "Hata",
+    "readOnly": "Salt Okunur"
+  }
+}

@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Presentation, Activity, Calendar, Info, Hash, Upload, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { useRouter } from '@/i18n/routing';
 
 export default function BildirimlerTableClient({ initialData }: { initialData: any[] }) {
   const [data, setData] = useState(initialData);
@@ -11,6 +12,24 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const router = useRouter();
+
+  useEffect(() => {
+    setData(initialData);
+  }, [initialData]);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('public:puko_degerlendirmeleri_table')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'puko_degerlendirmeleri' }, () => {
+        router.refresh();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [router]);
 
   const getPukoBadgeColor = (asama: string) => {
     const lower = (asama || '').toLowerCase();
@@ -150,11 +169,14 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                 currentData.map((row) => (
                   <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer group"
+                        onClick={() => router.push(`/olcutler/${row.alt_olcut_id}/${row.puko_asamasi || 'kontrol'}`)}
+                      >
+                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
                           {row.alt_olcutler?.kod || '-'}
                         </span>
-                        <div className="text-sm font-medium text-slate-700 max-w-[200px] truncate" title={row.alt_olcutler?.olcut_adi}>
+                        <div className="text-sm font-medium text-slate-700 max-w-[200px] truncate group-hover:text-blue-600 transition-colors" title={row.alt_olcutler?.olcut_adi}>
                           {row.alt_olcutler?.olcut_adi || 'Bilinmeyen Kriter'}
                         </div>
                       </div>

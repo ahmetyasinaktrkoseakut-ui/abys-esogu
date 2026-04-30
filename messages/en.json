@@ -1,0 +1,27 @@
+{
+  "Navigation": {
+    "dashboard": "Dashboard",
+    "criteria": "Criteria",
+    "assignments": "Assignments",
+    "documents": "Documents",
+    "tracking": "Tracking",
+    "suggestions": "Suggestions",
+    "tasks": "My Tasks",
+    "departments": "Departments",
+    "calendar": "Calendar",
+    "reports": "Reports",
+    "notifications": "Notifications",
+    "settings": "Settings",
+    "communication": "Communication",
+    "profile": "Profile",
+    "logout": "Logout"
+  },
+  "Common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "loading": "Loading...",
+    "success": "Success",
+    "error": "Error",
+    "readOnly": "Read Only"
+  }
+}

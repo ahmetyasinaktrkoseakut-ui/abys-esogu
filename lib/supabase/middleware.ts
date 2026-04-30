@@ -1,10 +1,12 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import createIntlMiddleware from 'next-intl/middleware';
+import { routing } from '@/i18n/routing';
+
+const handleI18nRouting = createIntlMiddleware(routing);
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  })
+  let supabaseResponse = handleI18nRouting(request);
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,9 +18,7 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = NextResponse.next({
-            request,
-          })
+          supabaseResponse = handleI18nRouting(request)
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -31,16 +31,20 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  const isLoginPage = request.nextUrl.pathname.startsWith('/login')
+  // Extract path without locale for checking
+  const pathname = request.nextUrl.pathname;
+  const pathWithoutLocale = pathname.replace(/^\/(tr|en|ar)/, '') || '/';
+  
+  const isLoginPage = pathWithoutLocale.startsWith('/login')
 
   if (
     !user &&
     !isLoginPage &&
-    !request.nextUrl.pathname.startsWith('/_next') &&
-    !request.nextUrl.pathname.startsWith('/favicon.ico') &&
-    !request.nextUrl.pathname.startsWith('/public')
+    !pathname.startsWith('/_next') &&
+    !pathname.startsWith('/favicon.ico') &&
+    !pathname.startsWith('/public')
   ) {
-    // no user, redirect to login
+    // no user, redirect to login (next-intl will localize it on next pass)
     const url = request.nextUrl.clone()
     url.pathname = '/login'
     return NextResponse.redirect(url)
@@ -64,10 +68,9 @@ export async function updateSession(request: NextRequest) {
     }
 
     // Catch deleted or unauthorized old paths
-    const currentPath = request.nextUrl.pathname;
     const oldPaths = ['/', '/puko', '/birimler'];
     
-    if (oldPaths.some(p => currentPath === p || currentPath.startsWith('/birimler'))) {
+    if (oldPaths.some(p => pathWithoutLocale === p || pathWithoutLocale.startsWith('/birimler'))) {
       const url = request.nextUrl.clone()
       url.pathname = '/olcutler'
       return NextResponse.redirect(url)

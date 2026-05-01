@@ -69,6 +69,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      const upsertData: Record<string, any> = {
         alt_olcut_id: resolvedParams.id,
         puko_asamasi: 'olgunluk',
         donem_id: selectedPeriod?.id,

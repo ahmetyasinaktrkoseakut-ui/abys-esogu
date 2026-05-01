@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getTranslations } from 'next-intl/server';
 import LanguageSwitcher from './LanguageSwitcher';
 import NotificationBellClient from './NotificationBellClient';
+import PeriodSelectorClient from './PeriodSelectorClient';
 
 export default async function Header() {
   const supabase = await createClient();
@@ -58,6 +59,8 @@ export default async function Header() {
   return (
     <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-end px-8 z-10 sticky top-0">
       <div className="flex items-center gap-5">
+        <PeriodSelectorClient />
+        <div className="h-4 w-px bg-slate-200"></div>
         <LanguageSwitcher />
         <div className="h-4 w-px bg-slate-200"></div>
         {user && <NotificationBellClient userId={user.id} isAdmin={isAdmin} />}

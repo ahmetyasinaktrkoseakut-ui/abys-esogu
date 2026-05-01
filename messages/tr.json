@@ -11,6 +11,7 @@
     "calendar": "Takvim",
     "reports": "Raporlar",
     "notifications": "Bildirimler",
+    "periods": "Dönem Yönetimi",
     "settings": "Ayarlar",
     "communication": "İletişim",
     "profile": "Profil",
@@ -243,5 +244,33 @@
     "latest": "En Yeni",
     "new_evidence_submitted": "Personel tarafından yeni bir kanıt girişi yapıldı.",
     "view_all": "Tüm Bildirimleri Gör"
+  },
+  "PeriodManagement": {
+    "title": "Dönem / Yıl Yönetimi",
+    "description": "Sistemin çok yıllı çalışabilmesi için dönemleri yönetin. Arşivleme ve yeni yıl hazırlıkları buradan yapılır.",
+    "add_new": "Yeni Dönem Ekle",
+    "table": {
+      "name": "Dönem Adı / Yıl",
+      "status": "Durum",
+      "actions": "İşlemler"
+    },
+    "status": {
+      "active": "Aktif (Veri Girişi Açık)",
+      "passive": "Pasif (Salt Okunur / Arşiv)"
+    },
+    "modal": {
+      "title": "Dönem Ekle / Düzenle",
+      "name_label": "Dönem Adı",
+      "name_placeholder": "Örn: 2024, 2024-2025 Güz vb.",
+      "is_active_label": "Aktif mi?",
+      "is_active_desc": "Aktif dönemlerde veri girişi ve düzenleme yapılabilir. Pasif dönemler salt okunur olur."
+    },
+    "messages": {
+      "save_success": "Dönem başarıyla kaydedildi.",
+      "save_error": "Dönem kaydedilirken hata oluştu.",
+      "delete_confirm": "Bu dönemi silmek istediğinize emin misiniz? Bu döneme ait veriler (pukö, kanıt vb.) silinmez ancak erişilemez kalabilir.",
+      "delete_success": "Dönem başarıyla silindi.",
+      "active_period_required": "Sistemde en az bir adet aktif dönem olması önerilir."
+    }
   }
 }

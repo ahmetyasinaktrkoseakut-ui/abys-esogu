@@ -5,6 +5,7 @@ import { Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 const getAsamaSlug = (asama: string) => {
   if (!asama) return 'kontrol-etme';
@@ -30,17 +31,20 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const { selectedPeriod } = usePeriod();
 
   useEffect(() => {
     let allowedAltOlcutIds: string[] = [];
     
     const fetchNotifications = async () => {
+      if (!selectedPeriod) return;
       try {
         if (isAdmin) {
           const { data } = await supabase
             .from('puko_degerlendirmeleri')
             .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
             .eq('durum', 'Beklemede')
+            .eq('donem_id', selectedPeriod.id)
             .order('olusturulma_tarihi', { ascending: false })
             .limit(5);
             
@@ -50,7 +54,8 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
           const { data: atamalar } = await supabase
             .from('kullanici_olcut_atamalari')
             .select('alt_olcut_id')
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .eq('donem_id', selectedPeriod.id);
             
           if (atamalar && atamalar.length > 0) {
             allowedAltOlcutIds = atamalar.map(a => a.alt_olcut_id);
@@ -58,6 +63,7 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
               .from('puko_degerlendirmeleri')
               .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
               .in('alt_olcut_id', allowedAltOlcutIds)
+              .eq('donem_id', selectedPeriod.id)
               .order('olusturulma_tarihi', { ascending: false })
               .limit(5);
               
@@ -83,7 +89,7 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [userId, isAdmin]);
+  }, [userId, isAdmin, selectedPeriod]);
 
   const processNotifications = (data: any[]) => {
     setNotifications(data);

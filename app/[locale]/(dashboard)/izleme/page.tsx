@@ -7,10 +7,12 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 
 import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 export default function IzlemePage() {
   const t = useTranslations('Tracking');
   const router = useRouter();
+  const { selectedPeriod } = usePeriod();
   const [stats, setStats] = useState({
     toplamOlcut: 0,
     bekleyen: 0,
@@ -24,6 +26,7 @@ export default function IzlemePage() {
 
   useEffect(() => {
     async function fetchStats() {
+      if (!selectedPeriod) return;
       try {
         setIsLoading(true);
 
@@ -42,7 +45,10 @@ export default function IzlemePage() {
 
         const { count: countOlcut } = await supabase.from('alt_olcutler').select('*', { count: 'exact', head: true });
         
-        const { data: pukoData } = await supabase.from('puko_degerlendirmeleri').select('durum, puko_asamasi, kanit_dosyalari');
+        const { data: pukoData } = await supabase
+          .from('puko_degerlendirmeleri')
+          .select('durum, puko_asamasi, kanit_dosyalari')
+          .eq('donem_id', selectedPeriod.id);
 
         let bekleyen = 0;
         let onaylanan = 0;
@@ -86,7 +92,7 @@ export default function IzlemePage() {
       }
     }
     fetchStats();
-  }, []);
+  }, [selectedPeriod]);
 
   if (isLoading) {
     return <div className="h-full flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;

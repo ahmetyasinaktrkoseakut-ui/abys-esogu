@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import { CheckCircle2, FileText, CalendarDays, Settings, Search, TrendingUp, FileSignature, BarChart } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface Step {
   id: string; // The puko_asamasi or step id
@@ -20,6 +21,7 @@ interface Step {
 
 export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: string, altOlcutId: string }) {
   const t = useTranslations('StepPanel');
+  const { selectedPeriod } = usePeriod();
   const [steps, setSteps] = useState<Step[]>([
     {
       id: 'kalite_el_kitabi',
@@ -106,7 +108,8 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
         const { data } = await supabase
           .from('puko_degerlendirmeleri')
           .select('puko_asamasi, aciklama, kanit_dosyalari')
-          .eq('alt_olcut_id', altOlcutId);
+          .eq('alt_olcut_id', altOlcutId)
+          .eq('donem_id', selectedPeriod?.id);
           
         if (data && data.length > 0) {
           setSteps(prevSteps => prevSteps.map(step => {
@@ -129,7 +132,7 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
       }
     }
     fetchProgresses();
-  }, [altOlcutId, activeStepId]);
+  }, [altOlcutId, activeStepId, selectedPeriod]);
 
   return (
     <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6">

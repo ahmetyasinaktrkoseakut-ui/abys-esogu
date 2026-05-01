@@ -6,6 +6,7 @@ import { Loader2, Calendar as CalendarIcon, Building, Users, CalendarDays, Exter
 import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface EylemPlani {
   id: number;
@@ -25,6 +26,7 @@ interface EylemPlani {
 
 export default function TakvimClient() {
   const t = useTranslations('Calendar');
+  const { selectedPeriod } = usePeriod();
   const [kayitlar, setKayitlar] = useState<EylemPlani[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -32,6 +34,7 @@ export default function TakvimClient() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!selectedPeriod) return;
       setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -45,6 +48,7 @@ export default function TakvimClient() {
         let query = supabase
           .from('eylem_planlari')
           .select('*')
+          .eq('donem_id', selectedPeriod.id)
           .order('id', { ascending: false });
 
         if (!userIsAdmin) {
@@ -52,7 +56,8 @@ export default function TakvimClient() {
           const { data: atamalar } = await supabase
             .from('kullanici_olcut_atamalari')
             .select('alt_olcut_id')
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .eq('donem_id', selectedPeriod.id);
 
           if (atamalar && atamalar.length > 0) {
             const allowedAltOlcutIds = atamalar.map(a => a.alt_olcut_id);
@@ -101,7 +106,7 @@ export default function TakvimClient() {
     }
 
     fetchData();
-  }, []);
+  }, [selectedPeriod]);
 
   if (isLoading) {
     return <div className="h-[calc(100vh-100px)] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;

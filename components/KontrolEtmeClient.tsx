@@ -7,6 +7,7 @@ import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
 import { useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import { usePeriod } from '@/contexts/PeriodContext';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from 'recharts';
 
 interface KontrolEtmeClientProps {
@@ -60,8 +61,10 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const locale = useLocale();
+  const { selectedPeriod } = usePeriod();
 
   const fetchData = async () => {
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
       
@@ -69,7 +72,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
       if (user) {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = profile?.rol?.toLowerCase() || '';
-        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin')) {
+        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || (selectedPeriod && !selectedPeriod.is_active)) {
           setIsReadOnly(true);
         }
       }
@@ -83,6 +86,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('puko_asamasi', 'kontrol')
+        .eq('donem_id', selectedPeriod.id)
         .order('id', { ascending: false })
         .limit(1)
         .single();
@@ -91,11 +95,11 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         setPukoId(pukoData.id.toString());
       }
 
-      // Fetch Tüm Anketler
       const { data: anketData } = await supabase
         .from('anketler')
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
+        .eq('donem_id', selectedPeriod.id)
         .order('id', { ascending: true });
 
       if (anketData && anketData.length > 0) {
@@ -159,7 +163,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
 
   useEffect(() => {
     fetchData();
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, selectedPeriod]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -168,12 +172,16 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
       const upsertPuko: Record<string, any> = {
         alt_olcut_id: resolvedParams.id,
         puko_asamasi: 'kontrol',
+        donem_id: selectedPeriod?.id,
         durum: 'Beklemede',
         red_nedeni: null
       };
       
       if (pukoId) {
-        await supabase.from('puko_degerlendirmeleri').update(upsertPuko).eq('id', pukoId);
+        await supabase.from('puko_degerlendirmeleri')
+          .update(upsertPuko)
+          .eq('id', pukoId)
+          .eq('donem_id', selectedPeriod?.id);
       } else {
         const { data: newPuko } = await supabase.from('puko_degerlendirmeleri').insert(upsertPuko).select('id').single();
         if (newPuko) setPukoId(newPuko.id.toString());
@@ -183,6 +191,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
       for (const anket of anketListesi) {
         const upsertAnket: Record<string, any> = {
           alt_olcut_id: resolvedParams.id,
+          donem_id: selectedPeriod?.id,
           baslik: anket.baslik,
           sorular: anket.sorular,
           aciklama: anket.aciklama

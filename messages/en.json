@@ -11,6 +11,7 @@
     "calendar": "Calendar",
     "reports": "Reports",
     "notifications": "Notifications",
+    "periods": "Period Management",
     "settings": "Settings",
     "communication": "Communication",
     "profile": "Profile",
@@ -243,5 +244,33 @@
     "latest": "Latest",
     "new_evidence_submitted": "A new evidence entry has been submitted by personnel.",
     "view_all": "View All Notifications"
+  },
+  "PeriodManagement": {
+    "title": "Period / Year Management",
+    "description": "Manage periods for the system to work across multiple years. Archive and prepare for new years here.",
+    "add_new": "Add New Period",
+    "table": {
+      "name": "Period Name / Year",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active (Data Entry Open)",
+      "passive": "Passive (Read Only / Archive)"
+    },
+    "modal": {
+      "title": "Add / Edit Period",
+      "name_label": "Period Name",
+      "name_placeholder": "E.g., 2024, Fall 2024-2025 etc.",
+      "is_active_label": "Is Active?",
+      "is_active_desc": "Data entry and editing are allowed in active periods. Passive periods are read-only."
+    },
+    "messages": {
+      "save_success": "Period saved successfully.",
+      "save_error": "Error saving period.",
+      "delete_confirm": "Are you sure you want to delete this period? Data belonging to this period (PDCA, evidence, etc.) will not be deleted but may remain inaccessible.",
+      "delete_success": "Period deleted successfully.",
+      "active_period_required": "It is recommended to have at least one active period in the system."
+    }
   }
 }

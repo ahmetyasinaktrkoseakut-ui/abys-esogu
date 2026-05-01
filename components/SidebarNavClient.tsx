@@ -80,10 +80,16 @@ export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
       
       <div className="p-4 border-t border-[#1e293b] mt-auto space-y-1">
         {isAdmin && (
-          <Link href="/atamalar" className={getLinkClass('/atamalar')}>
-            <Settings className="w-5 h-5 flex-shrink-0" />
-            {t('assignments')}
-          </Link>
+          <>
+            <Link href="/donem-yonetimi" className={getLinkClass('/donem-yonetimi')}>
+              <Calendar className="w-5 h-5 flex-shrink-0" />
+              {t('periods')}
+            </Link>
+            <Link href="/atamalar" className={getLinkClass('/atamalar')}>
+              <Settings className="w-5 h-5 flex-shrink-0" />
+              {t('assignments')}
+            </Link>
+          </>
         )}
         <LogoutButton />
       </div>

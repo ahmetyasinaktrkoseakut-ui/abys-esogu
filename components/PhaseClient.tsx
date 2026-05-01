@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface Eylem {
   id?: number;
@@ -39,6 +40,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   const [ustBirimOnerileri, setUstBirimOnerileri] = useState<any[]>([]);
   const t = useTranslations('Phase');
   const locale = useLocale();
+  const { selectedPeriod } = usePeriod();
   
   // Onay / Ret Sistematiği
   const [pukoId, setPukoId] = useState<string | null>(null);
@@ -55,7 +57,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       if (user) {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = profile?.rol?.toLowerCase() || '';
-        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin')) {
+        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || (selectedPeriod && !selectedPeriod.is_active)) {
           setIsReadOnly(true);
         }
       }
@@ -68,6 +70,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('puko_asamasi', phaseId)
+        .eq('donem_id', selectedPeriod?.id)
         .order('id', { ascending: false })
         .limit(1)
         .single();
@@ -92,6 +95,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           .from('eylem_planlari')
           .select('*')
           .eq('alt_olcut_id', resolvedParams.id)
+          .eq('donem_id', selectedPeriod?.id)
           .order('id', { ascending: true });
 
         if (eylemlerData && eylemlerData.length > 0) {
@@ -110,7 +114,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
 
   useEffect(() => {
     fetchData();
-  }, [resolvedParams.id, phaseId]);
+  }, [resolvedParams.id, phaseId, selectedPeriod]);
 
   const handleAddEylem = () => {
     setEylemler([...eylemler, { iyilestirme_alani: '', bulgular: '', eylem_faaliyet: '', sorumlu: '', takvim: '', basari_gostergesi: '', izleme_durumu: '' }]);
@@ -130,6 +134,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       const upsertData: Record<string, any> = {
         alt_olcut_id: resolvedParams.id,
         puko_asamasi: phaseId,
+        donem_id: selectedPeriod?.id,
         aciklama: aciklama,
         kanit_dosyalari: dokumanlar,
         durum: 'Beklemede',
@@ -145,6 +150,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         .select('id')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('puko_asamasi', phaseId)
+        .eq('donem_id', selectedPeriod?.id)
         .maybeSingle();
 
       if (existingRecord?.id) {
@@ -165,7 +171,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           .filter(e => !e.id)
           .map(e => {
             const { id, ...rest } = e;
-            return { ...rest, alt_olcut_id: resolvedParams.id };
+            return { ...rest, alt_olcut_id: resolvedParams.id, donem_id: selectedPeriod?.id };
           });
           
         const toUpdate = eylemler.filter(e => e.id);

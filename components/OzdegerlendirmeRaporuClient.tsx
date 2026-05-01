@@ -6,6 +6,7 @@ import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Downl
 import StepPanel from '@/components/StepPanel';
 import { useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface OzdegerlendirmeRaporuClientProps {
   params: Promise<{ id: string }>;
@@ -22,8 +23,10 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   
   const [isLoading, setIsLoading] = useState(true);
   const locale = useLocale();
+  const { selectedPeriod } = usePeriod();
 
   const fetchData = async () => {
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
       const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).single();
@@ -35,6 +38,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('puko_asamasi', 'rapor')
+        .eq('donem_id', selectedPeriod.id)
         .order('id', { ascending: false })
         .limit(1)
         .single();
@@ -53,7 +57,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
   useEffect(() => {
     fetchData();
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, selectedPeriod]);
 
   const exportToWord = () => {
     if (!raporMetni) return;
@@ -111,6 +115,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .from('puko_degerlendirmeleri')
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
+        .eq('donem_id', selectedPeriod?.id)
         .in('puko_asamasi', adimlar);
 
       if (!data || data.length === 0) {
@@ -155,6 +160,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       const upsertData: Record<string, any> = {
         alt_olcut_id: resolvedParams.id,
         puko_asamasi: 'rapor',
+        donem_id: selectedPeriod?.id,
         aciklama: birlesikMetin,
         kanit_dosyalari: uniqueKanitlar,
         durum: 'Beklemede',
@@ -166,6 +172,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .select('id')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('puko_asamasi', 'rapor')
+        .eq('donem_id', selectedPeriod?.id)
         .maybeSingle();
 
       if (existingRecord?.id) {

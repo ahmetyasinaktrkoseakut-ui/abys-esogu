@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import { Loader2, LineChart, FileText, Printer, Building2, CheckCircle2, Download } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface AnaBaslik {
   id: string;
@@ -29,6 +30,7 @@ interface PukoVerisi {
 
 export default function RaporlarClient() {
   const t = useTranslations('Reports');
+  const { selectedPeriod } = usePeriod();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -60,13 +62,19 @@ export default function RaporlarClient() {
     checkAuth();
   }, []);
 
+  useEffect(() => {
+    setRaporData(null);
+  }, [selectedPeriod]);
+
   const handleKurumRaporuOlustur = async () => {
     setIsGenerating(true);
     try {
       const [anaBasliklarRes, altOlcutlerRes, pukoRes] = await Promise.all([
         supabase.from('ana_basliklar').select('*').order('kod', { ascending: true }),
         supabase.from('alt_olcutler').select('*').order('kod', { ascending: true }),
-        supabase.from('puko_degerlendirmeleri').select('alt_olcut_id, puko_asamasi, aciklama, olgunluk_puani, kanit_dosyalari')
+        supabase.from('puko_degerlendirmeleri')
+          .select('alt_olcut_id, puko_asamasi, aciklama, olgunluk_puani, kanit_dosyalari')
+          .eq('donem_id', selectedPeriod?.id)
       ]);
 
       setRaporData({

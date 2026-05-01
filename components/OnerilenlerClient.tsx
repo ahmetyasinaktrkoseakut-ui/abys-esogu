@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import { Loader2, Lightbulb, FileText, Printer, Download } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface AnaBaslik {
   id: string;
@@ -27,6 +28,7 @@ interface PukoVerisi {
 
 export default function OnerilenlerClient() {
   const t = useTranslations('Suggestions');
+  const { selectedPeriod } = usePeriod();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [raporData, setRaporData] = useState<{
@@ -39,6 +41,7 @@ export default function OnerilenlerClient() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!selectedPeriod) return;
       setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -52,7 +55,10 @@ export default function OnerilenlerClient() {
             const [anaBasliklarRes, altOlcutlerRes, pukoRes, birimlerRes] = await Promise.all([
               supabase.from('ana_basliklar').select('*').order('kod', { ascending: true }),
               supabase.from('alt_olcutler').select('*').order('kod', { ascending: true }),
-              supabase.from('puko_degerlendirmeleri').select('alt_olcut_id, ust_birim_onerileri').eq('puko_asamasi', 'onlem'),
+              supabase.from('puko_degerlendirmeleri')
+                .select('alt_olcut_id, ust_birim_onerileri')
+                .eq('puko_asamasi', 'onlem')
+                .eq('donem_id', selectedPeriod.id),
               supabase.from('birimler').select('id, ad')
             ]);
 
@@ -86,7 +92,7 @@ export default function OnerilenlerClient() {
       }
     }
     fetchData();
-  }, []);
+  }, [selectedPeriod]);
 
   if (isLoading) {
     return <div className="h-[calc(100vh-100px)] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-amber-600" /></div>;

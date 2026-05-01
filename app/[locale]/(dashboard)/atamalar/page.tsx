@@ -5,9 +5,11 @@ import { supabase } from '@/lib/supabase/client';
 import { UserCheck, Search, Users, AlertCircle, Loader2, Save, CheckCircle2, FileText, ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 export default function AtamalarPage() {
   const t = useTranslations('Assignments');
+  const { selectedPeriod } = usePeriod();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [hocalar, setHocalar] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,7 +36,7 @@ export default function AtamalarPage() {
 
   useEffect(() => {
     fetchInitialData();
-  }, []);
+  }, [selectedPeriod]);
 
   useEffect(() => {
     if (selectedHoca) {
@@ -42,9 +44,10 @@ export default function AtamalarPage() {
     } else {
       setSelectedOlcutIds([]);
     }
-  }, [selectedHoca]);
+  }, [selectedHoca, selectedPeriod]);
 
   const fetchInitialData = async () => {
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
       // Hocaları getir (Birim Sorumluları)
@@ -66,8 +69,11 @@ export default function AtamalarPage() {
       // Ana başlıkları getir
       const { data: baslikData } = await supabase.from('ana_basliklar').select('*');
 
-      // Tüm atamaları getir
-      const { data: atamalarData } = await supabase.from('kullanici_olcut_atamalari').select('*');
+      // Tüm atamaları getir (Bu dönem için)
+      const { data: atamalarData } = await supabase
+        .from('kullanici_olcut_atamalari')
+        .select('*')
+        .eq('donem_id', selectedPeriod.id);
 
       setHocalar(profillerData || []);
       setOlcutler(olcutlerData || []);
@@ -86,7 +92,8 @@ export default function AtamalarPage() {
       const { data, error } = await supabase
         .from('kullanici_olcut_atamalari')
         .select('alt_olcut_id')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .eq('donem_id', selectedPeriod?.id);
 
       if (error) throw error;
       
@@ -132,7 +139,8 @@ export default function AtamalarPage() {
       const { error: deleteError } = await supabase
         .from('kullanici_olcut_atamalari')
         .delete()
-        .eq('user_id', selectedHoca);
+        .eq('user_id', selectedHoca)
+        .eq('donem_id', selectedPeriod?.id);
         
       if (deleteError) throw deleteError;
 
@@ -140,7 +148,8 @@ export default function AtamalarPage() {
       if (selectedOlcutIds.length > 0) {
         const insertData = selectedOlcutIds.map(olcutId => ({
           user_id: selectedHoca,
-          alt_olcut_id: olcutId
+          alt_olcut_id: olcutId,
+          donem_id: selectedPeriod?.id
         }));
 
         const { error: insertError } = await supabase
@@ -153,7 +162,10 @@ export default function AtamalarPage() {
       setMessage({ type: 'success', text: t('messages.save_success') });
 
       // Atamaları yenile
-      const { data: updatedAtamalar } = await supabase.from('kullanici_olcut_atamalari').select('*');
+      const { data: updatedAtamalar } = await supabase
+        .from('kullanici_olcut_atamalari')
+        .select('*')
+        .eq('donem_id', selectedPeriod?.id);
       if (updatedAtamalar) setAllAtamalar(updatedAtamalar);
       
       // Mesajı 3 saniye sonra kaldır
@@ -393,7 +405,7 @@ export default function AtamalarPage() {
               <div className="p-4 bg-white border-t border-slate-100 flex justify-end">
                 <button
                   onClick={handleSave}
-                  disabled={isSaving}
+                  disabled={isSaving || (selectedPeriod && !selectedPeriod.is_active)}
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm shadow-indigo-500/30 disabled:opacity-70"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

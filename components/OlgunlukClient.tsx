@@ -7,6 +7,7 @@ import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
 import { useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 interface OlgunlukClientProps {
   params: Promise<{ id: string }>;
@@ -21,8 +22,10 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const locale = useLocale();
+  const { selectedPeriod } = usePeriod();
 
   const fetchData = async () => {
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
       
@@ -30,7 +33,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
       if (user) {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = profile?.rol?.toLowerCase() || '';
-        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin')) {
+        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || (selectedPeriod && !selectedPeriod.is_active)) {
           setIsReadOnly(true);
         }
       }
@@ -43,6 +46,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('puko_asamasi', 'olgunluk')
+        .eq('donem_id', selectedPeriod.id)
         .order('id', { ascending: false })
         .limit(1)
         .single();
@@ -60,14 +64,14 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
 
   useEffect(() => {
     fetchData();
-  }, [resolvedParams.id]);
+  }, [resolvedParams.id, selectedPeriod]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const upsertData: Record<string, any> = {
         alt_olcut_id: resolvedParams.id,
         puko_asamasi: 'olgunluk',
+        donem_id: selectedPeriod?.id,
         aciklama: aciklama,
         olgunluk_puani: olgunlukPuani,
         durum: 'Beklemede',
@@ -79,6 +83,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
         .select('id')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('puko_asamasi', 'olgunluk')
+        .eq('donem_id', selectedPeriod?.id)
         .maybeSingle();
 
       if (existingRecord?.id) {

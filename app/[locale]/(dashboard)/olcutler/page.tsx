@@ -6,9 +6,11 @@ import Link from 'next/link';
 import { FileText, Loader2, ChevronRight } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import { usePeriod } from '@/contexts/PeriodContext';
 
 export default function OlcutlerPage() {
   const t = useTranslations('Criteria');
+  const { selectedPeriod } = usePeriod();
   const [olcutler, setOlcutler] = useState<any[]>([]);
   const [anaBasliklar, setAnaBasliklar] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,6 +26,7 @@ export default function OlcutlerPage() {
 
   useEffect(() => {
     async function fetchData() {
+      if (!selectedPeriod) return;
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -36,11 +39,11 @@ export default function OlcutlerPage() {
           const { data } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
           setOlcutler(data || []);
         } else {
-          // Birim sorumlusu: Sadece kendine atananlar
           const { data } = await supabase
             .from('kullanici_olcut_atamalari')
             .select('alt_olcut_id, alt_olcutler(*)')
-            .eq('user_id', user.id);
+            .eq('user_id', user.id)
+            .eq('donem_id', selectedPeriod.id);
             
           if (data) {
             const mappedOlcutler = data.map(item => item.alt_olcutler).filter(Boolean);
@@ -62,7 +65,7 @@ export default function OlcutlerPage() {
       }
     }
     fetchData();
-  }, []);
+  }, [selectedPeriod]);
 
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">

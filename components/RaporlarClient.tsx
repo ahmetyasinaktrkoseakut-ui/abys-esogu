@@ -124,22 +124,48 @@ export default function RaporlarClient() {
         htmlContent += `<h2>${anaBaslik.kod} - ${getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>`;
         ilgiliOlcutler.forEach(olcut => {
           const pukoList = getPukoForOlcut(olcut.id);
-          const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
+          const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
+          
+          let combinedText = '';
+          let allEvidences: any[] = [];
+          
+          phases.forEach(phase => {
+            const data = pukoList.find(p => p.puko_asamasi === phase);
+            if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
+              // HTML temizleme veya düzenleme gerekebilir ama genelde paragraf paragraf eklemek yeterli
+              combinedText += (combinedText ? '<br/><br/>' : '') + data.aciklama;
+              if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
+                allEvidences = [...allEvidences, ...data.kanit_dosyalari];
+              }
+            }
+          });
+
+          // Eğer aşamalarda veri yoksa 'rapor' aşamasına bak (summary olarak kullanılmış olabilir)
+          if (!combinedText) {
+            const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
+            if (raporPuko && raporPuko.aciklama) {
+              combinedText = raporPuko.aciklama;
+              if (raporPuko.kanit_dosyalari) allEvidences = raporPuko.kanit_dosyalari;
+            }
+          }
+
+          const uniqueEvidences = allEvidences.filter((v, i, a) => a.findIndex(t => t.url === v.url) === i);
           const olgunlukPuani = pukoList.find(p => p.puko_asamasi === 'olgunluk')?.olgunluk_puani;
 
           htmlContent += `<h3>${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</h3>`;
-          if (raporPuko && raporPuko.aciklama && raporPuko.aciklama !== '<p></p>') {
-            htmlContent += `<div>${raporPuko.aciklama}</div>`;
-            if (raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0) {
-              htmlContent += `<p style='font-size:12px; font-weight:bold; margin-bottom:5px;'>${t('uploaded_evidences')}:</p><ul>`;
-              raporPuko.kanit_dosyalari.forEach((k: any) => {
-                htmlContent += `<li><a href='${k.url}' style='color: #2b6cb0; text-decoration: underline;'>${k.name}</a></li>`;
-              });
-              htmlContent += `</ul>`;
+          
+          if (combinedText) {
+            htmlContent += `<div>${combinedText}</div>`;
+            if (uniqueEvidences.length > 0) {
+              const evidenceLinks = uniqueEvidences.map((k, idx) => 
+                `<a href='${k.url}' style='color: #2b6cb0; text-decoration: underline; font-weight: bold; font-size: 11px;'> (KANIT: ${idx + 1})</a>`
+              ).join(' ');
+              htmlContent += `<p style='margin-top: 10px;'>${evidenceLinks}</p>`;
             }
           } else {
             htmlContent += `<p style='color: #a0aec0; font-style: italic;'>${t('no_report_yet')}</p>`;
           }
+          
           if (olgunlukPuani) {
             htmlContent += `<div class='olgunluk'>${t('maturity_score')}: ${olgunlukPuani} / 5</div>`;
           }
@@ -240,7 +266,30 @@ export default function RaporlarClient() {
                   <div className="space-y-12 pl-4 border-l-4 border-slate-200 ml-4">
                     {ilgiliOlcutler.map((olcut) => {
                       const pukoList = getPukoForOlcut(olcut.id);
-                      const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
+                      const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
+                      
+                      let combinedText = '';
+                      let allEvidences: any[] = [];
+                      
+                      phases.forEach(phase => {
+                        const data = pukoList.find(p => p.puko_asamasi === phase);
+                        if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
+                          combinedText += (combinedText ? '<br/><br/>' : '') + data.aciklama;
+                          if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
+                            allEvidences = [...allEvidences, ...data.kanit_dosyalari];
+                          }
+                        }
+                      });
+
+                      if (!combinedText) {
+                        const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
+                        if (raporPuko && raporPuko.aciklama) {
+                          combinedText = raporPuko.aciklama;
+                          if (raporPuko.kanit_dosyalari) allEvidences = raporPuko.kanit_dosyalari;
+                        }
+                      }
+
+                      const uniqueEvidences = allEvidences.filter((v, i, a) => a.findIndex(t => t.url === v.url) === i);
                       const olgunlukPuani = pukoList.find(p => p.puko_asamasi === 'olgunluk')?.olgunluk_puani;
 
                       return (
@@ -250,25 +299,26 @@ export default function RaporlarClient() {
                             {getLocalizedField(olcut, 'olcut_adi', locale)}
                           </h3>
                           
-                          {raporPuko && raporPuko.aciklama && raporPuko.aciklama !== '<p></p>' ? (
+                          {combinedText ? (
                             <div className="space-y-6">
                               <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
                                 <div 
                                   className="prose prose-sm max-w-none prose-slate"
-                                  dangerouslySetInnerHTML={{ __html: raporPuko.aciklama }}
+                                  dangerouslySetInnerHTML={{ __html: combinedText }}
                                 />
-                                {raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0 && (
-                                  <div className="mt-6 pt-4 border-t border-slate-200">
-                                    <p className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">{t('attached_evidences')}:</p>
-                                    <ul className="list-disc pl-5 text-sm text-slate-600">
-                                      {raporPuko.kanit_dosyalari.map((k: any, i: number) => (
-                                        <li key={i}>
-                                          <a href={k.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                                            {k.name}
-                                          </a>
-                                        </li>
-                                      ))}
-                                    </ul>
+                                {uniqueEvidences.length > 0 && (
+                                  <div className="mt-6 pt-4 border-t border-slate-200 flex flex-wrap gap-2">
+                                    {uniqueEvidences.map((k, idx) => (
+                                      <a 
+                                        key={idx}
+                                        href={k.url} 
+                                        target="_blank" 
+                                        rel="noopener noreferrer" 
+                                        className="text-[11px] font-bold px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full hover:bg-blue-100 transition-colors"
+                                      >
+                                        (KANIT: {idx + 1})
+                                      </a>
+                                    ))}
                                   </div>
                                 )}
                               </div>

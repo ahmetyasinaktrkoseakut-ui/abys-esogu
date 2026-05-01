@@ -67,8 +67,8 @@ export default function OlcutlerPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-6 border-b border-slate-200 pb-4">
-        <h2 className="text-2xl font-bold text-[#0f172a] tracking-tight">Ölçütler</h2>
-        <p className="text-slate-500 mt-1 text-sm">Kurumsal akreditasyon için değerlendirilecek ölçütleri yönetin.</p>
+        <h2 className="text-2xl font-bold text-[#0f172a] tracking-tight">{t('title') || 'Ölçütler'}</h2>
+        <p className="text-slate-500 mt-1 text-sm">{t('description') || 'Kurumsal akreditasyon için değerlendirilecek ölçütleri yönetin.'}</p>
       </div>
 
       {isLoading ? (
@@ -88,7 +88,7 @@ export default function OlcutlerPage() {
           .sort(([k1], [k2]) => k1.localeCompare(k2))
           .map(([harf, items]) => {
             const baslikObj = anaBasliklar.find(b => b.kod === harf || (b.baslik_adi && b.baslik_adi.startsWith(harf + '.')));
-            const displayTitle = getLocalizedField(baslikObj, 'baslik_adi', locale) || `${harf} Grubu`;
+            const displayTitle = getLocalizedField(baslikObj, 'baslik_adi', locale) || t('group', { harf });
             const isOpen = openGroups[harf] || false;
 
             return (
@@ -103,7 +103,7 @@ export default function OlcutlerPage() {
                     </div>
                     <div>
                       <h3 className="text-lg font-bold text-slate-800">{displayTitle}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">{Array.isArray(items) ? items.length : 0} adet alt ölçüt bulunuyor</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{t('sub_criteria_count', { count: Array.isArray(items) ? items.length : 0 })}</p>
                     </div>
                   </div>
                   <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />

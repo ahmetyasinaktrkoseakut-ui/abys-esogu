@@ -76,6 +76,10 @@
     "reject_empty": "Please enter a reason for rejection."
   },
   "Criteria": {
+    "title": "Criteria",
+    "description": "Manage the criteria to be evaluated for institutional accreditation.",
+    "sub_criteria_count": "{count} sub-criteria found",
+    "group": "{harf} Group",
     "viewDetails": "View Details"
   },
   "StepPanel": {

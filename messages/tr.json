@@ -76,6 +76,10 @@
     "reject_empty": "Lütfen red nedeni giriniz."
   },
   "Criteria": {
+    "title": "Ölçütler",
+    "description": "Kurumsal akreditasyon için değerlendirilecek ölçütleri yönetin.",
+    "sub_criteria_count": "{count} adet alt ölçüt bulunuyor",
+    "group": "{harf} Grubu",
     "viewDetails": "Detayları Gör"
   },
   "StepPanel": {

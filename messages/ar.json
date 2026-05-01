@@ -76,6 +76,10 @@
     "reject_empty": "يرجى إدخال سبب للرفض."
   },
   "Criteria": {
+    "title": "المعايير",
+    "description": "إدارة المعايير التي سيتم تقييمها للاعتماد المؤسسي.",
+    "sub_criteria_count": "يوجد {count} معيار فرعي",
+    "group": "مجموعة {harf}",
     "viewDetails": "عرض التفاصيل"
   },
   "StepPanel": {

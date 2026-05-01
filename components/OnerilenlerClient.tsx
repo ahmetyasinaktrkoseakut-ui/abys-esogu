@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Lightbulb, FileText, Printer, Download } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface AnaBaslik {
@@ -26,6 +26,7 @@ interface PukoVerisi {
 }
 
 export default function OnerilenlerClient() {
+  const t = useTranslations('Suggestions');
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [raporData, setRaporData] = useState<{
@@ -95,8 +96,8 @@ export default function OnerilenlerClient() {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] p-8">
         <div className="bg-red-50 p-10 rounded-3xl border border-red-200 text-center max-w-md">
-          <h2 className="text-2xl font-bold text-red-700 mb-2">Yetkisiz Erişim</h2>
-          <p className="text-red-500">Bu sayfayı görüntüleme yetkiniz bulunmamaktadır. Sadece Yöneticiler erişebilir.</p>
+          <h2 className="text-2xl font-bold text-red-700 mb-2">{t('unauthorized_access')}</h2>
+          <p className="text-red-500">{t('unauthorized_desc')}</p>
         </div>
       </div>
     );
@@ -107,7 +108,7 @@ export default function OnerilenlerClient() {
 
     let htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>Üst Birim Önerileri Raporu</title>
+      <head><meta charset='utf-8'><title>${t('title')}</title>
       <style>
         body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.5; padding: 20px; }
         h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; color: #1a202c; }
@@ -119,8 +120,8 @@ export default function OnerilenlerClient() {
       </style>
       </head>
       <body>
-        <h1>Üst Birim Önerileri Raporu</h1>
-        <p style='text-align:center; color: #718096;'>Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}</p>
+        <h1>${t('title')}</h1>
+        <p style='text-align:center; color: #718096;'>${t('created_at')}: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
     `;
 
     raporData.anaBasliklar.forEach(anaBaslik => {
@@ -132,17 +133,17 @@ export default function OnerilenlerClient() {
         htmlContent += `<h2>${anaBaslik.kod} - ${getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>`;
         ilgiliOlcutler.forEach(olcut => {
           const puko = raporData.pukoVerileri.find(p => p.alt_olcut_id === olcut.id);
-          const sorumluBirimAd = raporData.birimler[olcut.sorumlu_birim_id] || 'Bilinmeyen Birim';
+          const sorumluBirimAd = raporData.birimler[olcut.sorumlu_birim_id] || t('unknown_unit');
 
           if (puko && puko.ust_birim_onerileri.length > 0) {
             htmlContent += `<h3>${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</h3>`;
-            htmlContent += `<p style='font-size:12px; color: #4a5568;'><b>Gönderen Birim:</b> ${sorumluBirimAd}</p>`;
+            htmlContent += `<p style='font-size:12px; color: #4a5568;'><b>${t('sender_unit')}:</b> ${sorumluBirimAd}</p>`;
             htmlContent += `<div class='oneri-box'><ul>`;
             puko.ust_birim_onerileri.forEach((o: any) => {
               const oneriText = typeof o === 'string' ? o : o.oneri;
               const gonderilenBirim = typeof o === 'string' ? '' : o.birim;
               if (oneriText && oneriText.trim() !== '') {
-                htmlContent += `<li>${gonderilenBirim ? `<b style="color: #c05621;">[Hedef: ${gonderilenBirim}]</b> ` : ''}${oneriText}</li>`;
+                htmlContent += `<li>${gonderilenBirim ? `<b style="color: #c05621;">[${t('target_unit')}: ${gonderilenBirim}]</b> ` : ''}${oneriText}</li>`;
               }
             });
             htmlContent += `</ul></div>`;
@@ -152,7 +153,7 @@ export default function OnerilenlerClient() {
     });
 
     htmlContent += `
-        <div class='footer'>Bu belge kalite yönetim sistemi tarafından otomatik olarak oluşturulmuştur.</div>
+        <div class='footer'>${t('auto_generated_footer')}</div>
       </body>
       </html>
     `;
@@ -177,16 +178,16 @@ export default function OnerilenlerClient() {
         <div>
           <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
             <Lightbulb className="w-8 h-8 text-amber-500" />
-            Üst Birim Önerileri Raporu
+            {t('title')}
           </h1>
-          <p className="text-slate-500 mt-2">Birimlerin "İyileştirme" aşamasında sunduğu tüm öneriler hiyerarşik olarak listelenir.</p>
+          <p className="text-slate-500 mt-2">{t('description')}</p>
         </div>
         {raporData && (
           <button
             onClick={exportToWord}
             className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md flex-shrink-0"
           >
-            <Download className="w-5 h-5" /> Word Olarak İndir (.doc)
+            <Download className="w-5 h-5" /> {t('export_word')}
           </button>
         )}
       </div>
@@ -194,15 +195,15 @@ export default function OnerilenlerClient() {
       {raporData && raporData.pukoVerileri.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-16 text-center">
           <Lightbulb className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <h3 className="text-xl font-bold text-slate-700 mb-2">Henüz Öneri Bulunmuyor</h3>
-          <p className="text-slate-500">Birimler "İyileştirme" aşamasında henüz bir üst birim önerisi girmemiş.</p>
+          <h3 className="text-xl font-bold text-slate-700 mb-2">{t('no_suggestion_title')}</h3>
+          <p className="text-slate-500">{t('no_suggestion_desc')}</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-10">
 
           <div className="text-center mb-12 border-b-2 border-slate-800 pb-8">
-            <h1 className="text-4xl font-black text-slate-900 mb-4 uppercase">Üst Birim Önerileri Raporu</h1>
-            <p className="text-lg text-slate-600">Oluşturulma Tarihi: {new Date().toLocaleDateString('tr-TR')} {new Date().toLocaleTimeString('tr-TR')}</p>
+            <h1 className="text-4xl font-black text-slate-900 mb-4 uppercase">{t('title')}</h1>
+            <p className="text-lg text-slate-600">{t('created_at')}: {new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} {new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
           </div>
 
           <div className="space-y-12">
@@ -230,7 +231,7 @@ export default function OnerilenlerClient() {
                       });
                       if (gecerliOneriler.length === 0) return null;
 
-                      const sorumluBirimAd = raporData.birimler[olcut.sorumlu_birim_id] || 'Bilinmeyen Birim';
+                      const sorumluBirimAd = raporData.birimler[olcut.sorumlu_birim_id] || t('unknown_unit');
 
                       return (
                         <div key={olcut.id} className="mb-6">
@@ -239,7 +240,7 @@ export default function OnerilenlerClient() {
                             {getLocalizedField(olcut, 'olcut_adi', locale)}
                           </h3>
                           <p className="text-sm text-slate-500 mb-4 font-semibold italic">
-                            Gönderen Birim: {sorumluBirimAd}
+                            {t('sender_unit')}: {sorumluBirimAd}
                           </p>
 
                           <div className="bg-amber-50/50 p-5 rounded-lg border border-amber-100">
@@ -255,7 +256,7 @@ export default function OnerilenlerClient() {
                                     <div className="flex-1">
                                       {gonderilenBirim && (
                                         <p className="text-[11px] uppercase tracking-wider font-bold text-amber-700 mb-1 flex items-center gap-1">
-                                          Hedef Birim: <span className="text-slate-700">{gonderilenBirim}</span>
+                                          {t('target_unit')}: <span className="text-slate-700">{gonderilenBirim}</span>
                                         </p>
                                       )}
                                       <p className="text-slate-800 leading-relaxed">{oneriText}</p>
@@ -275,7 +276,7 @@ export default function OnerilenlerClient() {
           </div>
 
           <div className="mt-20 pt-8 border-t border-slate-200 text-center text-slate-500 text-sm">
-            <p>Bu belge kalite yönetim sistemi tarafından otomatik olarak oluşturulmuştur.</p>
+            <p>{t('auto_generated_footer')}</p>
           </div>
         </div>
       )}

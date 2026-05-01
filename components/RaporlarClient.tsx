@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, LineChart, FileText, Printer, Building2, CheckCircle2, Download } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface AnaBaslik {
@@ -28,6 +28,7 @@ interface PukoVerisi {
 }
 
 export default function RaporlarClient() {
+  const t = useTranslations('Reports');
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -74,7 +75,7 @@ export default function RaporlarClient() {
         pukoVerileri: pukoRes.data || []
       });
     } catch (e: any) {
-      alert(`Rapor oluşturulurken hata: ${e.message}`);
+      alert(`${t('error_generating')}: ${e.message}`);
     } finally {
       setIsGenerating(false);
     }
@@ -88,8 +89,8 @@ export default function RaporlarClient() {
     return (
       <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] p-8">
         <div className="bg-red-50 p-10 rounded-3xl border border-red-200 text-center max-w-md">
-          <h2 className="text-2xl font-bold text-red-700 mb-2">Yetkisiz Erişim</h2>
-          <p className="text-red-500">Kurum raporunu görüntüleme ve oluşturma yetkiniz bulunmamaktadır. Sadece Yöneticiler erişebilir.</p>
+          <h2 className="text-2xl font-bold text-red-700 mb-2">{t('unauthorized_access')}</h2>
+          <p className="text-red-500">{t('unauthorized_desc')}</p>
         </div>
       </div>
     );
@@ -100,7 +101,7 @@ export default function RaporlarClient() {
 
     let htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>Kurumsal Özdeğerlendirme Raporu</title>
+      <head><meta charset='utf-8'><title>${t('institutional_report')}</title>
       <style>
         body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.5; padding: 20px; }
         h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; color: #1a202c; }
@@ -113,8 +114,8 @@ export default function RaporlarClient() {
       </style>
       </head>
       <body>
-        <h1>Kurumsal Özdeğerlendirme Raporu</h1>
-        <p style='text-align:center; color: #718096;'>Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}</p>
+        <h1>${t('institutional_report')}</h1>
+        <p style='text-align:center; color: #718096;'>${t('created_at')}: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
     `;
 
     raporData.anaBasliklar.forEach(anaBaslik => {
@@ -130,24 +131,24 @@ export default function RaporlarClient() {
           if (raporPuko && raporPuko.aciklama && raporPuko.aciklama !== '<p></p>') {
             htmlContent += `<div>${raporPuko.aciklama}</div>`;
             if (raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0) {
-              htmlContent += `<p style='font-size:12px; font-weight:bold; margin-bottom:5px;'>Yüklenen Kanıtlar:</p><ul>`;
+              htmlContent += `<p style='font-size:12px; font-weight:bold; margin-bottom:5px;'>${t('uploaded_evidences')}:</p><ul>`;
               raporPuko.kanit_dosyalari.forEach((k: any) => {
                 htmlContent += `<li><a href='${k.url}' style='color: #2b6cb0; text-decoration: underline;'>${k.name}</a></li>`;
               });
               htmlContent += `</ul>`;
             }
           } else {
-            htmlContent += `<p style='color: #a0aec0; font-style: italic;'>Bu ölçüt için henüz sonuç raporu oluşturulmamış.</p>`;
+            htmlContent += `<p style='color: #a0aec0; font-style: italic;'>${t('no_report_yet')}</p>`;
           }
           if (olgunlukPuani) {
-            htmlContent += `<div class='olgunluk'>Olgunluk Puanı: ${olgunlukPuani} / 5</div>`;
+            htmlContent += `<div class='olgunluk'>${t('maturity_score')}: ${olgunlukPuani} / 5</div>`;
           }
         });
       }
     });
 
     htmlContent += `
-        <div class='footer'>Bu belge kalite yönetim sistemi tarafından otomatik olarak oluşturulmuştur.</div>
+        <div class='footer'>${t('auto_generated_footer')}</div>
       </body>
       </html>
     `;
@@ -172,16 +173,16 @@ export default function RaporlarClient() {
         <div>
           <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
             <LineChart className="w-8 h-8 text-blue-600" />
-            Global Kurum Raporu
+            {t('title')}
           </h1>
-          <p className="text-slate-500 mt-2">Kurumun tüm stratejik ölçütleri ve kalite süreçlerinin dev sentezi.</p>
+          <p className="text-slate-500 mt-2">{t('description')}</p>
         </div>
         {raporData && (
           <button 
             onClick={exportToWord}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md"
           >
-            <Download className="w-5 h-5" /> Word Olarak İndir (.doc)
+            <Download className="w-5 h-5" /> {t('export_word')}
           </button>
         )}
       </div>
@@ -191,24 +192,24 @@ export default function RaporlarClient() {
           {isGenerating ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center bg-white p-12 text-center">
               <Loader2 className="w-16 h-16 animate-spin text-blue-600 mb-6" />
-              <h3 className="text-xl font-bold text-slate-800 mb-2">Kurum Verileri Derleniyor...</h3>
-              <p className="text-slate-500">Tüm birimlerin PUKÖ aşamaları birleştiriliyor. Bu işlem birkaç saniye sürebilir.</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">{t('generating_title')}</h3>
+              <p className="text-slate-500">{t('generating_desc')}</p>
             </div>
           ) : (
             <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center bg-gradient-to-br from-indigo-50/50 to-white">
               <div className="w-24 h-24 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
                 <Building2 className="w-12 h-12" />
               </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-3">Kurum Özdeğerlendirme Raporu</h3>
+              <h3 className="text-2xl font-black text-slate-800 mb-3">{t('institutional_report')}</h3>
               <p className="text-slate-500 max-w-lg mb-8 leading-relaxed">
-                Tüm ana başlıkları, alt ölçütleri ve içlerine yazılan metinleri, kanıtlarla birlikte sırasıyla tek bir dosyada derler.
+                {t('report_summary')}
               </p>
               <button 
                 onClick={handleKurumRaporuOlustur}
                 className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 font-bold text-white transition-all duration-300 bg-indigo-600 rounded-full hover:bg-indigo-700 hover:scale-105 hover:shadow-xl focus:outline-none overflow-hidden"
               >
                 <FileText className="w-6 h-6 relative z-10" />
-                <span className="text-lg relative z-10">Kurum Raporunu Oluştur</span>
+                <span className="text-lg relative z-10">{t('create_report')}</span>
               </button>
             </div>
           )}
@@ -220,8 +221,8 @@ export default function RaporlarClient() {
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-10">
           
           <div className="text-center mb-12 border-b-2 border-slate-800 pb-8">
-            <h1 className="text-4xl font-black text-slate-900 mb-4 uppercase">Kurumsal Özdeğerlendirme Raporu</h1>
-            <p className="text-lg text-slate-600">Oluşturulma Tarihi: {new Date().toLocaleDateString('tr-TR')} {new Date().toLocaleTimeString('tr-TR')}</p>
+            <h1 className="text-4xl font-black text-slate-900 mb-4 uppercase">{t('institutional_report')}</h1>
+            <p className="text-lg text-slate-600">{t('created_at')}: {new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} {new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
           </div>
 
           <div className="space-y-16">
@@ -258,7 +259,7 @@ export default function RaporlarClient() {
                                 />
                                 {raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0 && (
                                   <div className="mt-6 pt-4 border-t border-slate-200">
-                                    <p className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Ekli Kanıtlar:</p>
+                                    <p className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">{t('attached_evidences')}:</p>
                                     <ul className="list-disc pl-5 text-sm text-slate-600">
                                       {raporPuko.kanit_dosyalari.map((k: any, i: number) => (
                                         <li key={i}>
@@ -274,17 +275,17 @@ export default function RaporlarClient() {
                               
                               {olgunlukPuani && (
                                 <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-center justify-between">
-                                  <span className="font-bold text-orange-800">Olgunluk Puanı:</span>
+                                  <span className="font-bold text-orange-800">{t('maturity_score')}:</span>
                                   <span className="text-xl font-black text-orange-600">{olgunlukPuani} / 5</span>
                                 </div>
                               )}
                             </div>
                           ) : (
                             <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 border-dashed text-center">
-                              <p className="text-slate-400 italic text-sm">Bu ölçüt için henüz sonuç raporu (7. Aşama) oluşturulmamış.</p>
+                              <p className="text-slate-400 italic text-sm">{t('no_report_yet')}</p>
                               {olgunlukPuani && (
                                 <div className="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between">
-                                  <span className="font-bold text-slate-500 text-xs uppercase">Olgunluk Puanı:</span>
+                                  <span className="font-bold text-slate-500 text-xs uppercase">{t('maturity_score')}:</span>
                                   <span className="text-lg font-bold text-orange-600">{olgunlukPuani} / 5</span>
                                 </div>
                               )}
@@ -300,7 +301,7 @@ export default function RaporlarClient() {
           </div>
 
           <div className="mt-20 pt-8 border-t border-slate-200 text-center text-slate-500 text-sm">
-            <p>Bu belge kalite yönetim sistemi tarafından otomatik olarak oluşturulmuştur.</p>
+            <p>{t('auto_generated_footer')}</p>
           </div>
         </div>
       )}

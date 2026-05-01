@@ -99,5 +99,58 @@
     "rapor_subtitle": "Sistem Özeti",
     "enter_data": "Veri Gir",
     "edit": "Düzenle"
+  },
+  "Suggestions": {
+    "title": "Üst Birim Önerileri Raporu",
+    "description": "Birimlerin \"İyileştirme\" aşamasında sunduğu tüm öneriler hiyerarşik olarak listelenir.",
+    "export_word": "Word Olarak İndir (.doc)",
+    "no_suggestion_title": "Henüz Öneri Bulunmuyor",
+    "no_suggestion_desc": "Birimler \"İyileştirme\" aşamasında henüz bir üst birim önerisi girmemiş.",
+    "created_at": "Oluşturulma Tarihi",
+    "sender_unit": "Gönderen Birim",
+    "target_unit": "Hedef Birim",
+    "unknown_unit": "Bilinmeyen Birim",
+    "auto_generated_footer": "Bu belge kalite yönetim sistemi tarafından otomatik olarak oluşturulmuştur.",
+    "unauthorized_access": "Yetkisiz Erişim",
+    "unauthorized_desc": "Bu sayfayı görüntüleme yetkiniz bulunmamaktadır. Sadece Yöneticiler erişebilir."
+  },
+  "Calendar": {
+    "title": "Takvimli Eylem Planları",
+    "admin_desc": "Kurumsal düzeyde tüm ölçütlere ait girilen takvimli eylem planları.",
+    "user_desc": "Biriminize atanan ölçütler için oluşturulmuş takvimli eylem planları.",
+    "no_plan_title": "Henüz Eylem Planı Bulunmuyor",
+    "no_plan_desc": "Ölçütler menüsünden Planlama sekmesine giderek bir Takvimli Eylem Planı oluşturduğunuzda burada listelenecektir.",
+    "table": {
+      "date": "Tarih",
+      "criterion": "Ölçüt",
+      "improvement_area": "İyileştirme Alanı",
+      "findings": "Bulgular",
+      "action_activity": "Eylem / Faaliyet",
+      "responsible": "Sorumlu Birim",
+      "success_indicator": "Başarı Göstergesi",
+      "tracking": "İzleme"
+    },
+    "unknown_code": "Bilinmeyen Kod",
+    "unknown_criterion": "Bilinmeyen Ölçüt",
+    "no_criterion_name": "Kriter Adı Yok"
+  },
+  "Reports": {
+    "title": "Global Kurum Raporu",
+    "description": "Kurumun tüm stratejik ölçütleri ve kalite süreçlerinin dev sentezi.",
+    "export_word": "Word Olarak İndir (.doc)",
+    "generating_title": "Kurum Verileri Derleniyor...",
+    "generating_desc": "Tüm birimlerin PUKÖ aşamaları birleştiriliyor. Bu işlem birkaç saniye sürebilir.",
+    "institutional_report": "Kurum Özdeğerlendirme Raporu",
+    "report_summary": "Tüm ana başlıkları, alt ölçütleri ve içlerine yazılan metinleri, kanıtlarla birlikte sırasıyla tek bir dosyada derler.",
+    "create_report": "Kurum Raporunu Oluştur",
+    "created_at": "Oluşturulma Tarihi",
+    "no_report_yet": "Bu ölçüt için henüz sonuç raporu (7. Aşama) oluşturulmamış.",
+    "maturity_score": "Olgunluk Puanı",
+    "uploaded_evidences": "Yüklenen Kanıtlar",
+    "attached_evidences": "Ekli Kanıtlar",
+    "auto_generated_footer": "Bu belge kalite yönetim sistemi tarafından otomatik olarak oluşturulmuştur.",
+    "unauthorized_access": "Yetkisiz Erişim",
+    "unauthorized_desc": "Kurum raporunu görüntüleme ve oluşturma yetkiniz bulunmamaktadır. Sadece Yöneticiler erişebilir.",
+    "error_generating": "Rapor oluşturulurken hata"
   }
 }

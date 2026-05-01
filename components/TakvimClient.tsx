@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Calendar as CalendarIcon, Building, Users, CalendarDays, ExternalLink } from 'lucide-react';
 import { Link } from '@/i18n/routing';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface EylemPlani {
@@ -24,6 +24,7 @@ interface EylemPlani {
 }
 
 export default function TakvimClient() {
+  const t = useTranslations('Calendar');
   const [kayitlar, setKayitlar] = useState<EylemPlani[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -86,7 +87,7 @@ export default function TakvimClient() {
             .filter((item: any) => item.takvim || item.iyilestirme_alani || item.eylem_faaliyet)
             .map((item: any) => ({
               ...item,
-              alt_olcutler: olcutMap[item.alt_olcut_id] || { kod: '?', olcut_adi: 'Bilinmeyen Ölçüt' }
+              alt_olcutler: olcutMap[item.alt_olcut_id] || { kod: '?', olcut_adi: t('unknown_criterion') }
             }));
             
           setKayitlar(filteredData as EylemPlani[]);
@@ -111,13 +112,13 @@ export default function TakvimClient() {
       <div className="mb-8 flex flex-col gap-2">
         <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
           <CalendarIcon className="w-8 h-8 text-blue-600" />
-          Takvimli Eylem Planları
+          {t('title')}
         </h1>
         <p className="text-slate-500 flex items-center gap-2">
           {isAdmin ? (
-            <><Building className="w-4 h-4" /> Kurumsal düzeyde tüm ölçütlere ait girilen takvimli eylem planları.</>
+            <><Building className="w-4 h-4" /> {t('admin_desc')}</>
           ) : (
-            <><Users className="w-4 h-4" /> Biriminize atanan ölçütler için oluşturulmuş takvimli eylem planları.</>
+            <><Users className="w-4 h-4" /> {t('user_desc')}</>
           )}
         </p>
       </div>
@@ -128,9 +129,9 @@ export default function TakvimClient() {
             <div className="w-20 h-20 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-4">
               <CalendarDays className="w-10 h-10" />
             </div>
-            <h3 className="text-xl font-bold text-slate-700 mb-2">Henüz Eylem Planı Bulunmuyor</h3>
+            <h3 className="text-xl font-bold text-slate-700 mb-2">{t('no_plan_title')}</h3>
             <p className="text-slate-500 max-w-md">
-              Ölçütler menüsünden Planlama sekmesine giderek bir Takvimli Eylem Planı oluşturduğunuzda burada listelenecektir.
+              {t('no_plan_desc')}
             </p>
           </div>
         ) : (
@@ -138,14 +139,14 @@ export default function TakvimClient() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50 border-b border-slate-200">
-                  <th className="p-4 pl-6 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Tarih</th>
-                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">Ölçüt</th>
-                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">İyileştirme Alanı</th>
-                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">Bulgular</th>
-                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">Eylem / Faaliyet</th>
-                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Sorumlu Birim</th>
-                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Başarı Göstergesi</th>
-                  <th className="p-4 pr-6 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">İzleme</th>
+                  <th className="p-4 pl-6 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">{t('table.date')}</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">{t('table.criterion')}</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">{t('table.improvement_area')}</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">{t('table.findings')}</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">{t('table.action_activity')}</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">{t('table.responsible')}</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">{t('table.success_indicator')}</th>
+                  <th className="p-4 pr-6 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">{t('table.tracking')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -159,13 +160,13 @@ export default function TakvimClient() {
                     <td className="p-4 align-top">
                       <div className="flex flex-col gap-1.5 max-w-[200px]">
                         <span className="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded w-max">
-                          {kayit.alt_olcutler?.kod || 'Bilinmeyen Kod'}
+                          {kayit.alt_olcutler?.kod || t('unknown_code')}
                         </span>
                         <Link 
                           href={`/olcutler/${kayit.alt_olcut_id}/planlama`}
                           className="text-sm font-semibold text-slate-700 hover:text-blue-600 transition-colors flex items-start gap-1 group/link"
                         >
-                          <span className="line-clamp-2" title={kayit.alt_olcutler?.olcut_adi}>{kayit.alt_olcutler?.olcut_adi || 'Kriter Adı Yok'}</span>
+                          <span className="line-clamp-2" title={kayit.alt_olcutler?.olcut_adi}>{kayit.alt_olcutler?.olcut_adi || t('no_criterion_name')}</span>
                           <ExternalLink className="w-3 h-3 mt-1 opacity-0 group-hover/link:opacity-100 transition-opacity shrink-0" />
                         </Link>
                       </div>

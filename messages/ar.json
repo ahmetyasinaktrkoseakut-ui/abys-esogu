@@ -74,5 +74,26 @@
     "upload_error": "تعذر تحميل الملف",
     "delete_confirm": "هل أنت متأكد أنك تريد حذف هذا المستند؟ (سيتم تحديثه في قاعدة البيانات عند النقر على حفظ)",
     "reject_empty": "يرجى إدخال سبب للرفض."
+  },
+  "Criteria": {
+    "viewDetails": "عرض التفاصيل"
+  },
+  "StepPanel": {
+    "kalite_el_kitabi_title": "1. دليل الجودة",
+    "kalite_el_kitabi_subtitle": "مراجعة/تحديث",
+    "planlama_title": "2. التخطيط",
+    "planlama_subtitle": "التخطيط الاستراتيجي",
+    "uygulama_title": "3. التنفيذ",
+    "uygulama_subtitle": "تنفيذ العملية",
+    "kontrol_title": "4. التحقق",
+    "kontrol_subtitle": "جمع البيانات وتحليلها",
+    "onlem_title": "5. التحسين/اتخاذ التدابير",
+    "onlem_subtitle": "خطط العمل",
+    "olgunluk_title": "6. مستوى النضج",
+    "olgunluk_subtitle": "تسجيل المستوى",
+    "rapor_title": "7. تقرير التقييم الذاتي",
+    "rapor_subtitle": "ملخص النظام",
+    "enter_data": "إدخال البيانات",
+    "edit": "تعديل"
   }
 }

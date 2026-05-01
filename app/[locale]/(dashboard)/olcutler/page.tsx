@@ -4,10 +4,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { FileText, Loader2, ChevronRight } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
 export default function OlcutlerPage() {
+  const t = useTranslations('Criteria');
   const [olcutler, setOlcutler] = useState<any[]>([]);
   const [anaBasliklar, setAnaBasliklar] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -131,7 +132,7 @@ export default function OlcutlerPage() {
                             )}
                           </div>
                           <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-sm font-medium text-indigo-600">
-                            <span>Detayları Gör</span>
+                            <span>{t('viewDetails') || 'Detayları Gör'}</span>
                             <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                           </div>
                         </Link>

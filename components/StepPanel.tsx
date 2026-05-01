@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { CheckCircle2, FileText, CalendarDays, Settings, Search, TrendingUp, FileSignature, BarChart } from 'lucide-react';
 import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 
 interface Step {
   id: string; // The puko_asamasi or step id
@@ -18,11 +19,12 @@ interface Step {
 }
 
 export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: string, altOlcutId: string }) {
+  const t = useTranslations('StepPanel');
   const [steps, setSteps] = useState<Step[]>([
     {
       id: 'kalite_el_kitabi',
-      title: '1. KALİTE EL KİTABI',
-      subtitle: 'Review/Update',
+      title: t('kalite_el_kitabi_title'),
+      subtitle: t('kalite_el_kitabi_subtitle'),
       status: activeStepId === 'kalite_el_kitabi' ? 'active' : 'pending',
       progress: 0,
       icon: FileText,
@@ -32,8 +34,8 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
     },
     {
       id: 'planlama',
-      title: '2. PLANLAMA',
-      subtitle: 'Stratejik Planlama',
+      title: t('planlama_title'),
+      subtitle: t('planlama_subtitle'),
       status: activeStepId === 'planlama' ? 'active' : 'pending',
       progress: 0,
       icon: CalendarDays,
@@ -43,8 +45,8 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
     },
     {
       id: 'uygulama',
-      title: '3. UYGULAMA',
-      subtitle: 'Süreç Uygulama',
+      title: t('uygulama_title'),
+      subtitle: t('uygulama_subtitle'),
       status: activeStepId === 'uygulama' ? 'active' : 'pending',
       progress: 0,
       icon: Settings,
@@ -54,8 +56,8 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
     },
     {
       id: 'kontrol',
-      title: '4. KONTROL ETME',
-      subtitle: 'Veri Toplama & Analiz',
+      title: t('kontrol_title'),
+      subtitle: t('kontrol_subtitle'),
       status: activeStepId === 'kontrol' ? 'active' : 'pending',
       progress: 0,
       icon: Search,
@@ -65,8 +67,8 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
     },
     {
       id: 'onlem',
-      title: '5. İYİLEŞTİRME/ÖNLEM ALMA',
-      subtitle: 'Eylem Planları',
+      title: t('onlem_title'),
+      subtitle: t('onlem_subtitle'),
       status: activeStepId === 'onlem' ? 'active' : 'pending',
       progress: 0,
       icon: TrendingUp,
@@ -76,8 +78,8 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
     },
     {
       id: 'olgunluk',
-      title: '6. OLGUNLUK DÜZEYİ',
-      subtitle: 'Seviye Puanlaması',
+      title: t('olgunluk_title'),
+      subtitle: t('olgunluk_subtitle'),
       status: activeStepId === 'olgunluk' ? 'active' : 'pending',
       progress: 0,
       icon: BarChart,
@@ -87,8 +89,8 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
     },
     {
       id: 'rapor',
-      title: '7. ÖZDEĞERLENDİRME RAPORU',
-      subtitle: 'Sistem Özeti',
+      title: t('rapor_title'),
+      subtitle: t('rapor_subtitle'),
       status: activeStepId === 'rapor' ? 'active' : 'pending',
       progress: 0,
       icon: FileSignature,
@@ -175,7 +177,7 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
                     ? `text-white ${step.barColorClass}` 
                     : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}
                 `}>
-                  {isActive ? 'Düzenle' : (step.status === 'completed' ? 'Düzenle' : 'Veri Gir')}
+                  {isActive ? t('edit') : (step.status === 'completed' ? t('edit') : t('enter_data'))}
                 </div>
                 
                 {/* Arrow indicator if active */}

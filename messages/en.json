@@ -74,5 +74,26 @@
     "upload_error": "File could not be uploaded",
     "delete_confirm": "Are you sure you want to delete this document? (It will be updated in the database when you click Save)",
     "reject_empty": "Please enter a reason for rejection."
+  },
+  "Criteria": {
+    "viewDetails": "View Details"
+  },
+  "StepPanel": {
+    "kalite_el_kitabi_title": "1. QUALITY MANUAL",
+    "kalite_el_kitabi_subtitle": "Review/Update",
+    "planlama_title": "2. PLANNING",
+    "planlama_subtitle": "Strategic Planning",
+    "uygulama_title": "3. IMPLEMENTATION",
+    "uygulama_subtitle": "Process Implementation",
+    "kontrol_title": "4. CHECKING",
+    "kontrol_subtitle": "Data Collection & Analysis",
+    "onlem_title": "5. IMPROVEMENT/PRECAUTION",
+    "onlem_subtitle": "Action Plans",
+    "olgunluk_title": "6. MATURITY LEVEL",
+    "olgunluk_subtitle": "Level Scoring",
+    "rapor_title": "7. SELF-EVALUATION REPORT",
+    "rapor_subtitle": "System Summary",
+    "enter_data": "Enter Data",
+    "edit": "Edit"
   }
 }

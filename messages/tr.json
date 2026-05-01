@@ -74,5 +74,26 @@
     "upload_error": "Dosya yüklenemedi",
     "delete_confirm": "Bu dokümanı silmek istediğinize emin misiniz? (Kaydet butonuna bastığınızda veritabanında güncellenecektir)",
     "reject_empty": "Lütfen red nedeni giriniz."
+  },
+  "Criteria": {
+    "viewDetails": "Detayları Gör"
+  },
+  "StepPanel": {
+    "kalite_el_kitabi_title": "1. KALİTE EL KİTABI",
+    "kalite_el_kitabi_subtitle": "İnceleme/Güncelleme",
+    "planlama_title": "2. PLANLAMA",
+    "planlama_subtitle": "Stratejik Planlama",
+    "uygulama_title": "3. UYGULAMA",
+    "uygulama_subtitle": "Süreç Uygulama",
+    "kontrol_title": "4. KONTROL ETME",
+    "kontrol_subtitle": "Veri Toplama & Analiz",
+    "onlem_title": "5. İYİLEŞTİRME/ÖNLEM ALMA",
+    "onlem_subtitle": "Eylem Planları",
+    "olgunluk_title": "6. OLGUNLUK DÜZEYİ",
+    "olgunluk_subtitle": "Seviye Puanlaması",
+    "rapor_title": "7. ÖZDEĞERLENDİRME RAPORU",
+    "rapor_subtitle": "Sistem Özeti",
+    "enter_data": "Veri Gir",
+    "edit": "Düzenle"
   }
 }

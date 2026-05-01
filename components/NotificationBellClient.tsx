@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Bell } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 
 const getAsamaSlug = (asama: string) => {
   if (!asama) return 'kontrol-etme';
@@ -22,6 +23,8 @@ const getAsamaSlug = (asama: string) => {
 };
 
 export default function NotificationBellClient({ userId, isAdmin }: { userId: string, isAdmin: boolean }) {
+  const t = useTranslations('Header');
+  const nt = useTranslations('Notifications');
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
@@ -139,14 +142,14 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
       {isOpen && (
         <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
           <div className="px-4 py-3 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
-            <h3 className="font-bold text-slate-800 text-sm">Bildirimler</h3>
-            <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-full">En Yeni</span>
+            <h3 className="font-bold text-slate-800 text-sm">{t('notifications')}</h3>
+            <span className="text-xs text-blue-600 font-medium bg-blue-50 px-2 py-0.5 rounded-full">{t('latest')}</span>
           </div>
           
           <div className="max-h-80 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-4 text-center text-slate-500 text-sm">
-                Henüz bildirim bulunmuyor.
+                {nt('table.no_data')}
               </div>
             ) : (
               notifications.map((notif) => (
@@ -165,13 +168,15 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
                       notif.durum === 'Reddedildi' ? 'bg-red-100 text-red-700' :
                       'bg-amber-100 text-amber-700'
                     }`}>
-                      {notif.durum}
+                      {notif.durum === 'Onaylandı' ? nt('status.approved') : 
+                       notif.durum === 'Reddedildi' ? nt('status.rejected') : 
+                       nt('status.pending')}
                     </span>
                   </div>
                   <p className="text-xs text-slate-600 line-clamp-2 mt-1">
-                    {isAdmin ? 'Personel tarafından yeni bir kanıt girişi yapıldı.' : 
+                    {isAdmin ? t('new_evidence_submitted') : 
                       notif.durum === 'Reddedildi' ? notif.red_nedeni :
-                      notif.durum === 'Onaylandı' ? 'Veri girişiniz onaylandı.' : 'Girişiniz değerlendirme bekliyor.'}
+                      notif.durum === 'Onaylandı' ? nt('status.approved') : nt('status.pending')}
                   </p>
                 </div>
               ))
@@ -183,7 +188,7 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
               onClick={goToBildirimler}
               className="w-full py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-center"
             >
-              Tüm Bildirimleri Gör
+              {t('view_all')}
             </button>
           </div>
         </div>

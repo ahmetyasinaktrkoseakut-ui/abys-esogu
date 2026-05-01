@@ -152,5 +152,96 @@
     "unauthorized_access": "Unauthorized Access",
     "unauthorized_desc": "You do not have permission to view and create the institutional report. Only Administrators can access it.",
     "error_generating": "Error while generating report"
+  },
+  "Tracking": {
+    "title": "Process Tracking and Analytics",
+    "description": "Real-time analysis of quality and accreditation processes across the university.",
+    "stats": {
+      "total_criteria": "Total Sub-Criteria",
+      "pending_approval": "Pending Approval",
+      "approved_process": "Approved Process",
+      "uploaded_documents": "Uploaded Documents"
+    },
+    "charts": {
+      "data_entry_by_phase": "Data Entry by Phase",
+      "process_approval_status": "Process Approval Status",
+      "no_data": "No data has been entered yet.",
+      "no_data_short": "No data yet.",
+      "approved": "Approved",
+      "pending": "Pending",
+      "rejected": "Rejected"
+    }
+  },
+  "Notifications": {
+    "title": "Notification Center",
+    "description": "Personnel PDCA evidence entries awaiting your approval are listed below.",
+    "description_admin": "Personnel PDCA evidence entries awaiting your approval are listed below.",
+    "description_user": "Current status of your submitted PDCA data entries (Pending, Approved, Rejected).",
+    "table": {
+      "criterion": "Criterion",
+      "phase": "Phase",
+      "date": "Date",
+      "status": "Status",
+      "actions": "Description / Actions",
+      "no_data": "You haven't entered any data yet",
+      "no_data_desc": "You can submit forms from the PDCA Management tab."
+    },
+    "status": {
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "pending": "Pending"
+    },
+    "actions": {
+      "no_action_needed": "No action needed",
+      "revise": "Revise / New Evidence"
+    },
+    "modal": {
+      "title": "Revision Process",
+      "rejected_criterion": "Rejected Criterion",
+      "upload_new_evidence": "Upload New Evidence File",
+      "select_file": "Select File",
+      "file_types": "PDF, DOCX, ZIP or image",
+      "info_text": "By uploading a new evidence file, the form status will be updated to \"Pending\" and submitted for manager review again.",
+      "submit": "Upload and Send for Approval",
+      "submitting": "Revising...",
+      "upload_error": "File upload error",
+      "update_error": "Update error",
+      "process_failed": "Revision process could not be completed."
+    }
+  },
+  "Assignments": {
+    "title": "Criterion Assignments (Allocation)",
+    "description": "Assign specific quality criteria to unit coordinators (Personnel) so they can enter data in the PDCA system.",
+    "sidebar": {
+      "title": "Unit Coordinators",
+      "search_placeholder": "Search name or title...",
+      "loading": "Loading users...",
+      "no_user": "No registered unit coordinator found.",
+      "anonymous_user": "Anonymous User"
+    },
+    "main": {
+      "select_user_title": "Select Personnel to Assign Criteria",
+      "select_user_desc": "Select a unit coordinator from the list on the left to allocate specific quality criteria to them.",
+      "assignments_for": "Assignments for {name}",
+      "selected_count": "Selected criteria: {count} / {total}",
+      "select_all": "Select All",
+      "deselect_all": "Deselect All",
+      "assigned_badge": "Assigned",
+      "save_changes": "Save Changes",
+      "other_group": "Other",
+      "group_title": "{harf} Group"
+    },
+    "messages": {
+      "fetch_error": "An error occurred while loading users or criteria.",
+      "atama_fetch_error": "User's current assignments could not be loaded.",
+      "save_success": "Assignments saved successfully.",
+      "save_error": "An error occurred while saving assignments"
+    }
+  },
+  "Header": {
+    "notifications": "Notifications",
+    "latest": "Latest",
+    "new_evidence_submitted": "A new evidence entry has been submitted by personnel.",
+    "view_all": "View All Notifications"
   }
 }

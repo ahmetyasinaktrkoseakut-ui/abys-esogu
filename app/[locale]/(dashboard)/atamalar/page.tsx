@@ -3,10 +3,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { UserCheck, Search, Users, AlertCircle, Loader2, Save, CheckCircle2, FileText, ChevronRight } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
 export default function AtamalarPage() {
+  const t = useTranslations('Assignments');
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [hocalar, setHocalar] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -74,7 +75,7 @@ export default function AtamalarPage() {
       setAllAtamalar(atamalarData || []);
     } catch (error: any) {
       console.error("Veri çekme hatası:", error);
-      setMessage({ type: 'error', text: 'Kullanıcılar veya ölçütler yüklenirken bir hata oluştu.' });
+      setMessage({ type: 'error', text: t('messages.fetch_error') });
     } finally {
       setIsLoading(false);
     }
@@ -96,7 +97,7 @@ export default function AtamalarPage() {
       }
     } catch (error: any) {
       console.error("Atama çekme hatası:", error);
-      setMessage({ type: 'error', text: 'Kullanıcının mevcut atamaları yüklenemedi.' });
+      setMessage({ type: 'error', text: t('messages.atama_fetch_error') });
     }
   };
 
@@ -149,7 +150,7 @@ export default function AtamalarPage() {
         if (insertError) throw insertError;
       }
 
-      setMessage({ type: 'success', text: 'Atamalar başarıyla kaydedildi.' });
+      setMessage({ type: 'success', text: t('messages.save_success') });
 
       // Atamaları yenile
       const { data: updatedAtamalar } = await supabase.from('kullanici_olcut_atamalari').select('*');
@@ -162,7 +163,7 @@ export default function AtamalarPage() {
       
     } catch (error: any) {
       console.error("Kaydetme hatası:", error);
-      setMessage({ type: 'error', text: 'Atamalar kaydedilirken bir hata oluştu: ' + error.message });
+      setMessage({ type: 'error', text: t('messages.save_error') + ': ' + error.message });
     } finally {
       setIsSaving(false);
     }
@@ -180,10 +181,10 @@ export default function AtamalarPage() {
         <div>
           <h2 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
             <UserCheck className="w-8 h-8 text-blue-600" />
-            Ölçüt Atamaları (Zimmetleme)
+            {t('title')}
           </h2>
           <p className="text-slate-500 mt-2 text-sm leading-relaxed max-w-2xl">
-            Birim sorumlularına (Hocalara) PUKÖ sisteminde veri girişi yapabilecekleri özel kalite ölçütlerini atayın.
+            {t('description')}
           </p>
         </div>
       </div>
@@ -201,7 +202,7 @@ export default function AtamalarPage() {
           )}
           <div className="flex-1">
             <h3 className={`text-sm font-semibold ${message.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
-              {message.type === 'success' ? 'İşlem Başarılı' : 'Hata'}
+              {message.type === 'success' ? t('Common.success') : t('Common.error')}
             </h3>
             <p className="text-sm mt-1 opacity-90">{message.text}</p>
           </div>
@@ -214,13 +215,13 @@ export default function AtamalarPage() {
           <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Users className="w-5 h-5 text-indigo-500" />
-              Birim Sorumluları ({filteredHocalar.length})
+              {t('sidebar.title')} ({filteredHocalar.length})
             </div>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input 
                 type="text" 
-                placeholder="İsim veya unvan ara..."
+                placeholder={t('sidebar.search_placeholder')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-white border border-slate-200 text-slate-700 rounded-lg pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
@@ -232,11 +233,11 @@ export default function AtamalarPage() {
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-40 text-slate-400 gap-3">
                 <Loader2 className="w-6 h-6 animate-spin text-indigo-500" />
-                <span className="text-sm">Kullanıcılar yükleniyor...</span>
+                <span className="text-sm">{t('sidebar.loading')}</span>
               </div>
             ) : filteredHocalar.length === 0 ? (
               <div className="text-center py-8 text-slate-500 text-sm">
-                Kayıtlı birim sorumlusu bulunamadı.
+                {t('sidebar.no_user')}
               </div>
             ) : (
               filteredHocalar.map((hoca) => (
@@ -257,7 +258,7 @@ export default function AtamalarPage() {
                     </div>
                     <div className="flex-1 overflow-hidden">
                       <div className={`font-semibold text-sm truncate ${selectedHoca === hoca.id ? 'text-indigo-900' : 'text-slate-700'}`}>
-                        {hoca.unvan ? `${hoca.unvan} ` : ''}{hoca.ad_soyad || 'İsimsiz Kullanıcı'}
+                        {hoca.unvan ? `${hoca.unvan} ` : ''}{hoca.ad_soyad || t('sidebar.anonymous_user')}
                       </div>
                       <div className="text-xs text-slate-500 truncate">{hoca.email}</div>
                     </div>
@@ -275,18 +276,18 @@ export default function AtamalarPage() {
               <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
                 <FileText className="w-10 h-10 text-slate-300" />
               </div>
-              <h3 className="text-lg font-semibold text-slate-600">Ölçüt Atamak İçin Personel Seçin</h3>
-              <p className="text-sm mt-2 max-w-md">Sol taraftaki listeden bir birim sorumlusu seçerek ona özel kalite ölçütlerini zimmetleyebilirsiniz.</p>
+              <h3 className="text-lg font-semibold text-slate-600">{t('main.select_user_title')}</h3>
+              <p className="text-sm mt-2 max-w-md">{t('main.select_user_desc')}</p>
             </div>
           ) : (
             <>
               <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
                 <div>
                   <h3 className="font-semibold text-slate-800 text-sm">
-                    {hocalar.find(h => h.id === selectedHoca)?.unvan} {hocalar.find(h => h.id === selectedHoca)?.ad_soyad} için Atamalar
+                    {t('main.assignments_for', { name: `${hocalar.find(h => h.id === selectedHoca)?.unvan || ''} ${hocalar.find(h => h.id === selectedHoca)?.ad_soyad || ''}` })}
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    Seçili ölçüt sayısı: <strong className="text-indigo-600">{selectedOlcutIds.length}</strong> / {olcutler.length}
+                    {t('main.selected_count', { count: selectedOlcutIds.length, total: olcutler.length })}
                   </p>
                 </div>
                 <div className="flex gap-2">
@@ -294,13 +295,13 @@ export default function AtamalarPage() {
                     onClick={() => handleSelectAll(true)}
                     className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 text-slate-600 transition-colors"
                   >
-                    Tümünü Seç
+                    {t('main.select_all')}
                   </button>
                   <button 
                     onClick={() => handleSelectAll(false)}
                     className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 text-slate-600 transition-colors"
                   >
-                    Tümünü Kaldır
+                    {t('main.deselect_all')}
                   </button>
                 </div>
               </div>
@@ -314,7 +315,7 @@ export default function AtamalarPage() {
                   <div className="space-y-4">
                     {Object.entries(
                       olcutler.reduce((acc, olcut) => {
-                        const groupKey = olcut.kod ? olcut.kod.split('.')[0] : 'Diğer';
+                        const groupKey = olcut.kod ? olcut.kod.split('.')[0] : t('main.other_group');
                         if (!acc[groupKey]) acc[groupKey] = [];
                         acc[groupKey].push(olcut);
                         return acc;
@@ -323,7 +324,7 @@ export default function AtamalarPage() {
                     .sort(([k1], [k2]) => k1.localeCompare(k2))
                     .map(([harf, items]) => {
                       const baslikObj = anaBasliklar.find(b => b.kod === harf || (b.baslik_adi && b.baslik_adi.startsWith(harf + '.')));
-                      const displayTitle = getLocalizedField(baslikObj, 'baslik_adi', locale) || `${harf} Grubu`;
+                      const displayTitle = getLocalizedField(baslikObj, 'baslik_adi', locale) || t('main.group_title', { harf });
                       const isOpen = openGroups[harf] || false;
 
                       return (
@@ -373,7 +374,7 @@ export default function AtamalarPage() {
                                       </div>
                                       {isAssignedToOther && (
                                         <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 text-slate-500 rounded flex-shrink-0">
-                                          Atandı
+                                          {t('main.assigned_badge')}
                                         </span>
                                       )}
                                     </div>
@@ -396,7 +397,7 @@ export default function AtamalarPage() {
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm shadow-indigo-500/30 disabled:opacity-70"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                  Değişiklikleri Kaydet
+                  {t('main.save_changes')}
                 </button>
               </div>
             </>

@@ -152,5 +152,96 @@
     "unauthorized_access": "Yetkisiz Erişim",
     "unauthorized_desc": "Kurum raporunu görüntüleme ve oluşturma yetkiniz bulunmamaktadır. Sadece Yöneticiler erişebilir.",
     "error_generating": "Rapor oluşturulurken hata"
+  },
+  "Tracking": {
+    "title": "Süreç İzleme ve Analitik",
+    "description": "Üniversite geneli kalite ve akreditasyon süreçlerinin anlık analizi.",
+    "stats": {
+      "total_criteria": "Toplam Alt Ölçüt",
+      "pending_approval": "Bekleyen Onay",
+      "approved_process": "Onaylanan Süreç",
+      "uploaded_documents": "Yüklenen Doküman"
+    },
+    "charts": {
+      "data_entry_by_phase": "Aşamalara Göre Veri Girişi",
+      "process_approval_status": "Süreç Onay Durumları",
+      "no_data": "Henüz veri girişi yapılmamış.",
+      "no_data_short": "Henüz veri yok.",
+      "approved": "Onaylandı",
+      "pending": "Beklemede",
+      "rejected": "Reddedildi"
+    }
+  },
+  "Notifications": {
+    "title": "Bildirim Merkezi",
+    "description": "Onayınızı bekleyen personel PUKÖ kanıt girişleri aşağıda listelenmektedir.",
+    "description_admin": "Onayınızı bekleyen personel PUKÖ kanıt girişleri aşağıda listelenmektedir.",
+    "description_user": "Gönderdiğiniz PUKÖ veri girişlerinizin güncel durumları (Beklemede, Onaylandı, Reddedildi).",
+    "table": {
+      "criterion": "Kriter",
+      "phase": "Aşama",
+      "date": "Tarih",
+      "status": "Durum",
+      "actions": "Açıklama / İşlemler",
+      "no_data": "Henüz bir veri girişi yapmadınız",
+      "no_data_desc": "PUKÖ Yönetimi sekmesinden form gönderebilirsiniz."
+    },
+    "status": {
+      "approved": "Onaylandı",
+      "rejected": "Reddedildi",
+      "pending": "Beklemede"
+    },
+    "actions": {
+      "no_action_needed": "Müdahale gerekmiyor",
+      "revise": "Revize Et / Yeni Kanıt"
+    },
+    "modal": {
+      "title": "Revize İşlemi",
+      "rejected_criterion": "Reddedilen Kriter",
+      "upload_new_evidence": "Yeni Kanıt Dosyası Yükle",
+      "select_file": "Dosya Seç",
+      "file_types": "PDF, DOCX, ZIP veya resim",
+      "info_text": "Yeni kanıt dosyası yüklemeniz ile birlikte form durumu \"Beklemede\" olarak güncellenecek ve yöneticinin tekrar incelemesine sunulacaktır.",
+      "submit": "Yükle ve Onaya Gönder",
+      "submitting": "Revize Ediliyor...",
+      "upload_error": "Dosya yükleme hatası",
+      "update_error": "Güncelleme hatası",
+      "process_failed": "Revize işlemi tamamlanamadı."
+    }
+  },
+  "Assignments": {
+    "title": "Ölçüt Atamaları (Zimmetleme)",
+    "description": "Birim sorumlularına (Hocalara) PUKÖ sisteminde veri girişi yapabilecekleri özel kalite ölçütlerini atayın.",
+    "sidebar": {
+      "title": "Birim Sorumluları",
+      "search_placeholder": "İsim veya unvan ara...",
+      "loading": "Kullanıcılar yükleniyor...",
+      "no_user": "Kayıtlı birim sorumlusu bulunamadı.",
+      "anonymous_user": "İsimsiz Kullanıcı"
+    },
+    "main": {
+      "select_user_title": "Ölçüt Atamak İçin Personel Seçin",
+      "select_user_desc": "Sol taraftaki listeden bir birim sorumlusu seçerek ona özel kalite ölçütlerini zimmetleyebilirsiniz.",
+      "assignments_for": "{name} için Atamalar",
+      "selected_count": "Seçili ölçüt sayısı: {count} / {total}",
+      "select_all": "Tümünü Seç",
+      "deselect_all": "Tümünü Kaldır",
+      "assigned_badge": "Atandı",
+      "save_changes": "Değişiklikleri Kaydet",
+      "other_group": "Diğer",
+      "group_title": "{harf} Grubu"
+    },
+    "messages": {
+      "fetch_error": "Kullanıcılar veya ölçütler yüklenirken bir hata oluştu.",
+      "atama_fetch_error": "Kullanıcının mevcut atamaları yüklenemedi.",
+      "save_success": "Atamalar başarıyla kaydedildi.",
+      "save_error": "Atamalar kaydedilirken bir hata oluştu"
+    }
+  },
+  "Header": {
+    "notifications": "Bildirimler",
+    "latest": "En Yeni",
+    "new_evidence_submitted": "Personel tarafından yeni bir kanıt girişi yapıldı.",
+    "view_all": "Tüm Bildirimleri Gör"
   }
 }

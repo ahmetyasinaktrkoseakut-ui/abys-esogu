@@ -5,9 +5,11 @@ import { supabase } from '@/lib/supabase/client';
 import { Loader2, Activity, CheckCircle, Clock, XCircle, FileText, BarChart3, TrendingUp } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 
-import { useRouter } from 'next/navigation';
+import { useRouter } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 
 export default function IzlemePage() {
+  const t = useTranslations('Tracking');
   const router = useRouter();
   const [stats, setStats] = useState({
     toplamOlcut: 0,
@@ -58,7 +60,7 @@ export default function IzlemePage() {
               toplamDokuman += row.kanit_dosyalari.length;
             }
 
-            const asama = row.puko_asamasi || 'Bilinmiyor';
+            const asama = row.puko_asamasi || t('charts.no_data_short');
             pukoCounts[asama] = (pukoCounts[asama] || 0) + 1;
           });
         }
@@ -91,9 +93,9 @@ export default function IzlemePage() {
   }
 
   const durumData = [
-    { name: 'Onaylandı', value: stats.onaylanan, color: '#10b981' }, // emerald-500
-    { name: 'Beklemede', value: stats.bekleyen, color: '#fbbf24' },  // amber-400
-    { name: 'Reddedildi', value: stats.reddedilen, color: '#ef4444' }, // red-500
+    { name: t('charts.approved'), value: stats.onaylanan, color: '#10b981' }, // emerald-500
+    { name: t('charts.pending'), value: stats.bekleyen, color: '#fbbf24' },  // amber-400
+    { name: t('charts.rejected'), value: stats.reddedilen, color: '#ef4444' }, // red-500
   ].filter(d => d.value > 0);
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6', '#f43f5e'];
@@ -101,8 +103,8 @@ export default function IzlemePage() {
   return (
     <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Süreç İzleme ve Analitik</h2>
-        <p className="text-slate-500 mt-1 text-sm">Üniversite geneli kalite ve akreditasyon süreçlerinin anlık analizi.</p>
+        <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{t('title')}</h2>
+        <p className="text-slate-500 mt-1 text-sm">{t('description')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -111,7 +113,7 @@ export default function IzlemePage() {
             <Activity className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Toplam Alt Ölçüt</p>
+            <p className="text-sm font-medium text-slate-500">{t('stats.total_criteria')}</p>
             <p className="text-2xl font-bold text-slate-800">{stats.toplamOlcut}</p>
           </div>
         </div>
@@ -121,7 +123,7 @@ export default function IzlemePage() {
             <Clock className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Bekleyen Onay</p>
+            <p className="text-sm font-medium text-slate-500">{t('stats.pending_approval')}</p>
             <p className="text-2xl font-bold text-slate-800">{stats.bekleyen}</p>
           </div>
         </div>
@@ -131,7 +133,7 @@ export default function IzlemePage() {
             <CheckCircle className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Onaylanan Süreç</p>
+            <p className="text-sm font-medium text-slate-500">{t('stats.approved_process')}</p>
             <p className="text-2xl font-bold text-slate-800">{stats.onaylanan}</p>
           </div>
         </div>
@@ -141,7 +143,7 @@ export default function IzlemePage() {
             <FileText className="w-6 h-6" />
           </div>
           <div>
-            <p className="text-sm font-medium text-slate-500">Yüklenen Doküman</p>
+            <p className="text-sm font-medium text-slate-500">{t('stats.uploaded_documents')}</p>
             <p className="text-2xl font-bold text-slate-800">{stats.toplamDokuman}</p>
           </div>
         </div>
@@ -151,7 +153,7 @@ export default function IzlemePage() {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-6">
             <BarChart3 className="w-5 h-5 text-blue-600" />
-            Aşamalara Göre Veri Girişi
+            {t('charts.data_entry_by_phase')}
           </h3>
           <div className="h-72 w-full">
             {pukoDistribution.length > 0 ? (
@@ -168,7 +170,7 @@ export default function IzlemePage() {
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-               <div className="h-full flex items-center justify-center text-slate-400">Henüz veri girişi yapılmamış.</div>
+               <div className="h-full flex items-center justify-center text-slate-400">{t('charts.no_data')}</div>
             )}
           </div>
         </div>
@@ -176,7 +178,7 @@ export default function IzlemePage() {
         <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
           <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-6">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
-            Süreç Onay Durumları
+            {t('charts.process_approval_status')}
           </h3>
           <div className="h-72 w-full flex items-center justify-center">
              {durumData.length > 0 ? (
@@ -202,7 +204,7 @@ export default function IzlemePage() {
              ) : (
                 <div className="flex flex-col items-center justify-center text-slate-400">
                   <PieChart className="w-16 h-16 opacity-30 mb-2" />
-                  Henüz veri yok.
+                  {t('charts.no_data_short')}
                 </div>
              )}
           </div>

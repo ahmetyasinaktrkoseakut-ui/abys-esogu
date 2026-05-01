@@ -86,7 +86,7 @@ export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
         {isAdmin && (
           <Link href="/atamalar" className={getLinkClass('/atamalar')}>
             <Settings className="w-5 h-5 flex-shrink-0" />
-            Admin / {t('assignments')}
+            {t('assignments')}
           </Link>
         )}
         <LogoutButton />

@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { Presentation, Activity, Calendar, Info, Hash, Upload, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
 const getAsamaSlug = (asama: string) => {
@@ -24,6 +24,7 @@ const getAsamaSlug = (asama: string) => {
 };
 
 export default function BildirimlerTableClient({ initialData }: { initialData: any[] }) {
+  const t = useTranslations('Notifications');
   const [data, setData] = useState(initialData);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>(null);
@@ -62,18 +63,18 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
   const getStatusBadge = (durum: string) => {
     const lower = (durum || '').toLowerCase();
     if (lower === 'onaylandı' || lower === 'onaylandi') {
-      return <span className="bg-green-100 text-green-700 border border-green-200 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block shadow-sm">Onaylandı</span>;
+      return <span className="bg-green-100 text-green-700 border border-green-200 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block shadow-sm">{t('status.approved')}</span>;
     }
     if (lower === 'reddedildi') {
-      return <span className="bg-red-100 text-red-700 border border-red-200 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block shadow-sm">Reddedildi</span>;
+      return <span className="bg-red-100 text-red-700 border border-red-200 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block shadow-sm">{t('status.rejected')}</span>;
     }
-    return <span className="bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block shadow-sm">Beklemede</span>;
+    return <span className="bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block shadow-sm">{t('status.pending')}</span>;
   };
 
   const formatDate = (dateString: string) => {
     if (!dateString) return '-';
     const date = new Date(dateString);
-    return date.toLocaleDateString('tr-TR');
+    return date.toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US');
   };
 
   const currentData = data || [];
@@ -100,7 +101,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
         .from('kanit_dosyalari')
         .upload(fileName, file);
 
-      if (uploadError) throw new Error('Dosya yükleme hatası: ' + uploadError.message);
+      if (uploadError) throw new Error(t('modal.upload_error') + ': ' + uploadError.message);
 
       const { data: urlData } = supabase.storage
         .from('kanit_dosyalari')
@@ -118,7 +119,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
         })
         .eq('id', selectedRow.id);
 
-      if (dbError) throw new Error('Güncelleme hatası: ' + dbError.message);
+      if (dbError) throw new Error(t('modal.update_error') + ': ' + dbError.message);
 
       // 3. Update local state
       setData(prev => prev.map(item => {
@@ -137,7 +138,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
       setIsModalOpen(false);
 
     } catch (err: any) {
-      setModalError(err.message || 'Revize işlemi tamamlanamadı.');
+      setModalError(err.message || t('modal.process_failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -152,24 +153,24 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
               <tr className="bg-slate-50/80 border-b border-slate-200">
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
-                    <Hash className="w-4 h-4" /> Kriter
+                    <Hash className="w-4 h-4" /> {t('table.criterion')}
                   </div>
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4" /> Aşama
+                    <Activity className="w-4 h-4" /> {t('table.phase')}
                   </div>
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" /> Tarih
+                    <Calendar className="w-4 h-4" /> {t('table.date')}
                   </div>
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">
-                  Durum
+                  {t('table.status')}
                 </th>
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  Açıklama / İşlemler
+                  {t('table.actions')}
                 </th>
               </tr>
             </thead>
@@ -179,8 +180,8 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                   <td colSpan={5} className="py-20 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-400">
                       <Presentation className="w-12 h-12 text-slate-200 mb-3" />
-                      <p className="text-sm font-medium text-slate-500">Henüz bir veri girişi yapmadınız</p>
-                      <p className="text-xs mt-1 text-slate-400">PUKÖ Yönetimi sekmesinden form gönderebilirsiniz.</p>
+                      <p className="text-sm font-medium text-slate-500">{t('table.no_data')}</p>
+                      <p className="text-xs mt-1 text-slate-400">{t('table.no_data_desc')}</p>
                     </div>
                   </td>
                 </tr>
@@ -196,7 +197,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                           {row.alt_olcutler?.kod || '-'}
                         </span>
                         <div className="text-sm font-medium text-slate-700 max-w-[200px] truncate group-hover:text-blue-600 transition-colors" title={getLocalizedField(row.alt_olcutler, 'olcut_adi', locale)}>
-                          {getLocalizedField(row.alt_olcutler, 'olcut_adi', locale) || 'Bilinmeyen Kriter'}
+                          {getLocalizedField(row.alt_olcutler, 'olcut_adi', locale) || t('Assignments.sidebar.anonymous_user')}
                         </div>
                       </div>
                     </td>
@@ -230,12 +231,12 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                               className="text-xs font-semibold px-3 py-2 bg-white text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors shadow-sm flex items-center gap-1.5"
                             >
                               <Upload className="w-3.5 h-3.5" />
-                              Revize Et / Yeni Kanıt
+                              {t('actions.revise')}
                             </button>
                           </div>
                         </div>
                       ) : (
-                        <span className="text-xs text-slate-400 italic">Müdahale gerekmiyor</span>
+                        <span className="text-xs text-slate-400 italic">{t('actions.no_action_needed')}</span>
                       )}
                     </td>
                   </tr>
@@ -253,7 +254,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Upload className="w-5 h-5 text-blue-600" />
-                Revize İşlemi
+                {t('modal.title')}
               </h3>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -265,7 +266,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
             
             <div className="p-6">
               <div className="mb-4 bg-orange-50 border border-orange-200 p-3 rounded-xl text-sm text-orange-800">
-                <p className="font-semibold mb-1">Reddedilen Kriter: {selectedRow.alt_olcutler?.kod}</p>
+                <p className="font-semibold mb-1">{t('modal.rejected_criterion')}: {selectedRow.alt_olcutler?.kod}</p>
                 <p className="text-xs opacity-90">{selectedRow.red_nedeni}</p>
               </div>
 
@@ -277,23 +278,23 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
 
               <div className="space-y-2">
                 <label className="block text-sm font-semibold text-slate-700">
-                  Yeni Kanıt Dosyası Yükle
+                  {t('modal.upload_new_evidence')}
                 </label>
                 <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-slate-300 border-dashed rounded-xl hover:border-blue-400 transition-colors bg-slate-50">
                   <div className="space-y-1 text-center">
                     <Upload className="mx-auto h-12 w-12 text-slate-400 mb-3" />
                     <div className="flex text-sm text-slate-600 justify-center">
                       <label htmlFor="file-upload-revize" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500 px-2 py-1 shadow-sm border border-slate-200">
-                        <span>Dosya Seç</span>
+                        <span>{t('modal.select_file')}</span>
                         <input id="file-upload-revize" name="file-upload-revize" type="file" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] || null)} />
                       </label>
                     </div>
                     <p className="text-xs text-slate-500 mt-2">
-                      {file ? <span className="font-semibold text-blue-600">{file.name}</span> : 'PDF, DOCX, ZIP veya resim'}
+                      {file ? <span className="font-semibold text-blue-600">{file.name}</span> : t('modal.file_types')}
                     </p>
                   </div>
                 </div>
-                <p className="text-xs text-slate-500 mt-2 italic">Yeni kanıt dosyası yüklemeniz ile birlikte form durumu "Beklemede" olarak güncellenecek ve yöneticinin tekrar incelemesine sunulacaktır.</p>
+                <p className="text-xs text-slate-500 mt-2 italic">{t('modal.info_text')}</p>
               </div>
 
               <div className="mt-8 flex flex-col gap-3">
@@ -304,7 +305,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                   className="flex justify-center items-center gap-2 px-6 py-3 text-sm font-medium text-white bg-blue-600 rounded-xl hover:bg-blue-700 shadow-sm shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 w-full"
                 >
                   {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {isSubmitting ? 'Revize Ediliyor...' : 'Yükle ve Onaya Gönder'}
+                  {isSubmitting ? t('modal.submitting') : t('modal.submit')}
                 </button>
               </div>
             </div>

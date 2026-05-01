@@ -1,8 +1,10 @@
 import { createClient } from '@/lib/supabase/server';
 import BildirimlerTableClient from '@/components/BildirimlerTableClient';
 import { redirect } from 'next/navigation';
+import { getTranslations } from 'next-intl/server';
 
 export default async function BildirimlerPage() {
+  const t = await getTranslations('Notifications');
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -54,11 +56,9 @@ export default async function BildirimlerPage() {
   return (
     <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
       <div className="mb-6 flex flex-col gap-2">
-        <h2 className="text-2xl font-bold text-slate-800">Bildirim Merkezi</h2>
+        <h2 className="text-2xl font-bold text-slate-800">{t('title')}</h2>
         <p className="text-sm text-slate-500">
-          {isAdmin 
-            ? 'Onayınızı bekleyen personel PUKÖ kanıt girişleri aşağıda listelenmektedir.'
-            : 'Gönderdiğiniz PUKÖ veri girişlerinizin güncel durumları (Beklemede, Onaylandı, Reddedildi).'}
+          {isAdmin ? t('description_admin') : t('description_user')}
         </p>
       </div>
       

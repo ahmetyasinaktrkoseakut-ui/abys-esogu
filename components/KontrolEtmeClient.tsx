@@ -72,7 +72,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
       if (user) {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = profile?.rol?.toLowerCase() || '';
-        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || (selectedPeriod && !selectedPeriod.is_active)) {
+        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false) {
           setIsReadOnly(true);
         }
       }

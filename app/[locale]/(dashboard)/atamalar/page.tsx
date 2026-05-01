@@ -405,7 +405,7 @@ export default function AtamalarPage() {
               <div className="p-4 bg-white border-t border-slate-100 flex justify-end">
                 <button
                   onClick={handleSave}
-                  disabled={isSaving || (selectedPeriod && !selectedPeriod.is_active)}
+                  disabled={isSaving || (selectedPeriod ? !selectedPeriod.is_active : false)}
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm shadow-indigo-500/30 disabled:opacity-70"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

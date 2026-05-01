@@ -26,8 +26,12 @@ export default function OlcutlerPage() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!selectedPeriod) return;
+      if (!selectedPeriod) {
+        setIsLoading(false);
+        return;
+      }
       try {
+        setIsLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 

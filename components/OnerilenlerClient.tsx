@@ -41,7 +41,10 @@ export default function OnerilenlerClient() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!selectedPeriod) return;
+      if (!selectedPeriod) {
+        setIsLoading(false);
+        return;
+      }
       setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();

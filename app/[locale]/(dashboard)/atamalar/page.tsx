@@ -47,7 +47,10 @@ export default function AtamalarPage() {
   }, [selectedHoca, selectedPeriod]);
 
   const fetchInitialData = async () => {
-    if (!selectedPeriod) return;
+    if (!selectedPeriod) {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       // Hocaları getir (Birim Sorumluları)

@@ -64,7 +64,10 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
   const { selectedPeriod } = usePeriod();
 
   const fetchData = async () => {
-    if (!selectedPeriod) return;
+    if (!selectedPeriod) {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       
@@ -86,7 +89,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('puko_asamasi', 'kontrol')
-        .eq('donem_id', selectedPeriod.id)
+        .eq('donem_id', selectedPeriod?.id)
         .order('id', { ascending: false })
         .limit(1)
         .single();

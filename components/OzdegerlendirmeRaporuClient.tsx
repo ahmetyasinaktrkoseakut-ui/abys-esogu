@@ -26,7 +26,10 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const { selectedPeriod } = usePeriod();
 
   const fetchData = async () => {
-    if (!selectedPeriod) return;
+    if (!selectedPeriod) {
+      setIsLoading(false);
+      return;
+    }
     try {
       setIsLoading(true);
       const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).single();
@@ -38,7 +41,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('puko_asamasi', 'rapor')
-        .eq('donem_id', selectedPeriod.id)
+        .eq('donem_id', selectedPeriod?.id)
         .order('id', { ascending: false })
         .limit(1)
         .single();

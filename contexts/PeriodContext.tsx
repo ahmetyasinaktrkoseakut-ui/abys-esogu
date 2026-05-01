@@ -30,7 +30,7 @@ export function PeriodProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase
         .from('donemler')
         .select('*')
-        .order('olusturulma_tarihi', { ascending: false });
+        .order('donem_adi', { ascending: false });
 
       if (error) {
         console.error('Error fetching periods:', error);

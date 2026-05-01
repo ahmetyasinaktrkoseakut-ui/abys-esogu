@@ -26,7 +26,10 @@ export default function IzlemePage() {
 
   useEffect(() => {
     async function fetchStats() {
-      if (!selectedPeriod) return;
+      if (!selectedPeriod) {
+        setIsLoading(false);
+        return;
+      }
       try {
         setIsLoading(true);
 

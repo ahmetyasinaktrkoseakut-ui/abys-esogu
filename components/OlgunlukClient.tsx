@@ -25,36 +25,33 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
   const { selectedPeriod } = usePeriod();
 
   const fetchData = async () => {
-    if (!selectedPeriod) return;
+    if (!selectedPeriod) {
+      setIsLoading(false);
+      return;
+    }
     try {
-    async function fetchData() {
-      if (!selectedPeriod) {
-        setIsLoading(false);
-        return;
-      }
-      try {
-        setIsLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
-          const role = profile?.rol?.toLowerCase() || '';
-          if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false) {
-            setIsReadOnly(true);
-          }
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+        const role = profile?.rol?.toLowerCase() || '';
+        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false) {
+          setIsReadOnly(true);
         }
-        
-        const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).single();
-        if (olcut) setOlcutDetay(olcut);
+      }
+      
+      const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).single();
+      if (olcut) setOlcutDetay(olcut);
 
-        const { data: pukoData } = await supabase
-          .from('puko_degerlendirmeleri')
-          .select('*')
-          .eq('alt_olcut_id', resolvedParams.id)
-          .eq('puko_asamasi', 'olgunluk')
-          .eq('donem_id', selectedPeriod?.id)
-          .order('id', { ascending: false })
-          .limit(1)
-          .single();
+      const { data: pukoData } = await supabase
+        .from('puko_degerlendirmeleri')
+        .select('*')
+        .eq('alt_olcut_id', resolvedParams.id)
+        .eq('puko_asamasi', 'olgunluk')
+        .eq('donem_id', selectedPeriod?.id)
+        .order('id', { ascending: false })
+        .limit(1)
+        .single();
 
       if (pukoData) {
         setAciklama(pukoData.aciklama || '');

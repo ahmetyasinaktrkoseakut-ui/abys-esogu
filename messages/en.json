@@ -272,5 +272,24 @@
       "delete_success": "Period deleted successfully.",
       "active_period_required": "It is recommended to have at least one active period in the system."
     }
+  },
+  "SelfEvaluation": {
+    "title": "Auto Self-Evaluation Report",
+    "description": "Planning, Implementation, Checking, Improvement, and Maturity Score data you enter into the system is automatically compiled into a single report by our AI-supported module.",
+    "create_button": "Generate Giant Report",
+    "generating_title": "Compiling Report...",
+    "generating_desc": "Merging all PDCA stages and gathering evidences. Please wait.",
+    "ready_title": "Self-Evaluation Report Ready",
+    "ready_subtitle": "Data has been successfully compiled and merged.",
+    "download_word": "Download as Word (.doc)",
+    "recompile": "Recompile",
+    "evidences": "Evidences",
+    "no_evidence": "No evidence documents have been added to any stage in this process yet.",
+    "home": "Home",
+    "criteria": "Criteria",
+    "synthesis_desc": "Create the institutional self-evaluation report by synthesizing all PDCA steps.",
+    "stage_header": "{stage} STAGE",
+    "maturity_score_header": "MATURITY LEVEL SCORE:",
+    "no_data_alert": "No data has been entered for any stage of this criterion yet."
   }
 }

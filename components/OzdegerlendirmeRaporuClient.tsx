@@ -22,6 +22,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const [olgunlukPuani, setOlgunlukPuani] = useState<number | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
+  const t = useTranslations('SelfEvaluation');
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
 
@@ -67,7 +68,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
     let htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>Birim Özdeğerlendirme Raporu</title>
+      <head><meta charset='utf-8'><title>${t('title')}</title>
       <style>
         body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.5; padding: 20px; }
         h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; color: #1a202c; }
@@ -79,22 +80,22 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       </style>
       </head>
       <body>
-        <h1>Özdeğerlendirme Raporu</h1>
+        <h1>${t('title')}</h1>
         <p style='text-align:center; font-weight: bold;'>${olcutDetay?.kod || ''} - ${getLocalizedField(olcutDetay, 'olcut_adi', locale) || ''}</p>
-        <p style='text-align:center; color: #718096; font-size: 12px;'>Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}</p>
+        <p style='text-align:center; color: #718096; font-size: 12px;'>${t('generating_title').replace('...', '')}: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
         
         <div class='content'>
           ${raporMetni}
         </div>
 
         <div class='kanit-section'>
-          <h2>Ekli Kanıtlar</h2>
-          ${kanitlar.length === 0 ? '<p><i>Bu rapor için kanıt eklenmemiştir.</i></p>' : '<ul>'}
+          <h2>${t('evidences')}</h2>
+          ${kanitlar.length === 0 ? `<p><i>${t('no_evidence')}</i></p>` : '<ul>'}
           ${kanitlar.map(doc => `<li><a class='kanit-link' href='${doc.url}'>${doc.name}</a></li>`).join('')}
           ${kanitlar.length === 0 ? '' : '</ul>'}
         </div>
 
-        <div class='footer'>Bu belge kalite yönetim sistemi tarafından otomatik olarak oluşturulmuştur.</div>
+        <div class='footer'>${t('title')} - Quality Management System</div>
       </body>
       </html>
     `;
@@ -103,7 +104,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `Birim_Raporu_${olcutDetay?.kod || 'Rapor'}.doc`;
+    link.download = `${t('title').replace(/ /g, '_')}_${olcutDetay?.kod || 'Rapor'}.doc`;
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -122,7 +123,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .in('puko_asamasi', adimlar);
 
       if (!data || data.length === 0) {
-        alert('Bu ölçüt için henüz herhangi bir aşamada veri girişi yapılmamıştır.');
+        alert(t('no_data_alert'));
         setIsGenerating(false);
         return;
       }
@@ -137,8 +138,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
       for (const row of siraliData) {
         if (row.aciklama && row.aciklama.trim() !== '' && row.aciklama !== '<p></p>') {
-          const baslik = row.puko_asamasi.toUpperCase();
-          birlesikMetin += `<h3>${baslik} AŞAMASI</h3>${row.aciklama}<br/><br/>`;
+          const baslik = t('stage_header', { stage: row.puko_asamasi.toUpperCase() });
+          birlesikMetin += `<h3>${baslik}</h3>${row.aciklama}<br/><br/>`;
         }
         if (row.kanit_dosyalari && Array.isArray(row.kanit_dosyalari)) {
           birlesikKanitlar = [...birlesikKanitlar, ...row.kanit_dosyalari];
@@ -149,7 +150,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       }
 
       if (puan) {
-        birlesikMetin += `<hr/><h3>OLGUNLUK DÜZEYİ PUANI: <span style="color: #ea580c;">${puan} / 5</span></h3>`;
+        birlesikMetin += `<hr/><h3>${t('maturity_score_header')} <span style="color: #ea580c;">${puan} / 5</span></h3>`;
         setOlgunlukPuani(puan);
       }
 
@@ -187,7 +188,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       setRaporOlusturuldu(true);
     } catch (err: any) {
       console.error(err);
-      alert(`Rapor oluşturulurken hata: ${err.message}`);
+      alert(`Error: ${err.message}`);
     } finally {
       setIsGenerating(false);
     }
@@ -202,8 +203,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
-            <span className="cursor-pointer hover:text-blue-600">Ana Sayfa</span> &gt; 
-            <span className="cursor-pointer hover:text-blue-600">Ölçütler</span> &gt;
+            <span className="cursor-pointer hover:text-blue-600">{t('home')}</span> &gt; 
+            <span className="cursor-pointer hover:text-blue-600">{t('criteria')}</span> &gt;
             <span className="text-slate-800">{[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -212,7 +213,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
             </h2>
             <Info className="w-4 h-4 text-slate-400 cursor-pointer" />
           </div>
-          <p className="text-sm text-slate-500">Tüm PUKÖ adımlarını sentezleyerek kurum özdeğerlendirme raporunu oluşturun.</p>
+          <p className="text-sm text-slate-500">{t('synthesis_desc')}</p>
         </div>
       </div>
 
@@ -224,9 +225,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
             <div className="w-24 h-24 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
               <FileSignature className="w-12 h-12" />
             </div>
-            <h3 className="text-2xl font-black text-slate-800 mb-3">Oto-Özdeğerlendirme Raporu</h3>
+            <h3 className="text-2xl font-black text-slate-800 mb-3">{t('title')}</h3>
             <p className="text-slate-500 max-w-lg mb-8 leading-relaxed">
-              Sisteme girdiğiniz Planlama, Uygulama, Kontrol Etme, İyileştirme ve Olgunluk Puanı verileri yapay zeka destekli modülümüz tarafından otomatik derlenerek tek bir rapora dönüştürülür.
+              {t('description')}
             </p>
             <button 
               onClick={handleRaporOlustur}
@@ -234,14 +235,14 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
               <FileSearch className="w-6 h-6 relative z-10" />
-              <span className="text-lg relative z-10">Dev Raporu Oluştur</span>
+              <span className="text-lg relative z-10">{t('create_button')}</span>
             </button>
           </div>
         ) : isGenerating ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center bg-white">
              <Loader2 className="w-16 h-16 animate-spin text-blue-600 mb-6" />
-             <h3 className="text-xl font-bold text-slate-700 mb-2">Rapor Derleniyor...</h3>
-             <p className="text-slate-500">Tüm PUKÖ aşamaları birleştiriliyor ve kanıtlar toparlanıyor. Lütfen bekleyin.</p>
+             <h3 className="text-xl font-bold text-slate-700 mb-2">{t('generating_title')}</h3>
+             <p className="text-slate-500">{t('generating_desc')}</p>
           </div>
         ) : (
           <div className="flex flex-col h-full">
@@ -249,8 +250,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-8 h-8 text-blue-200" />
                 <div>
-                  <h3 className="text-xl font-bold">Özdeğerlendirme Raporu Hazır</h3>
-                  <p className="text-blue-100 text-sm">Veriler başarıyla derlendi ve birleştirildi.</p>
+                  <h3 className="text-xl font-bold">{t('ready_title')}</h3>
+                  <p className="text-blue-100 text-sm">{t('ready_subtitle')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -258,13 +259,13 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                   onClick={exportToWord}
                   className="bg-white text-blue-600 hover:bg-blue-50 px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg"
                 >
-                  <Download className="w-4 h-4" /> Word Olarak İndir (.doc)
+                  <Download className="w-4 h-4" /> {t('download_word')}
                 </button>
                 <button 
                   onClick={handleRaporOlustur}
                   className="bg-white/20 hover:bg-white/30 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
                 >
-                  <FileSearch className="w-4 h-4" /> Yeniden Derle
+                  <FileSearch className="w-4 h-4" /> {t('recompile')}
                 </button>
               </div>
             </div>
@@ -276,12 +277,12 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
             <div className="p-8 lg:p-12 bg-white">
               <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b pb-4">
                 <FileText className="w-6 h-6 text-blue-600" />
-                Kanıtlar
+                {t('evidences')}
               </h3>
               
               {kanitlar.length === 0 ? (
                 <div className="text-slate-500 italic p-6 bg-slate-50 rounded-xl border border-slate-200 border-dashed text-center">
-                  Bu süreçte henüz hiçbir aşamaya kanıt dokümanı eklenmemiş.
+                  {t('no_evidence')}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">

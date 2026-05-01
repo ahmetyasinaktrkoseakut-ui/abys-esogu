@@ -16,22 +16,7 @@ export default async function DashboardPage() {
   let isAdmin = false;
 
   try {
-    const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
-    const role = profile?.rol?.toLowerCase() || '';
-    isAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
-    
-    if (!isAdmin) {
-      redirect('/olcutler');
-    }
-
-    const { count: olcutCount } = await supabase.from('alt_olcutler').select('*', { count: 'exact', head: true });
-    activeOlcutCount = olcutCount || 0;
-
-    const { count: beklemedeCount } = await supabase.from('puko_degerlendirmeleri').select('*', { count: 'exact', head: true }).eq('durum', 'Beklemede');
-    activeEylemCount = beklemedeCount || 0;
-
-    const { count: tamamlandiCount } = await supabase.from('puko_degerlendirmeleri').select('*', { count: 'exact', head: true }).eq('durum', 'Onaylandı');
-    totalBirimCount = tamamlandiCount || 0;
+    redirect('/olcutler');
   } catch(e) { console.error(e) }
 
   return (

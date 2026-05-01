@@ -34,13 +34,9 @@ export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
   return (
     <>
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <Link href="/" className={getLinkClass('/', true)}>
+        <Link href="/olcutler" className={getLinkClass('/olcutler')}>
           <Home className="w-5 h-5 flex-shrink-0" />
           {t('dashboard')}
-        </Link>
-        <Link href="/olcutler" className={getLinkClass('/olcutler')}>
-          <FileText className="w-5 h-5 flex-shrink-0" />
-          {t('criteria')}
         </Link>
         {isAdmin && (
           <Link href="/izleme" className={getLinkClass('/izleme')}>

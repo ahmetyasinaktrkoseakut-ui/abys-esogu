@@ -4,6 +4,8 @@ import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface OzdegerlendirmeRaporuClientProps {
   params: Promise<{ id: string }>;
@@ -19,6 +21,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const [olgunlukPuani, setOlgunlukPuani] = useState<number | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
+  const locale = useLocale();
 
   const fetchData = async () => {
     try {
@@ -70,7 +73,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       </head>
       <body>
         <h1>Özdeğerlendirme Raporu</h1>
-        <p style='text-align:center; font-weight: bold;'>${olcutDetay?.kod || ''} - ${olcutDetay?.olcut_adi || ''}</p>
+        <p style='text-align:center; font-weight: bold;'>${olcutDetay?.kod || ''} - ${getLocalizedField(olcutDetay, 'olcut_adi', locale) || ''}</p>
         <p style='text-align:center; color: #718096; font-size: 12px;'>Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')} ${new Date().toLocaleTimeString('tr-TR')}</p>
         
         <div class='content'>
@@ -191,11 +194,11 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
             <span className="cursor-pointer hover:text-blue-600">Ana Sayfa</span> &gt; 
             <span className="cursor-pointer hover:text-blue-600">Ölçütler</span> &gt;
-            <span className="text-slate-800">{[olcutDetay?.kod, olcutDetay?.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
+            <span className="text-slate-800">{[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
           </div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold text-slate-800">
-              {[olcutDetay?.kod, olcutDetay?.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}
+              {[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}
             </h2>
             <Info className="w-4 h-4 text-slate-400 cursor-pointer" />
           </div>

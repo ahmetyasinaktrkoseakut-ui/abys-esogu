@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import { ExternalLink, Calendar, Presentation, Activity, Building, TrendingUp, Hash, Check, X, Info, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 type RecordType = Record<string, any>;
 
 export default function DashboardTableClient({ initialData, userRole }: { initialData: RecordType[], userRole: string }) {
   const [data, setData] = useState<RecordType[]>(initialData);
+  const locale = useLocale();
   
   // Modal States
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
@@ -167,8 +170,8 @@ export default function DashboardTableClient({ initialData, userRole }: { initia
                         <span className="font-mono text-sm font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded">
                           {row.alt_olcutler?.kod || '-'}
                         </span>
-                        <div className="text-sm font-medium text-slate-600 max-w-[200px] truncate" title={row.alt_olcutler?.olcut_adi}>
-                          {row.alt_olcutler?.olcut_adi || 'Bilinmeyen Kriter'}
+                        <div className="text-sm font-medium text-slate-600 max-w-[200px] truncate" title={getLocalizedField(row.alt_olcutler, 'olcut_adi', locale)}>
+                          {getLocalizedField(row.alt_olcutler, 'olcut_adi', locale) || 'Bilinmeyen Kriter'}
                         </div>
                       </div>
                       <div className="text-xs text-slate-400 mt-1 truncate max-w-[250px]" title={row.aciklama}>

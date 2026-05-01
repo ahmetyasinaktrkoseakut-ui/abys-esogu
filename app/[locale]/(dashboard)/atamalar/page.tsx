@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { UserCheck, Search, Users, AlertCircle, Loader2, Save, CheckCircle2, FileText, ChevronRight } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 export default function AtamalarPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -10,6 +12,7 @@ export default function AtamalarPage() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [olcutler, setOlcutler] = useState<any[]>([]);
   const [anaBasliklar, setAnaBasliklar] = useState<any[]>([]);
+  const [allAtamalar, setAllAtamalar] = useState<any[]>([]);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   
   const [selectedHoca, setSelectedHoca] = useState<string | null>(null);
@@ -19,6 +22,7 @@ export default function AtamalarPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const locale = useLocale();
 
   const toggleGroup = (groupKey: string) => {
     setOpenGroups(prev => ({
@@ -61,9 +65,13 @@ export default function AtamalarPage() {
       // Ana başlıkları getir
       const { data: baslikData } = await supabase.from('ana_basliklar').select('*');
 
+      // Tüm atamaları getir
+      const { data: atamalarData } = await supabase.from('kullanici_olcut_atamalari').select('*');
+
       setHocalar(profillerData || []);
       setOlcutler(olcutlerData || []);
       setAnaBasliklar(baslikData || []);
+      setAllAtamalar(atamalarData || []);
     } catch (error: any) {
       console.error("Veri çekme hatası:", error);
       setMessage({ type: 'error', text: 'Kullanıcılar veya ölçütler yüklenirken bir hata oluştu.' });
@@ -102,7 +110,11 @@ export default function AtamalarPage() {
 
   const handleSelectAll = (select: boolean) => {
     if (select) {
-      setSelectedOlcutIds(olcutler.map(o => o.id));
+      // Sadece başka birine atanmamış olanları seç
+      const availableOlcutIds = olcutler
+        .filter(o => !allAtamalar.some(a => a.alt_olcut_id === o.id && a.user_id !== selectedHoca))
+        .map(o => o.id);
+      setSelectedOlcutIds(availableOlcutIds);
     } else {
       setSelectedOlcutIds([]);
     }
@@ -138,6 +150,10 @@ export default function AtamalarPage() {
       }
 
       setMessage({ type: 'success', text: 'Atamalar başarıyla kaydedildi.' });
+
+      // Atamaları yenile
+      const { data: updatedAtamalar } = await supabase.from('kullanici_olcut_atamalari').select('*');
+      if (updatedAtamalar) setAllAtamalar(updatedAtamalar);
       
       // Mesajı 3 saniye sonra kaldır
       setTimeout(() => {
@@ -307,7 +323,7 @@ export default function AtamalarPage() {
                     .sort(([k1], [k2]) => k1.localeCompare(k2))
                     .map(([harf, items]) => {
                       const baslikObj = anaBasliklar.find(b => b.kod === harf || (b.baslik_adi && b.baslik_adi.startsWith(harf + '.')));
-                      const displayTitle = baslikObj?.baslik_adi || `${harf} Grubu`;
+                      const displayTitle = getLocalizedField(baslikObj, 'baslik_adi', locale) || `${harf} Grubu`;
                       const isOpen = openGroups[harf] || false;
 
                       return (
@@ -328,28 +344,38 @@ export default function AtamalarPage() {
                           {isOpen && (
                             <div className="p-4 border-t border-slate-100 bg-white grid grid-cols-1 gap-2">
                               {(items as any[]).map((olcut: any) => {
+                                const isAssignedToOther = allAtamalar.some(a => a.alt_olcut_id === olcut.id && a.user_id !== selectedHoca);
                                 const isSelected = selectedOlcutIds.includes(olcut.id);
                                 return (
                                   <label 
                                     key={olcut.id} 
-                                    className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
+                                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
+                                      isAssignedToOther ? 'bg-slate-50 border-slate-200 cursor-not-allowed opacity-60' :
                                       isSelected 
-                                        ? 'bg-indigo-50/50 border-indigo-200' 
-                                        : 'bg-white border-slate-100 hover:border-indigo-200'
+                                        ? 'bg-indigo-50/50 border-indigo-200 cursor-pointer' 
+                                        : 'bg-white border-slate-100 hover:border-indigo-200 cursor-pointer'
                                     }`}
                                   >
                                     <div className="pt-0.5">
                                       <input
                                         type="checkbox"
                                         checked={isSelected}
-                                        onChange={() => handleToggleOlcut(olcut.id)}
-                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                        disabled={isAssignedToOther}
+                                        onChange={() => {
+                                          if (!isAssignedToOther) handleToggleOlcut(olcut.id);
+                                        }}
+                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 disabled:opacity-50"
                                       />
                                     </div>
-                                    <div className="flex-1">
-                                      <div className={`text-xs font-semibold ${isSelected ? 'text-indigo-900' : 'text-slate-700'}`}>
-                                        {[olcut.kod, olcut.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${olcut.id}`}
+                                    <div className="flex-1 flex justify-between items-start gap-2">
+                                      <div className={`text-xs font-semibold ${isSelected && !isAssignedToOther ? 'text-indigo-900' : 'text-slate-700'}`}>
+                                        {[olcut.kod, getLocalizedField(olcut, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${olcut.id}`}
                                       </div>
+                                      {isAssignedToOther && (
+                                        <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 text-slate-500 rounded flex-shrink-0">
+                                          Atandı
+                                        </span>
+                                      )}
                                     </div>
                                   </label>
                                 );

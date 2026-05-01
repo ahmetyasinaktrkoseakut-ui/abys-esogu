@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, File, ExternalLink, Download, Search } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface DokumanItem {
   name: string;
@@ -18,13 +20,14 @@ export default function DokumanlarPage() {
   const [documents, setDocuments] = useState<DokumanItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const locale = useLocale();
 
   useEffect(() => {
     async function fetchDocs() {
       try {
         const { data } = await supabase
           .from('puko_degerlendirmeleri')
-          .select('alt_olcut_id, puko_asamasi, kanit_dosyalari, olusturulma_tarihi, alt_olcutler(olcut_adi, kod)');
+          .select('alt_olcut_id, puko_asamasi, kanit_dosyalari, olusturulma_tarihi, alt_olcutler(olcut_adi, olcut_adi_en, olcut_adi_ar, kod)');
 
         if (data) {
           const allDocs: DokumanItem[] = [];
@@ -36,7 +39,7 @@ export default function DokumanlarPage() {
                   url: doc.url,
                   size: doc.size,
                   olcut_id: row.alt_olcutler?.kod || row.alt_olcut_id,
-                  olcut_adi: row.alt_olcutler?.olcut_adi || 'Bilinmiyor',
+                  olcut_adi: getLocalizedField(row.alt_olcutler, 'olcut_adi', locale) || 'Bilinmiyor',
                   asama: row.puko_asamasi,
                   olusturulma_tarihi: row.olusturulma_tarihi
                 });

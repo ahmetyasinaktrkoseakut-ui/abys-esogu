@@ -4,12 +4,15 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { FileText, Loader2, ChevronRight } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 export default function OlcutlerPage() {
   const [olcutler, setOlcutler] = useState<any[]>([]);
   const [anaBasliklar, setAnaBasliklar] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const locale = useLocale();
 
   const toggleGroup = (groupKey: string) => {
     setOpenGroups(prev => ({
@@ -84,7 +87,7 @@ export default function OlcutlerPage() {
           .sort(([k1], [k2]) => k1.localeCompare(k2))
           .map(([harf, items]) => {
             const baslikObj = anaBasliklar.find(b => b.kod === harf || (b.baslik_adi && b.baslik_adi.startsWith(harf + '.')));
-            const displayTitle = baslikObj?.baslik_adi || `${harf} Grubu`;
+            const displayTitle = getLocalizedField(baslikObj, 'baslik_adi', locale) || `${harf} Grubu`;
             const isOpen = openGroups[harf] || false;
 
             return (
@@ -119,7 +122,7 @@ export default function OlcutlerPage() {
                               <FileText className="w-5 h-5" />
                             </div>
                             <h4 className="font-semibold text-slate-800 line-clamp-2">
-                              {[olcut.kod, olcut.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${olcut.id}`}
+                              {[olcut.kod, getLocalizedField(olcut, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${olcut.id}`}
                             </h4>
                             {olcut.aciklama && (
                               <p className="text-sm text-slate-500 mt-2 line-clamp-3 leading-relaxed">

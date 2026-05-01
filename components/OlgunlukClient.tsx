@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase/client';
 import { Loader2, Info, Save, Settings, Star } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface OlgunlukClientProps {
   params: Promise<{ id: string }>;
@@ -18,6 +20,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const locale = useLocale();
 
   const fetchData = async () => {
     try {
@@ -120,11 +123,11 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
           <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
             <span className="cursor-pointer hover:text-blue-600">Ana Sayfa</span> &gt; 
             <span className="cursor-pointer hover:text-blue-600">Ölçütler</span> &gt;
-            <span className="text-slate-800">{[olcutDetay?.kod, olcutDetay?.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
+            <span className="text-slate-800">{[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
           </div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold text-slate-800">
-              {[olcutDetay?.kod, olcutDetay?.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}
+              {[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}
             </h2>
             <Info className="w-4 h-4 text-slate-400 cursor-pointer" />
           </div>

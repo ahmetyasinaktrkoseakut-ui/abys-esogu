@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, LineChart, FileText, Printer, Building2, CheckCircle2, Download } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface AnaBaslik {
   id: string;
@@ -34,6 +36,7 @@ export default function RaporlarClient() {
     altOlcutler: AltOlcut[],
     pukoVerileri: PukoVerisi[]
   } | null>(null);
+  const locale = useLocale();
 
   useEffect(() => {
     async function checkAuth() {
@@ -117,13 +120,13 @@ export default function RaporlarClient() {
     raporData.anaBasliklar.forEach(anaBaslik => {
       const ilgiliOlcutler = raporData.altOlcutler.filter(o => o.ana_baslik_id === anaBaslik.id);
       if (ilgiliOlcutler.length > 0) {
-        htmlContent += `<h2>${anaBaslik.kod} - ${anaBaslik.baslik_adi}</h2>`;
+        htmlContent += `<h2>${anaBaslik.kod} - ${getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>`;
         ilgiliOlcutler.forEach(olcut => {
           const pukoList = getPukoForOlcut(olcut.id);
           const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
           const olgunlukPuani = pukoList.find(p => p.puko_asamasi === 'olgunluk')?.olgunluk_puani;
 
-          htmlContent += `<h3>${olcut.kod} - ${olcut.olcut_adi}</h3>`;
+          htmlContent += `<h3>${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</h3>`;
           if (raporPuko && raporPuko.aciklama && raporPuko.aciklama !== '<p></p>') {
             htmlContent += `<div>${raporPuko.aciklama}</div>`;
             if (raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0) {
@@ -230,7 +233,7 @@ export default function RaporlarClient() {
               return (
                 <div key={anaBaslik.id}>
                   <div className="bg-slate-800 text-white p-4 rounded-lg mb-6">
-                    <h2 className="text-2xl font-bold">{anaBaslik.kod} - {anaBaslik.baslik_adi}</h2>
+                    <h2 className="text-2xl font-bold">{anaBaslik.kod} - {getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>
                   </div>
 
                   <div className="space-y-12 pl-4 border-l-4 border-slate-200 ml-4">
@@ -243,7 +246,7 @@ export default function RaporlarClient() {
                         <div key={olcut.id} className="mb-12">
                           <h3 className="text-xl font-bold text-blue-800 mb-6 flex items-center gap-2">
                             <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">{olcut.kod}</span>
-                            {olcut.olcut_adi}
+                            {getLocalizedField(olcut, 'olcut_adi', locale)}
                           </h3>
                           
                           {raporPuko && raporPuko.aciklama && raporPuko.aciklama !== '<p></p>' ? (

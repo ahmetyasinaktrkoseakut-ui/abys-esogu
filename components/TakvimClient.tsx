@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Calendar as CalendarIcon, Building, Users, CalendarDays, ExternalLink } from 'lucide-react';
 import { Link } from '@/i18n/routing';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface EylemPlani {
   id: number;
@@ -25,6 +27,7 @@ export default function TakvimClient() {
   const [kayitlar, setKayitlar] = useState<EylemPlani[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const locale = useLocale();
 
   useEffect(() => {
     async function fetchData() {
@@ -68,13 +71,13 @@ export default function TakvimClient() {
           const altOlcutIds = [...new Set(data.map(item => item.alt_olcut_id))];
           const { data: olcutlerData } = await supabase
             .from('alt_olcutler')
-            .select('id, kod, olcut_adi')
+            .select('id, kod, olcut_adi, olcut_adi_en, olcut_adi_ar')
             .in('id', altOlcutIds);
 
           const olcutMap: Record<string, any> = {};
           if (olcutlerData) {
             olcutlerData.forEach(o => {
-              olcutMap[o.id] = { kod: o.kod, olcut_adi: o.olcut_adi };
+              olcutMap[o.id] = { kod: o.kod, olcut_adi: getLocalizedField(o, 'olcut_adi', locale) };
             });
           }
 

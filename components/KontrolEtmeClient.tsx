@@ -5,6 +5,8 @@ import { supabase } from '@/lib/supabase/client';
 import { Loader2, Save, Settings, Plus, Trash2, Link as LinkIcon, Edit3, BarChart2, ChevronDown, ChevronUp } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from 'recharts';
 
 interface KontrolEtmeClientProps {
@@ -57,6 +59,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const locale = useLocale();
 
   const fetchData = async () => {
     try {
@@ -282,11 +285,11 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
           <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
             <span className="cursor-pointer hover:text-blue-600">Ana Sayfa</span> &gt; 
             <span className="cursor-pointer hover:text-blue-600">Ölçütler</span> &gt;
-            <span className="text-slate-800">{[olcutDetay?.kod, olcutDetay?.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
+            <span className="text-slate-800">{[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
           </div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold text-slate-800">
-              {[olcutDetay?.kod, olcutDetay?.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}
+              {[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}
             </h2>
           </div>
           <p className="text-sm text-slate-500">Uygulama sonuçlarını ölçmek için dış paydaş anketleri hazırlayın ve bağımsız raporlar oluşturun.</p>

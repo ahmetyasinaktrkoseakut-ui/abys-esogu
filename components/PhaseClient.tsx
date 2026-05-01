@@ -3,9 +3,10 @@
 import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Plus, Info, Save, Link as LinkIcon, Settings, CalendarDays, ExternalLink, Trash2 } from 'lucide-react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface Eylem {
   id?: number;
@@ -37,6 +38,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [ustBirimOnerileri, setUstBirimOnerileri] = useState<any[]>([]);
   const t = useTranslations('Phase');
+  const locale = useLocale();
   
   // Onay / Ret Sistematiği
   const [pukoId, setPukoId] = useState<string | null>(null);
@@ -285,11 +287,11 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
             <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
               <span className="cursor-pointer hover:text-blue-600">{t('home')}</span> &gt; 
               <span className="cursor-pointer hover:text-blue-600">{t('criteria')}</span> &gt;
-              <span className="text-slate-800">{[olcutDetay?.kod, olcutDetay?.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
+              <span className="text-slate-800">{[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
             </div>
             <div className="flex items-center gap-2">
               <h2 className="text-2xl font-bold text-slate-800">
-                {[olcutDetay?.kod, olcutDetay?.olcut_adi].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}
+                {[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}
               </h2>
               <Info className="w-4 h-4 text-slate-400 cursor-pointer" />
             </div>

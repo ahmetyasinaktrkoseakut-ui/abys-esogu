@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Lightbulb, FileText, Printer, Download } from 'lucide-react';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface AnaBaslik {
   id: string;
@@ -32,6 +34,7 @@ export default function OnerilenlerClient() {
     pukoVerileri: PukoVerisi[],
     birimler: Record<string, string>
   } | null>(null);
+  const locale = useLocale();
 
   useEffect(() => {
     async function fetchData() {
@@ -126,13 +129,13 @@ export default function OnerilenlerClient() {
       );
 
       if (ilgiliOlcutler.length > 0) {
-        htmlContent += `<h2>${anaBaslik.kod} - ${anaBaslik.baslik_adi}</h2>`;
+        htmlContent += `<h2>${anaBaslik.kod} - ${getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>`;
         ilgiliOlcutler.forEach(olcut => {
           const puko = raporData.pukoVerileri.find(p => p.alt_olcut_id === olcut.id);
           const sorumluBirimAd = raporData.birimler[olcut.sorumlu_birim_id] || 'Bilinmeyen Birim';
 
           if (puko && puko.ust_birim_onerileri.length > 0) {
-            htmlContent += `<h3>${olcut.kod} - ${olcut.olcut_adi}</h3>`;
+            htmlContent += `<h3>${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</h3>`;
             htmlContent += `<p style='font-size:12px; color: #4a5568;'><b>Gönderen Birim:</b> ${sorumluBirimAd}</p>`;
             htmlContent += `<div class='oneri-box'><ul>`;
             puko.ust_birim_onerileri.forEach((o: any) => {
@@ -213,7 +216,7 @@ export default function OnerilenlerClient() {
               return (
                 <div key={anaBaslik.id}>
                   <div className="bg-slate-800 text-white p-4 rounded-lg mb-6">
-                    <h2 className="text-2xl font-bold">{anaBaslik.kod} - {anaBaslik.baslik_adi}</h2>
+                    <h2 className="text-2xl font-bold">{anaBaslik.kod} - {getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>
                   </div>
 
                   <div className="space-y-8 pl-4 border-l-4 border-slate-200 ml-4">
@@ -233,7 +236,7 @@ export default function OnerilenlerClient() {
                         <div key={olcut.id} className="mb-6">
                           <h3 className="text-lg font-bold text-amber-800 mb-2 flex items-center gap-2">
                             <span className="bg-amber-100 text-amber-800 px-2 py-1 rounded">{olcut.kod}</span>
-                            {olcut.olcut_adi}
+                            {getLocalizedField(olcut, 'olcut_adi', locale)}
                           </h3>
                           <p className="text-sm text-slate-500 mb-4 font-semibold italic">
                             Gönderen Birim: {sorumluBirimAd}

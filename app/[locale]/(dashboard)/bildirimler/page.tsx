@@ -26,7 +26,7 @@ export default async function BildirimlerPage() {
     // Admin: Durumu 'Beklemede' olanları getir
     const { data } = await supabase
       .from('puko_degerlendirmeleri')
-      .select('*, alt_olcutler(kod, olcut_adi)')
+      .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
       .eq('durum', 'Beklemede')
       .order('olusturulma_tarihi', { ascending: false });
       
@@ -43,7 +43,7 @@ export default async function BildirimlerPage() {
       const allowedAltOlcutIds = atamalar.map(a => a.alt_olcut_id);
       const { data } = await supabase
         .from('puko_degerlendirmeleri')
-        .select('*, alt_olcutler(kod, olcut_adi)')
+        .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
         .in('alt_olcut_id', allowedAltOlcutIds)
         .order('olusturulma_tarihi', { ascending: false });
 

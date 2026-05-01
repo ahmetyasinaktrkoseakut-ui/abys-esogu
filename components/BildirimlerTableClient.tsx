@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { Presentation, Activity, Calendar, Info, Hash, Upload, X, Loader2 } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
+import { useLocale } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 
 const getAsamaSlug = (asama: string) => {
   if (!asama) return 'kontrol-etme';
@@ -29,6 +31,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
   const router = useRouter();
+  const locale = useLocale();
 
   useEffect(() => {
     setData(initialData);
@@ -192,8 +195,8 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                         <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
                           {row.alt_olcutler?.kod || '-'}
                         </span>
-                        <div className="text-sm font-medium text-slate-700 max-w-[200px] truncate group-hover:text-blue-600 transition-colors" title={row.alt_olcutler?.olcut_adi}>
-                          {row.alt_olcutler?.olcut_adi || 'Bilinmeyen Kriter'}
+                        <div className="text-sm font-medium text-slate-700 max-w-[200px] truncate group-hover:text-blue-600 transition-colors" title={getLocalizedField(row.alt_olcutler, 'olcut_adi', locale)}>
+                          {getLocalizedField(row.alt_olcutler, 'olcut_adi', locale) || 'Bilinmeyen Kriter'}
                         </div>
                       </div>
                     </td>

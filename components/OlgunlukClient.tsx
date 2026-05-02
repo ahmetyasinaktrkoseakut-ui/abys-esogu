@@ -121,10 +121,19 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
 
   const getDuzeyAciklamasi = (olcut: any, puan: number, loc: string) => {
     if (!olcut || !puan) return '';
-    const duzeylerObj = olcut[`olgunluk_duzeyleri_${loc}`] || olcut['olgunluk_duzeyleri'];
-    if (duzeylerObj && typeof duzeylerObj === 'object') {
-       return duzeylerObj[puan.toString()] || '';
+    
+    if (loc !== 'tr' && olcut[`olgunluk_duzeyleri_${loc}`]) {
+      const localeObj = olcut[`olgunluk_duzeyleri_${loc}`];
+      if (localeObj && typeof localeObj === 'object' && localeObj[puan.toString()]) {
+        return localeObj[puan.toString()];
+      }
     }
+    
+    const defaultObj = olcut['olgunluk_duzeyleri'];
+    if (defaultObj && typeof defaultObj === 'object' && defaultObj[puan.toString()]) {
+       return defaultObj[puan.toString()];
+    }
+    
     return '';
   };
 

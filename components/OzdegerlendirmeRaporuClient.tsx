@@ -153,9 +153,19 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         birlesikMetin += `<hr/><h3>${t('maturity_score_header')} <span style="color: #ea580c;">${puan} / 5</span></h3>`;
         
         let rubricText = '';
-        const duzeylerObj = olcutDetay?.[`olgunluk_duzeyleri_${locale}`] || olcutDetay?.['olgunluk_duzeyleri'];
-        if (duzeylerObj && typeof duzeylerObj === 'object') {
-           rubricText = duzeylerObj[puan.toString()] || '';
+        
+        if (locale !== 'tr' && olcutDetay?.[`olgunluk_duzeyleri_${locale}`]) {
+          const localeObj = olcutDetay[`olgunluk_duzeyleri_${locale}`];
+          if (localeObj && typeof localeObj === 'object' && localeObj[puan.toString()]) {
+             rubricText = localeObj[puan.toString()];
+          }
+        }
+        
+        if (!rubricText) {
+          const defaultObj = olcutDetay?.['olgunluk_duzeyleri'];
+          if (defaultObj && typeof defaultObj === 'object' && defaultObj[puan.toString()]) {
+             rubricText = defaultObj[puan.toString()];
+          }
         }
         
         if (rubricText) {

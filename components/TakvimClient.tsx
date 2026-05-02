@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Calendar as CalendarIcon, Building, Users, CalendarDays, ExternalLink } from 'lucide-react';
+import { Loader2, Calendar as CalendarIcon, Building, Users, CalendarDays, ExternalLink, Download } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
@@ -111,24 +111,112 @@ export default function TakvimClient() {
     fetchData();
   }, [selectedPeriod]);
 
+  const exportToWord = () => {
+    if (!kayitlar || kayitlar.length === 0) return;
+
+    let htmlContent = `
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head><meta charset='utf-8'><title>${t('title')}</title>
+      <style>
+        body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.5; padding: 20px; }
+        h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; color: #1a202c; }
+        h2 { background-color: #edf2f7; padding: 10px; border: 1px solid #cbd5e0; margin-top: 30px; color: #2d3748; font-size: 16px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
+        th, td { border: 1px solid #cbd5e0; padding: 8px; text-align: left; vertical-align: top; }
+        th { background-color: #f7fafc; color: #4a5568; font-weight: bold; }
+        .footer { text-align: center; font-size: 11px; color: #718096; margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
+      </style>
+      </head>
+      <body>
+        <h1>${t('title')}</h1>
+        <p style='text-align:center; color: #718096;'>Tarih: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
+    `;
+
+    const groupedData: Record<string, EylemPlani[]> = {};
+    kayitlar.forEach(k => {
+      const olcutKey = `${k.alt_olcutler?.kod || ''} - ${k.alt_olcutler?.olcut_adi || ''}`;
+      if (!groupedData[olcutKey]) groupedData[olcutKey] = [];
+      groupedData[olcutKey].push(k);
+    });
+
+    Object.entries(groupedData).forEach(([olcutTitle, planlar]) => {
+      htmlContent += `<h2>${olcutTitle}</h2>`;
+      htmlContent += `
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 15%;">${t('table.improvement_area')}</th>
+              <th style="width: 20%;">${t('table.findings')}</th>
+              <th style="width: 25%;">${t('table.action_activity')}</th>
+              <th style="width: 15%;">${t('table.responsible')}</th>
+              <th style="width: 15%;">${t('table.success_indicator')}</th>
+              <th style="width: 10%;">${t('table.tracking')}</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      planlar.forEach(p => {
+        htmlContent += `
+          <tr>
+            <td>${p.iyilestirme_alani || '-'}</td>
+            <td>${p.bulgular || '-'}</td>
+            <td>${p.eylem_faaliyet || '-'}</td>
+            <td>${p.sorumlu || '-'}</td>
+            <td>${p.basari_gostergesi || '-'}</td>
+            <td>${p.izleme_durumu || '-'}</td>
+          </tr>
+        `;
+      });
+      htmlContent += `
+          </tbody>
+        </table>
+      `;
+    });
+
+    htmlContent += `
+        <div class='footer'>${t('title')} - BKY Sistemi</div>
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'Eylem_Planlari_Raporu.doc';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return <div className="h-[calc(100vh-100px)] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;
   }
 
   return (
     <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
-      <div className="mb-8 flex flex-col gap-2">
-        <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
-          <CalendarIcon className="w-8 h-8 text-blue-600" />
-          {t('title')}
-        </h1>
-        <p className="text-slate-500 flex items-center gap-2">
-          {isAdmin ? (
-            <><Building className="w-4 h-4" /> {t('admin_desc')}</>
-          ) : (
-            <><Users className="w-4 h-4" /> {t('user_desc')}</>
-          )}
-        </p>
+      <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
+            <CalendarIcon className="w-8 h-8 text-blue-600" />
+            {t('title')}
+          </h1>
+          <p className="text-slate-500 flex items-center gap-2">
+            {isAdmin ? (
+              <><Building className="w-4 h-4" /> {t('admin_desc')}</>
+            ) : (
+              <><Users className="w-4 h-4" /> {t('user_desc')}</>
+            )}
+          </p>
+        </div>
+        
+        {kayitlar.length > 0 && (
+          <button 
+            onClick={exportToWord}
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-md shrink-0"
+          >
+            <Download className="w-5 h-5" /> Rapor Oluştur (Word)
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">

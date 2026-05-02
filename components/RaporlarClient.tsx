@@ -317,25 +317,58 @@ export default function RaporlarClient() {
                         phases.forEach(phase => {
                           const data = pukoList.find(p => p.puko_asamasi === phase);
                           if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
-                            combinedText += (combinedText ? '<br/><br/>' : '') + data.aciklama;
-                            if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
-                              allEvidences = [...allEvidences, ...data.kanit_dosyalari];
+                            let phaseText = data.aciklama;
+                            if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari) && data.kanit_dosyalari.length > 0) {
+                              const phaseEvidenceStrings: string[] = [];
+                              data.kanit_dosyalari.forEach(k => {
+                                let ev = allEvidences.find(e => e.url === k.url);
+                                if (!ev) {
+                                  ev = { ...k, no: globalEvidenceCounter++ };
+                                  allEvidences.push(ev);
+                                }
+                                phaseEvidenceStrings.push(`(${t('evidence_prefix')} ${ev.no})`);
+                              });
+                              
+                              const evidenceHtml = ` <strong style="color: #ea580c; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</strong>`;
+                              
+                              if (phaseText.trim().endsWith('</p>')) {
+                                phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
+                              } else {
+                                phaseText += evidenceHtml;
+                              }
                             }
+                            combinedText += (combinedText ? '<br/><br/>' : '') + phaseText;
                           }
                         });
 
                         if (!combinedText) {
                           const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
                           if (raporPuko && raporPuko.aciklama) {
-                            combinedText = raporPuko.aciklama;
-                            if (raporPuko.kanit_dosyalari) allEvidences = raporPuko.kanit_dosyalari;
+                            let phaseText = raporPuko.aciklama;
+                            if (raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0) {
+                              const phaseEvidenceStrings: string[] = [];
+                              raporPuko.kanit_dosyalari.forEach((k: any) => {
+                                let ev = allEvidences.find(e => e.url === k.url);
+                                if (!ev) {
+                                  ev = { ...k, no: globalEvidenceCounter++ };
+                                  allEvidences.push(ev);
+                                }
+                                phaseEvidenceStrings.push(`(${t('evidence_prefix')} ${ev.no})`);
+                              });
+                              
+                              const evidenceHtml = ` <strong style="color: #ea580c; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</strong>`;
+                              
+                              if (phaseText.trim().endsWith('</p>')) {
+                                phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
+                              } else {
+                                phaseText += evidenceHtml;
+                              }
+                            }
+                            combinedText = phaseText;
                           }
                         }
 
-                        const uniqueEvidences = allEvidences.filter((v, i, a) => a.findIndex(t => t.url === v.url) === i);
-                        const evidencesWithNumbers = uniqueEvidences.map(k => {
-                          return { ...k, no: globalEvidenceCounter++ };
-                        });
+                        const evidencesWithNumbers = allEvidences;
                         const olgunlukPuani = pukoList.find(p => p.puko_asamasi === 'olgunluk')?.olgunluk_puani;
 
                         return (
@@ -352,13 +385,6 @@ export default function RaporlarClient() {
                                     className="prose prose-sm max-w-none prose-slate"
                                     dangerouslySetInnerHTML={{ __html: combinedText }}
                                   />
-                                  {evidencesWithNumbers.length > 0 && (
-                                    <div className="mt-4 pt-4 border-t border-slate-200 text-sm text-slate-600 font-medium space-y-1">
-                                      {evidencesWithNumbers.map((k) => (
-                                        <div key={k.url}>{t('evidence_prefix')} {k.no}</div>
-                                      ))}
-                                    </div>
-                                  )}
                                 </div>
                                 
                                 <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl space-y-4">

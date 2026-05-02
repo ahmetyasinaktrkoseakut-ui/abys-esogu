@@ -66,6 +66,21 @@ export default function RaporlarClient() {
     setRaporData(null);
   }, [selectedPeriod]);
 
+  const getDuzeyAciklamasi = (olcut: any, puan: number, loc: string) => {
+    if (!olcut || !puan) return '';
+    if (loc !== 'tr' && olcut[`olgunluk_duzeyleri_${loc}`]) {
+      const localeObj = olcut[`olgunluk_duzeyleri_${loc}`];
+      if (localeObj && typeof localeObj === 'object' && localeObj[puan.toString()]) {
+        return localeObj[puan.toString()];
+      }
+    }
+    const defaultObj = olcut['olgunluk_duzeyleri'];
+    if (defaultObj && typeof defaultObj === 'object' && defaultObj[puan.toString()]) {
+       return defaultObj[puan.toString()];
+    }
+    return '';
+  };
+
   const handleKurumRaporuOlustur = async () => {
     setIsGenerating(true);
     try {
@@ -164,18 +179,32 @@ export default function RaporlarClient() {
           
           if (combinedText) {
             htmlContent += `<div>${combinedText}</div>`;
-            if (uniqueEvidences.length > 0) {
-              const evidenceLinks = uniqueEvidences.map((k, idx) => 
-                `<a href='${k.url}' style='color: #2b6cb0; text-decoration: underline; font-weight: bold; font-size: 11px;'> (KANIT: ${idx + 1})</a>`
-              ).join(' ');
-              htmlContent += `<p style='margin-top: 10px;'>${evidenceLinks}</p>`;
-            }
           } else {
             htmlContent += `<p style='color: #a0aec0; font-style: italic;'>${t('no_report_yet')}</p>`;
           }
           
-          if (olgunlukPuani) {
-            htmlContent += `<div class='olgunluk'>${t('maturity_score')}: ${olgunlukPuani} / 5</div>`;
+          if (combinedText || olgunlukPuani || uniqueEvidences.length > 0) {
+            htmlContent += `<div style='background-color: #fffaf0; padding: 15px; border: 1px solid #feebc8; margin-top: 20px;'>`;
+            
+            if (olgunlukPuani) {
+              const rubricText = getDuzeyAciklamasi(olcut, olgunlukPuani, locale);
+              htmlContent += `<p style='color: #c05621; font-weight: bold; margin: 0;'>${t('maturity_score')}: ${olgunlukPuani} / 5</p>`;
+              if (rubricText) {
+                htmlContent += `<p style='color: #9c4221; font-style: italic; font-size: 13px; margin-top: 5px; margin-bottom: 15px;'>${rubricText}</p>`;
+              }
+            }
+            
+            if (uniqueEvidences.length > 0) {
+              htmlContent += `<div style='border-top: 1px solid #feebc8; padding-top: 10px; margin-top: 10px;'>`;
+              htmlContent += `<p style='color: #c05621; font-size: 12px; font-weight: bold; margin-bottom: 5px;'>Ekli Kanıtlar:</p>`;
+              const evidenceLinks = uniqueEvidences.map((k, idx) => 
+                `<a href='${k.url}' style='color: #2b6cb0; text-decoration: none; font-size: 12px; display: block; margin-bottom: 3px;'>• (KANIT: ${idx + 1}) ${k.name}</a>`
+              ).join('');
+              htmlContent += evidenceLinks;
+              htmlContent += `</div>`;
+            }
+            
+            htmlContent += `</div>`;
           }
         });
       }
@@ -314,39 +343,77 @@ export default function RaporlarClient() {
                                   className="prose prose-sm max-w-none prose-slate"
                                   dangerouslySetInnerHTML={{ __html: combinedText }}
                                 />
+                              </div>
+                              
+                              <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl space-y-4">
+                                {olgunlukPuani ? (
+                                  <>
+                                    <div className="flex items-center justify-between border-b border-orange-200/50 pb-4">
+                                      <span className="font-bold text-orange-800">{t('maturity_score')}:</span>
+                                      <span className="text-xl font-black text-orange-600">{olgunlukPuani} / 5</span>
+                                    </div>
+                                    <p className="text-sm text-orange-800 italic leading-relaxed">
+                                      {getDuzeyAciklamasi(olcut, olgunlukPuani, locale)}
+                                    </p>
+                                  </>
+                                ) : (
+                                  <p className="text-sm text-slate-500 italic">Olgunluk puanı henüz girilmemiş.</p>
+                                )}
+                                
                                 {uniqueEvidences.length > 0 && (
-                                  <div className="mt-6 pt-4 border-t border-slate-200 flex flex-wrap gap-2">
-                                    {uniqueEvidences.map((k, idx) => (
-                                      <a 
-                                        key={idx}
-                                        href={k.url} 
-                                        target="_blank" 
-                                        rel="noopener noreferrer" 
-                                        className="text-[11px] font-bold px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full hover:bg-blue-100 transition-colors"
-                                      >
-                                        (KANIT: {idx + 1})
-                                      </a>
-                                    ))}
+                                  <div className="pt-4 border-t border-orange-200/50 flex flex-col gap-2">
+                                    <span className="text-xs font-bold text-orange-700 uppercase">Ekli Kanıtlar:</span>
+                                    <div className="flex flex-wrap gap-2">
+                                      {uniqueEvidences.map((k, idx) => (
+                                        <a 
+                                          key={idx}
+                                          href={k.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          className="text-xs font-medium px-3 py-1.5 bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors shadow-sm flex items-center gap-1"
+                                        >
+                                          (KANIT: {idx + 1}) {k.name}
+                                        </a>
+                                      ))}
+                                    </div>
                                   </div>
                                 )}
                               </div>
-                              
-                              {olgunlukPuani && (
-                                <div className="bg-orange-50 border border-orange-200 p-4 rounded-lg flex items-center justify-between">
-                                  <span className="font-bold text-orange-800">{t('maturity_score')}:</span>
-                                  <span className="text-xl font-black text-orange-600">{olgunlukPuani} / 5</span>
-                                </div>
-                              )}
                             </div>
                           ) : (
                             <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 border-dashed text-center">
                               <p className="text-slate-400 italic text-sm">{t('no_report_yet')}</p>
-                              {olgunlukPuani && (
-                                <div className="mt-4 pt-4 border-t border-slate-200 flex items-center justify-between">
-                                  <span className="font-bold text-slate-500 text-xs uppercase">{t('maturity_score')}:</span>
-                                  <span className="text-lg font-bold text-orange-600">{olgunlukPuani} / 5</span>
-                                </div>
-                              )}
+                              <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl space-y-4 mt-6 text-left">
+                                {olgunlukPuani && (
+                                  <>
+                                    <div className="flex items-center justify-between border-b border-orange-200/50 pb-4">
+                                      <span className="font-bold text-orange-800 uppercase text-xs">{t('maturity_score')}:</span>
+                                      <span className="text-lg font-bold text-orange-600">{olgunlukPuani} / 5</span>
+                                    </div>
+                                    <p className="text-sm text-orange-800 italic leading-relaxed">
+                                      {getDuzeyAciklamasi(olcut, olgunlukPuani, locale)}
+                                    </p>
+                                  </>
+                                )}
+                                {uniqueEvidences.length > 0 && (
+                                  <div className="pt-4 border-t border-orange-200/50 flex flex-col gap-2">
+                                    <span className="text-xs font-bold text-orange-700 uppercase">Ekli Kanıtlar:</span>
+                                    <div className="flex flex-wrap gap-2">
+                                      {uniqueEvidences.map((k, idx) => (
+                                        <a 
+                                          key={idx}
+                                          href={k.url} 
+                                          target="_blank" 
+                                          rel="noopener noreferrer" 
+                                          className="text-xs font-medium px-3 py-1.5 bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors shadow-sm flex items-center gap-1"
+                                        >
+                                          (KANIT: {idx + 1}) {k.name}
+                                        </a>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           )}
                         </div>

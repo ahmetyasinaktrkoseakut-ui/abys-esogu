@@ -14,7 +14,8 @@ import {
   Search, 
   Settings,
   Bell,
-  Lightbulb
+  Lightbulb,
+  BookOpen
 } from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
 
@@ -54,6 +55,10 @@ export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
           <Link href="/takvim" className={getLinkClass('/takvim')}>
             <Calendar className="w-5 h-5 flex-shrink-0" />
             {t('calendar')}
+          </Link>
+          <Link href="/kalite-el-kitabi" className={getLinkClass('/kalite-el-kitabi')}>
+            <BookOpen className="w-5 h-5 flex-shrink-0" />
+            {t('quality_manual')}
           </Link>
           <Link href="/raporlar" className={getLinkClass('/raporlar')}>
             <LineChart className="w-5 h-5 flex-shrink-0" />

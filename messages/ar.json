@@ -14,7 +14,8 @@
     "settings": "الإعدادات",
     "communication": "التواصل",
     "profile": "الملف الشخصي",
-    "logout": "تسجيل خروج"
+    "logout": "تسجيل خروج",
+    "quality_manual": "دليل الجودة"
   },
   "Common": {
     "save": "حفظ",

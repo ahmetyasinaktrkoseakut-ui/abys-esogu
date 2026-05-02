@@ -15,7 +15,8 @@
     "settings": "Settings",
     "communication": "Communication",
     "profile": "Profile",
-    "logout": "Logout"
+    "logout": "Logout",
+    "quality_manual": "Quality Manual"
   },
   "Common": {
     "save": "Save",

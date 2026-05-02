@@ -15,7 +15,8 @@
     "settings": "Ayarlar",
     "communication": "İletişim",
     "profile": "Profil",
-    "logout": "Çıkış Yap"
+    "logout": "Çıkış Yap",
+    "quality_manual": "Kalite El Kitabı"
   },
   "Common": {
     "save": "Kaydet",

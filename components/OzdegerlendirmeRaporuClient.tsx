@@ -151,14 +151,13 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
       if (puan) {
         birlesikMetin += `<hr/><h3>${t('maturity_score_header')} <span style="color: #ea580c;">${puan} / 5</span></h3>`;
-        const fallbackAciklamalar = [
-          "Henüz süreç başlamadı veya planlama aşamasında.",
-          "Süreç planlandı ancak uygulama kısıtlı.",
-          "Süreç kısmen uygulanıyor ve bazı sonuçlar alınıyor.",
-          "Süreç tam uygulanıyor, sonuçlar izleniyor ve analiz ediliyor.",
-          "Süreç kurumsallaştı, sürekli iyileştiriliyor ve örnek teşkil ediyor."
-        ];
-        const rubricText = olcutDetay?.rubrik_aciklamalari?.[puan.toString()] || fallbackAciklamalar[puan - 1];
+        
+        let rubricText = '';
+        const duzeylerObj = olcutDetay?.[`olgunluk_duzeyleri_${locale}`] || olcutDetay?.['olgunluk_duzeyleri'];
+        if (duzeylerObj && typeof duzeylerObj === 'object') {
+           rubricText = duzeylerObj[puan.toString()] || '';
+        }
+        
         if (rubricText) {
           birlesikMetin += `<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">${rubricText}</p>`;
         }

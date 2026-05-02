@@ -116,13 +116,16 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
     return <div className="h-full flex items-center justify-center p-20"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;
   }
 
-  const fallbackAciklamalar = [
-    "Henüz süreç başlamadı veya planlama aşamasında.",
-    "Süreç planlandı ancak uygulama kısıtlı.",
-    "Süreç kısmen uygulanıyor ve bazı sonuçlar alınıyor.",
-    "Süreç tam uygulanıyor, sonuçlar izleniyor ve analiz ediliyor.",
-    "Süreç kurumsallaştı, sürekli iyileştiriliyor ve örnek teşkil ediyor."
-  ];
+  const getDuzeyAciklamasi = (olcut: any, puan: number, loc: string) => {
+    if (!olcut || !puan) return '';
+    const duzeylerObj = olcut[`olgunluk_duzeyleri_${loc}`] || olcut['olgunluk_duzeyleri'];
+    if (duzeylerObj && typeof duzeylerObj === 'object') {
+       return duzeylerObj[puan.toString()] || '';
+    }
+    return '';
+  };
+
+  const gecerliAciklama = getDuzeyAciklamasi(olcutDetay, olgunlukPuani, locale);
 
   return (
     <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
@@ -165,17 +168,23 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
           </div>
           <div className="min-h-[80px] w-full max-w-3xl mt-4 flex flex-col items-center">
             {olgunlukPuani > 0 ? (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 shadow-sm w-full">
-                <Info className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
-                <div className="text-left">
-                  <p className="font-bold text-amber-800 text-sm mb-1">
-                    {olgunlukPuani} Puan - Resmi İAA Rubrik Karşılığı:
-                  </p>
-                  <p className="text-amber-700 text-sm leading-relaxed">
-                    {olcutDetay?.rubrik_aciklamalari?.[olgunlukPuani.toString()] || fallbackAciklamalar[olgunlukPuani - 1]}
-                  </p>
+              gecerliAciklama ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-bottom-2 shadow-sm w-full">
+                  <Info className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                  <div className="text-left">
+                    <p className="font-bold text-amber-800 text-sm mb-1">
+                      {olgunlukPuani} Puan
+                    </p>
+                    <p className="text-amber-700 text-sm leading-relaxed">
+                      {gecerliAciklama}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <p className="text-amber-600 font-semibold text-center animate-in fade-in slide-in-from-bottom-2">
+                  {olgunlukPuani} Puan
+                </p>
+              )
             ) : (
                <p className="text-slate-400 font-medium text-center italic mt-6">Lütfen bir puan seçiniz.</p>
             )}

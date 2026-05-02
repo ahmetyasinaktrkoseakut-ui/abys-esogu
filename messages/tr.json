@@ -325,5 +325,14 @@
     "justification": "Olgunluk Düzeyi Gerekçesi (Açıklama)",
     "save_button": "Puanı ve Gerekçeyi Kaydet",
     "save_success": "Olgunluk puanı ve değerlendirmesi başarıyla kaydedildi!"
+  },
+  "QualityManual": {
+    "title": "Kalite El Kitabı",
+    "description": "Kurumun stratejik ölçütlerinin ve kalite süreçlerinin genel sentezi.",
+    "card_desc": "Tüm ölçütlerde 'Kalite El Kitabı' alanına girilen verileri hiyerarşik sırayla (A, B, C...) tek bir Word dosyasında derler.",
+    "button": "Kalite El Kitabını Oluştur (Word)",
+    "no_data": "Sistemde henüz 'Kalite El Kitabı' aşamasına ait doldurulmuş bir veri bulunamadı.",
+    "date": "Tarih:",
+    "error": "Hata:"
   }
 }

@@ -26,6 +26,7 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
   const pathname = usePathname();
   const t = useTranslations('Navigation');
   const tAnn = useTranslations('Announcements');
+  const tQM = useTranslations('QualityManual');
   const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
@@ -97,7 +98,7 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
           </Link>
           <Link href="/kalite-el-kitabi" className={getLinkClass('/kalite-el-kitabi')}>
             <BookOpen className="w-5 h-5 flex-shrink-0" />
-            {t('quality_manual')}
+            {tQM('title')}
           </Link>
           <Link href="/raporlar" className={getLinkClass('/raporlar')}>
             <LineChart className="w-5 h-5 flex-shrink-0" />

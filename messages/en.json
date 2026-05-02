@@ -330,9 +330,9 @@
   },
   "QualityManual": {
     "title": "Quality Manual",
-    "description": "You can download all your Quality Manual data in Word format from this area.",
-    "card_desc": "Download all Quality Manual texts entered into the system to your computer as a single Word document in a hierarchical layout (sorted by Criterion codes).",
-    "button": "Create Report (Word)",
+    "description": "General synthesis of the institution's strategic criteria and quality processes.",
+    "card_desc": "Compiles data entered in the 'Quality Manual' field across all criteria into a single Word file in hierarchical order (A, B, C...).",
+    "button": "Generate Quality Manual (Word)",
     "no_data": "No completed data for the 'Quality Manual' phase has been found in the system yet.",
     "date": "Date:",
     "error": "Error:"

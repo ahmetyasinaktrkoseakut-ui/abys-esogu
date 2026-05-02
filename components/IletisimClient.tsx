@@ -68,7 +68,7 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
     fetchMessages();
 
     const channel = supabase
-      .channel('mesajlar_realtime')
+      .channel('public:mesajlar')
       .on(
         'postgres_changes',
         {
@@ -106,6 +106,7 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
       alici_id: selectedUser.id,
       mesaj: newMessage.trim(),
       okundu: false,
+      olusturulma_tarihi: new Date().toISOString()
     });
 
     if (!error) {

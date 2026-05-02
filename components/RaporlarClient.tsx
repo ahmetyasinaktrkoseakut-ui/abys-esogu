@@ -271,9 +271,9 @@ export default function RaporlarClient() {
             
             if (uniqueEvidences.length > 0) {
               htmlContent += `<div style='border-top: 1px solid #feebc8; padding-top: 10px; margin-top: 10px;'>`;
-              htmlContent += `<p style='color: #c05621; font-size: 12px; font-weight: bold; margin-bottom: 5px;'>Ekli Kanıtlar:</p>`;
+              htmlContent += `<p style='color: #c05621; font-size: 12px; font-weight: bold; margin-bottom: 5px;'>${t('attached_evidences')}</p>`;
               const evidenceLinks = uniqueEvidences.map((k, idx) => 
-                `<a href='${k.url}' style='color: #2b6cb0; text-decoration: none; font-size: 12px; display: block; margin-bottom: 3px;'>• (KANIT: ${idx + 1}) ${k.name}</a>`
+                `<a href='${k.url}' style='color: #2b6cb0; text-decoration: none; font-size: 12px; display: block; margin-bottom: 3px;'>• (${t('evidence_prefix')}: ${idx + 1}) ${k.name}</a>`
               ).join('');
               htmlContent += evidenceLinks;
               htmlContent += `</div>`;
@@ -443,12 +443,12 @@ export default function RaporlarClient() {
                                     </p>
                                   </>
                                 ) : (
-                                  <p className="text-sm text-slate-500 italic">Olgunluk puanı henüz girilmemiş.</p>
+                                  <p className="text-sm text-slate-500 italic">{t('maturity_score_missing')}</p>
                                 )}
                                 
                                 {uniqueEvidences.length > 0 && (
                                   <div className="pt-4 border-t border-orange-200/50 flex flex-col gap-2">
-                                    <span className="text-xs font-bold text-orange-700 uppercase">Ekli Kanıtlar:</span>
+                                    <span className="text-xs font-bold text-orange-700 uppercase">{t('attached_evidences')}</span>
                                     <div className="flex flex-wrap gap-2">
                                       {uniqueEvidences.map((k, idx) => (
                                         <a 
@@ -458,7 +458,7 @@ export default function RaporlarClient() {
                                           rel="noopener noreferrer" 
                                           className="text-xs font-medium px-3 py-1.5 bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors shadow-sm flex items-center gap-1"
                                         >
-                                          (KANIT: {idx + 1}) {k.name}
+                                          ({t('evidence_prefix')}: {idx + 1}) {k.name}
                                         </a>
                                       ))}
                                     </div>
@@ -483,7 +483,7 @@ export default function RaporlarClient() {
                                 )}
                                 {uniqueEvidences.length > 0 && (
                                   <div className="pt-4 border-t border-orange-200/50 flex flex-col gap-2">
-                                    <span className="text-xs font-bold text-orange-700 uppercase">Ekli Kanıtlar:</span>
+                                    <span className="text-xs font-bold text-orange-700 uppercase">{t('attached_evidences')}</span>
                                     <div className="flex flex-wrap gap-2">
                                       {uniqueEvidences.map((k, idx) => (
                                         <a 
@@ -493,7 +493,7 @@ export default function RaporlarClient() {
                                           rel="noopener noreferrer" 
                                           className="text-xs font-medium px-3 py-1.5 bg-white text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors shadow-sm flex items-center gap-1"
                                         >
-                                          (KANIT: {idx + 1}) {k.name}
+                                          ({t('evidence_prefix')}: {idx + 1}) {k.name}
                                         </a>
                                       ))}
                                     </div>

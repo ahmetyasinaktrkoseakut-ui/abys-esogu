@@ -129,7 +129,7 @@ export default function TakvimClient() {
       </head>
       <body>
         <h1>${t('title')}</h1>
-        <p style='text-align:center; color: #718096;'>Tarih: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
+        <p style='text-align:center; color: #718096;'>${t('report_date')} ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
     `;
 
     const groupedData: Record<string, EylemPlani[]> = {};
@@ -214,7 +214,7 @@ export default function TakvimClient() {
             onClick={exportToWord}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-md shrink-0"
           >
-            <Download className="w-5 h-5" /> Rapor Oluştur (Word)
+            <Download className="w-5 h-5" /> {t('export_word')}
           </button>
         )}
       </div>

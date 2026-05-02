@@ -114,7 +114,10 @@
     "unknown_unit": "Bilinmeyen Birim",
     "auto_generated_footer": "Bu belge kalite yönetim sistemi tarafından otomatik olarak oluşturulmuştur.",
     "unauthorized_access": "Yetkisiz Erişim",
-    "unauthorized_desc": "Bu sayfayı görüntüleme yetkiniz bulunmamaktadır. Sadece Yöneticiler erişebilir."
+    "unauthorized_desc": "Bu sayfayı görüntüleme yetkiniz bulunmamaktadır. Sadece Yöneticiler erişebilir.",
+    "maturity_score_missing": "Olgunluk puanı henüz girilmemiş.",
+    "attached_evidences": "Ekli Kanıtlar:",
+    "evidence_prefix": "KANIT"
   },
   "Calendar": {
     "title": "Takvimli Eylem Planları",
@@ -133,8 +136,10 @@
       "tracking": "İzleme"
     },
     "unknown_code": "Bilinmeyen Kod",
+    "no_criterion_name": "Ölçüt adı yok",
     "unknown_criterion": "Bilinmeyen Ölçüt",
-    "no_criterion_name": "Kriter Adı Yok"
+    "export_word": "Rapor Oluştur (Word)",
+    "report_date": "Tarih:"
   },
   "Reports": {
     "title": "Global Kurum Raporu",

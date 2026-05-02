@@ -11,6 +11,7 @@ export default function KaliteElKitabiClient() {
   const { selectedPeriod } = usePeriod();
   const locale = useLocale();
   const tNav = useTranslations('Navigation');
+  const tQM = useTranslations('QualityManual');
   const [isGeneratingKitap, setIsGeneratingKitap] = useState(false);
 
   const exportKaliteElKitabi = async () => {
@@ -26,7 +27,7 @@ export default function KaliteElKitabiClient() {
       
       const filledPuko = (pukoRes || []).filter(p => p.aciklama && p.aciklama !== '<p></p>' && p.aciklama !== '');
       if (filledPuko.length === 0) {
-        alert("Sistemde henüz 'Kalite El Kitabı' aşamasına ait doldurulmuş bir veri bulunamadı.");
+        alert(tQM('no_data'));
         setIsGeneratingKitap(false);
         return;
       }
@@ -43,7 +44,7 @@ export default function KaliteElKitabiClient() {
 
       let htmlContent = `
         <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-        <head><meta charset='utf-8'><title>Kalite El Kitabı</title>
+        <head><meta charset='utf-8'><title>${tQM('title')}</title>
         <style>
           body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.6; padding: 20px; font-size: 12pt; color: #000; }
           h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; margin-bottom: 40px; font-size: 24pt; color: #1a202c; }
@@ -52,8 +53,8 @@ export default function KaliteElKitabiClient() {
         </style>
         </head>
         <body>
-          <h1>Kalite El Kitabı</h1>
-          <p style='text-align:center; font-style: italic; margin-bottom: 50px; color: #718096;'>Tarih: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
+          <h1>${tQM('title')}</h1>
+          <p style='text-align:center; font-style: italic; margin-bottom: 50px; color: #718096;'>${tQM('date')} ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
       `;
 
       if (altOlcutlerRes) {
@@ -81,7 +82,7 @@ export default function KaliteElKitabiClient() {
       URL.revokeObjectURL(url);
       
     } catch (e: any) {
-      alert(`Hata: ${e.message}`);
+      alert(`${tQM('error')} ${e.message}`);
     } finally {
       setIsGeneratingKitap(false);
     }
@@ -93,9 +94,9 @@ export default function KaliteElKitabiClient() {
         <div>
           <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
             <BookOpen className="w-8 h-8 text-emerald-600" />
-            {tNav('quality_manual')}
+            {tQM('title')}
           </h1>
-          <p className="text-slate-500 mt-2">Bu alandan sistemdeki tüm Kalite El Kitabı verilerinizi Word formatında indirebilirsiniz.</p>
+          <p className="text-slate-500 mt-2">{tQM('description')}</p>
         </div>
       </div>
 
@@ -104,9 +105,9 @@ export default function KaliteElKitabiClient() {
           <div className="w-24 h-24 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-6 shadow-inner">
             <BookOpen className="w-12 h-12" />
           </div>
-          <h3 className="text-2xl font-black text-slate-800 mb-3">{tNav('quality_manual')}</h3>
+          <h3 className="text-2xl font-black text-slate-800 mb-3">{tQM('title')}</h3>
           <p className="text-slate-500 max-w-lg mb-8 leading-relaxed">
-            Sistemde girilmiş olan tüm Kalite El Kitabı metinlerini, hiyerarşik bir düzende (Ölçüt kodlarına göre sıralanmış olarak) tek bir Word dokümanı halinde bilgisayarınıza indirin.
+            {tQM('card_desc')}
           </p>
           <button 
             onClick={exportKaliteElKitabi}
@@ -114,7 +115,7 @@ export default function KaliteElKitabiClient() {
             className="group relative inline-flex items-center justify-center gap-3 px-10 py-5 font-bold text-white transition-all duration-300 bg-emerald-600 rounded-full hover:bg-emerald-700 hover:scale-105 hover:shadow-xl focus:outline-none overflow-hidden disabled:opacity-50 disabled:hover:scale-100"
           >
             {isGeneratingKitap ? <Loader2 className="w-6 h-6 animate-spin relative z-10" /> : <Download className="w-6 h-6 relative z-10" />}
-            <span className="text-lg relative z-10">Rapor Oluştur (Word)</span>
+            <span className="text-lg relative z-10">{tQM('button')}</span>
           </button>
         </div>
       </div>

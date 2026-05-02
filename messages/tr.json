@@ -26,6 +26,25 @@
     "error": "Hata",
     "readOnly": "Salt Okunur"
   },
+  "Announcements": {
+    "title": "Duyurular",
+    "description": "Sistem genelindeki tüm duyuruları buradan takip edebilirsiniz.",
+    "add_new": "Yeni Duyuru Ekle",
+    "no_announcements": "Henüz bir duyuru bulunmuyor.",
+    "modal_title": "Yeni Duyuru Ekle",
+    "announcement_title": "Duyuru Başlığı",
+    "announcement_content": "İçerik",
+    "save": "Paylaş",
+    "save_success": "Duyuru başarıyla paylaşıldı."
+  },
+  "Messaging": {
+    "title": "İletişim",
+    "description": "Diğer personellerle anlık olarak mesajlaşın.",
+    "search_user": "Kişi ara...",
+    "no_user_selected": "Sohbet etmek için soldan bir kişi seçin.",
+    "type_message": "Mesajınızı yazın...",
+    "send": "Gönder"
+  },
   "Roles": {
     "admin": "Yönetici",
     "unit_admin": "Birim Yöneticisi",

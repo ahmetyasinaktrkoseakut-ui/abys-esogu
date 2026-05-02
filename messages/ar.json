@@ -25,6 +25,25 @@
     "error": "خطأ",
     "readOnly": "للقراءة فقط"
   },
+  "Announcements": {
+    "title": "الإعلانات",
+    "description": "تابع جميع الإعلانات على مستوى النظام هنا.",
+    "add_new": "إضافة إعلان جديد",
+    "no_announcements": "لا توجد إعلانات بعد.",
+    "modal_title": "إضافة إعلان جديد",
+    "announcement_title": "عنوان الإعلان",
+    "announcement_content": "المحتوى",
+    "save": "مشاركة",
+    "save_success": "تمت مشاركة الإعلان بنجاح."
+  },
+  "Messaging": {
+    "title": "التواصل",
+    "description": "راسل أعضاء الطاقم الآخرين في الوقت الفعلي.",
+    "search_user": "البحث عن شخص...",
+    "no_user_selected": "اختر شخصًا من اليسار للدردشة.",
+    "type_message": "اكتب رسالتك...",
+    "send": "إرسال"
+  },
   "Roles": {
     "admin": "مدير",
     "unit_admin": "مدير الوحدة",

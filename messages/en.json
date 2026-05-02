@@ -26,6 +26,25 @@
     "error": "Error",
     "readOnly": "Read Only"
   },
+  "Announcements": {
+    "title": "Announcements",
+    "description": "Follow all system-wide announcements here.",
+    "add_new": "Add New Announcement",
+    "no_announcements": "No announcements yet.",
+    "modal_title": "Add New Announcement",
+    "announcement_title": "Announcement Title",
+    "announcement_content": "Content",
+    "save": "Share",
+    "save_success": "Announcement shared successfully."
+  },
+  "Messaging": {
+    "title": "Communication",
+    "description": "Message other staff members in real-time.",
+    "search_user": "Search person...",
+    "no_user_selected": "Select a person from the left to chat.",
+    "type_message": "Type your message...",
+    "send": "Send"
+  },
   "Roles": {
     "admin": "Administrator",
     "unit_admin": "Unit Manager",

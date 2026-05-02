@@ -34,7 +34,7 @@ export default async function Sidebar() {
         </div>
       </div>
 
-      <SidebarNavClient isAdmin={isAdmin} />
+      <SidebarNavClient isAdmin={isAdmin} userId={user?.id || ''} />
     </aside>
   );
 }

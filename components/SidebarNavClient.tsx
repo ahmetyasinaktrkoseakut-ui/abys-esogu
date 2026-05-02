@@ -15,13 +15,50 @@ import {
   Settings,
   Bell,
   Lightbulb,
-  BookOpen
+  BookOpen,
+  Megaphone
 } from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
 
-export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
+export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean, userId: string }) {
   const pathname = usePathname();
   const t = useTranslations('Navigation');
+  const tAnn = useTranslations('Announcements');
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    async function fetchUnreadCount() {
+      const { data: allAnns } = await supabase.from('duyurular').select('id');
+      const { data: readAnns } = await supabase.from('duyuru_okumalar').select('duyuru_id').eq('kullanici_id', userId);
+      
+      const allIds = allAnns?.map(a => a.id) || [];
+      const readIds = new Set(readAnns?.map(r => r.duyuru_id) || []);
+      const unread = allIds.filter(id => !readIds.has(id)).length;
+      
+      setUnreadCount(unread);
+    }
+
+    fetchUnreadCount();
+
+    const duyurularChannel = supabase
+      .channel('sidebar_duyurular')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'duyurular' }, () => {
+        fetchUnreadCount();
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'duyuru_okumalar', filter: `kullanici_id=eq.${userId}` }, () => {
+        fetchUnreadCount();
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'duyurular' }, () => {
+        fetchUnreadCount();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(duyurularChannel);
+    };
+  }, [userId]);
 
   const getLinkClass = (path: string, exact: boolean = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
@@ -79,6 +116,17 @@ export default function SidebarNavClient({ isAdmin }: { isAdmin: boolean }) {
           <Link href="/iletisim" className={getLinkClass('/iletisim')}>
             <MessageSquare className="w-5 h-5 flex-shrink-0" />
             {t('communication')}
+          </Link>
+          <Link href="/duyurular" className={getLinkClass('/duyurular')}>
+            <div className="relative">
+              <Megaphone className="w-5 h-5 flex-shrink-0" />
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                  {unreadCount}
+                </span>
+              )}
+            </div>
+            {tAnn('title')}
           </Link>
         </div>
       </nav>

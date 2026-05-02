@@ -293,98 +293,110 @@ export default function RaporlarClient() {
           </div>
 
           <div className="space-y-16">
-            {raporData.anaBasliklar.map((anaBaslik) => {
-              const ilgiliOlcutler = raporData.altOlcutler.filter(o => o.ana_baslik_id === anaBaslik.id);
-              
-              if (ilgiliOlcutler.length === 0) return null;
+            {(() => {
+              let globalEvidenceCounter = 1;
+              return raporData.anaBasliklar.map((anaBaslik) => {
+                const ilgiliOlcutler = raporData.altOlcutler.filter(o => o.ana_baslik_id === anaBaslik.id);
+                
+                if (ilgiliOlcutler.length === 0) return null;
 
-              return (
-                <div key={anaBaslik.id}>
-                  <div className="bg-slate-800 text-white p-4 rounded-lg mb-6">
-                    <h2 className="text-2xl font-bold">{anaBaslik.kod} - {getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>
-                  </div>
+                return (
+                  <div key={anaBaslik.id}>
+                    <div className="bg-slate-800 text-white p-4 rounded-lg mb-6">
+                      <h2 className="text-2xl font-bold">{anaBaslik.kod} - {getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>
+                    </div>
 
-                  <div className="space-y-12 pl-4 border-l-4 border-slate-200 ml-4">
-                    {ilgiliOlcutler.map((olcut) => {
-                      const pukoList = getPukoForOlcut(olcut.id);
-                      const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
-                      
-                      let combinedText = '';
-                      let allEvidences: any[] = [];
-                      
-                      phases.forEach(phase => {
-                        const data = pukoList.find(p => p.puko_asamasi === phase);
-                        if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
-                          combinedText += (combinedText ? '<br/><br/>' : '') + data.aciklama;
-                          if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
-                            allEvidences = [...allEvidences, ...data.kanit_dosyalari];
+                    <div className="space-y-12 pl-4 border-l-4 border-slate-200 ml-4">
+                      {ilgiliOlcutler.map((olcut) => {
+                        const pukoList = getPukoForOlcut(olcut.id);
+                        const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
+                        
+                        let combinedText = '';
+                        let allEvidences: any[] = [];
+                        
+                        phases.forEach(phase => {
+                          const data = pukoList.find(p => p.puko_asamasi === phase);
+                          if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
+                            combinedText += (combinedText ? '<br/><br/>' : '') + data.aciklama;
+                            if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
+                              allEvidences = [...allEvidences, ...data.kanit_dosyalari];
+                            }
+                          }
+                        });
+
+                        if (!combinedText) {
+                          const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
+                          if (raporPuko && raporPuko.aciklama) {
+                            combinedText = raporPuko.aciklama;
+                            if (raporPuko.kanit_dosyalari) allEvidences = raporPuko.kanit_dosyalari;
                           }
                         }
-                      });
 
-                      if (!combinedText) {
-                        const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
-                        if (raporPuko && raporPuko.aciklama) {
-                          combinedText = raporPuko.aciklama;
-                          if (raporPuko.kanit_dosyalari) allEvidences = raporPuko.kanit_dosyalari;
-                        }
-                      }
+                        const uniqueEvidences = allEvidences.filter((v, i, a) => a.findIndex(t => t.url === v.url) === i);
+                        const evidencesWithNumbers = uniqueEvidences.map(k => {
+                          return { ...k, no: globalEvidenceCounter++ };
+                        });
+                        const olgunlukPuani = pukoList.find(p => p.puko_asamasi === 'olgunluk')?.olgunluk_puani;
 
-                      const uniqueEvidences = allEvidences.filter((v, i, a) => a.findIndex(t => t.url === v.url) === i);
-                      const olgunlukPuani = pukoList.find(p => p.puko_asamasi === 'olgunluk')?.olgunluk_puani;
-
-                      return (
-                        <div key={olcut.id} className="mb-12">
-                          <h3 className="text-xl font-bold text-blue-800 mb-6 flex items-center gap-2">
-                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">{olcut.kod}</span>
-                            {getLocalizedField(olcut, 'olcut_adi', locale)}
-                          </h3>
-                          
-                          {combinedText ? (
-                            <div className="space-y-6">
-                              <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
-                                <div 
-                                  className="prose prose-sm max-w-none prose-slate"
-                                  dangerouslySetInnerHTML={{ __html: combinedText }}
-                                />
-                              </div>
-                              
-                              <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl space-y-4">
-                                {olgunlukPuani ? (
-                                  <>
-                                    <div className="flex items-center justify-between border-b border-orange-200/50 pb-4">
-                                      <span className="font-bold text-orange-800">{t('maturity_score')}:</span>
-                                      <span className="text-xl font-black text-orange-600">{olgunlukPuani} / 5</span>
-                                    </div>
-                                    <p className="text-sm text-orange-800 italic leading-relaxed">
-                                      {getDuzeyAciklamasi(olcut, olgunlukPuani, locale)}
-                                    </p>
-                                  </>
-                                ) : (
-                                  <p className="text-sm text-slate-500 italic">{t('maturity_score_missing')}</p>
-                                )}
-                                
-                                {uniqueEvidences.length > 0 && (
-                                  <div className="pt-4 border-t border-orange-200/50 flex flex-col gap-3">
-                                    <span className="text-xs font-bold text-orange-700 uppercase">{t('attached_evidences')}</span>
-                                    <div className="flex flex-col gap-2">
-                                      {uniqueEvidences.map((k, idx) => (
-                                        <a 
-                                          key={idx}
-                                          href={k.url} 
-                                          target="_blank" 
-                                          rel="noopener noreferrer" 
-                                          className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                                        >
-                                          {t('evidence_prefix')} {idx + 1}: {k.name}
-                                        </a>
+                        return (
+                          <div key={olcut.id} className="mb-12">
+                            <h3 className="text-xl font-bold text-blue-800 mb-6 flex items-center gap-2">
+                              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">{olcut.kod}</span>
+                              {getLocalizedField(olcut, 'olcut_adi', locale)}
+                            </h3>
+                            
+                            {combinedText ? (
+                              <div className="space-y-6">
+                                <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
+                                  <div 
+                                    className="prose prose-sm max-w-none prose-slate"
+                                    dangerouslySetInnerHTML={{ __html: combinedText }}
+                                  />
+                                  {evidencesWithNumbers.length > 0 && (
+                                    <div className="mt-4 pt-4 border-t border-slate-200 text-sm text-slate-600 font-medium space-y-1">
+                                      {evidencesWithNumbers.map((k) => (
+                                        <div key={k.url}>{t('evidence_prefix')} {k.no}</div>
                                       ))}
                                     </div>
-                                  </div>
-                                )}
+                                  )}
+                                </div>
+                                
+                                <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl space-y-4">
+                                  {olgunlukPuani ? (
+                                    <>
+                                      <div className="flex items-center justify-between border-b border-orange-200/50 pb-4">
+                                        <span className="font-bold text-orange-800">{t('maturity_score')}:</span>
+                                        <span className="text-xl font-black text-orange-600">{olgunlukPuani} / 5</span>
+                                      </div>
+                                      <p className="text-sm text-orange-800 italic leading-relaxed">
+                                        {getDuzeyAciklamasi(olcut, olgunlukPuani, locale)}
+                                      </p>
+                                    </>
+                                  ) : (
+                                    <p className="text-sm text-slate-500 italic">{t('maturity_score_missing')}</p>
+                                  )}
+                                  
+                                  {evidencesWithNumbers.length > 0 && (
+                                    <div className="pt-4 border-t border-orange-200/50 flex flex-col gap-3">
+                                      <span className="text-xs font-bold text-orange-700 uppercase">{t('attached_evidences')}</span>
+                                      <div className="flex flex-col gap-2">
+                                        {evidencesWithNumbers.map((k) => (
+                                          <a 
+                                            key={k.url}
+                                            href={k.url} 
+                                            target="_blank" 
+                                            rel="noopener noreferrer" 
+                                            className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                          >
+                                            {t('evidence_prefix')} {k.no}: {k.name}
+                                          </a>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          ) : (
+                            ) : (
                             <div className="bg-slate-50 p-6 rounded-xl border border-slate-100 border-dashed text-center">
                               <p className="text-slate-400 italic text-sm">{t('no_report_yet')}</p>
                               <div className="bg-orange-50 border border-orange-200 p-6 rounded-xl space-y-4 mt-6 text-left">
@@ -399,19 +411,19 @@ export default function RaporlarClient() {
                                     </p>
                                   </>
                                 )}
-                                {uniqueEvidences.length > 0 && (
+                                {evidencesWithNumbers.length > 0 && (
                                   <div className="pt-4 border-t border-orange-200/50 flex flex-col gap-3">
                                     <span className="text-xs font-bold text-orange-700 uppercase">{t('attached_evidences')}</span>
                                     <div className="flex flex-col gap-2">
-                                      {uniqueEvidences.map((k, idx) => (
+                                      {evidencesWithNumbers.map((k) => (
                                         <a 
-                                          key={idx}
+                                          key={k.url}
                                           href={k.url} 
                                           target="_blank" 
                                           rel="noopener noreferrer" 
                                           className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                                         >
-                                          {t('evidence_prefix')} {idx + 1}: {k.name}
+                                          {t('evidence_prefix')} {k.no}: {k.name}
                                         </a>
                                       ))}
                                     </div>
@@ -426,7 +438,8 @@ export default function RaporlarClient() {
                   </div>
                 </div>
               );
-            })}
+            });
+          })()}
           </div>
 
           <div className="mt-20 pt-8 border-t border-slate-200 text-center text-slate-500 text-sm">

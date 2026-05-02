@@ -182,6 +182,7 @@
     "maturity_score": "درجة النضج",
     "uploaded_evidences": "الأدلة المرفوعة",
     "attached_evidences": "الأدلة المرفقة",
+    "evidence_prefix": "دليل",
     "auto_generated_footer": "تم إنشاء هذا المستند تلقائياً بواسطة نظام إدارة الجودة.",
     "unauthorized_access": "وصول غير مصرح به",
     "unauthorized_desc": "ليس لديك إذن لعرض وإنشاء تقرير المؤسسة. يمكن للمديرين فقط الوصول إليه.",

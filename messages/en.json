@@ -179,7 +179,7 @@
     "unauthorized_desc": "You do not have permission to view and create the institutional report. Only Administrators can access it.",
     "error_generating": "Error while generating report",
     "maturity_score_missing": "Maturity score not yet entered.",
-    "evidence_prefix": "EVIDENCE"
+    "evidence_prefix": "Evidence"
   },
   "Tracking": {
     "title": "Process Tracking and Analytics",

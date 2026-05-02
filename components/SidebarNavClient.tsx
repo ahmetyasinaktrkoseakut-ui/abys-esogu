@@ -2,6 +2,8 @@
 
 import { Link, usePathname } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase/client';
 import { 
   Home, 
   FileText, 

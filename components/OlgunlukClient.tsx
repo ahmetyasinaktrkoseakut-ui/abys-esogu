@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import { Loader2, Info, Save, Settings, Star } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
-import { useLocale } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
 
@@ -22,6 +22,9 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const locale = useLocale();
+  const t = useTranslations('Maturity');
+  const tPhase = useTranslations('Phase');
+  const tCommon = useTranslations('Common');
   const { selectedPeriod } = usePeriod();
 
   const fetchData = async () => {
@@ -102,11 +105,11 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
         if (insertErr) throw insertErr;
       }
 
-      alert('Olgunluk puanı ve değerlendirmesi başarıyla kaydedildi!');
+      alert(t('save_success'));
       fetchData(); 
     } catch (error: any) {
       console.error('Save Error:', error);
-      alert(`Kaydetme Hatası: ${error.message || 'Bilinmeyen Hata'}`);
+      alert(`${tPhase('save_error')}: ${error.message || 'Error'}`);
     } finally {
       setIsSaving(false);
     }
@@ -132,8 +135,8 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
-            <span className="cursor-pointer hover:text-blue-600">Ana Sayfa</span> &gt; 
-            <span className="cursor-pointer hover:text-blue-600">Ölçütler</span> &gt;
+            <span className="cursor-pointer hover:text-blue-600">{tPhase('home')}</span> &gt; 
+            <span className="cursor-pointer hover:text-blue-600">{tPhase('criteria')}</span> &gt;
             <span className="text-slate-800">{[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -142,7 +145,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
             </h2>
             <Info className="w-4 h-4 text-slate-400 cursor-pointer" />
           </div>
-          <p className="text-sm text-slate-500">Sürecin mevcut olgunluk düzeyini puanlayın ve gerekçelendirin.</p>
+          <p className="text-sm text-slate-500">{t('description')}</p>
         </div>
       </div>
 
@@ -150,7 +153,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-6">
         <div className="p-8 border-b border-slate-200 flex flex-col items-center justify-center bg-gradient-to-b from-orange-50 to-white">
-          <h3 className="text-xl font-bold text-slate-800 mb-6">Süreç Olgunluk Puanı</h3>
+          <h3 className="text-xl font-bold text-slate-800 mb-6">{t('title')}</h3>
           <div className="flex items-center justify-center gap-4 mb-4">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -173,7 +176,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
                   <Info className="w-5 h-5 text-amber-600 mt-0.5 flex-shrink-0" />
                   <div className="text-left">
                     <p className="font-bold text-amber-800 text-sm mb-1">
-                      {olgunlukPuani} Puan
+                      {t('points', { puan: olgunlukPuani })}
                     </p>
                     <p className="text-amber-700 text-sm leading-relaxed">
                       {gecerliAciklama}
@@ -182,11 +185,11 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
                 </div>
               ) : (
                 <p className="text-amber-600 font-semibold text-center animate-in fade-in slide-in-from-bottom-2">
-                  {olgunlukPuani} Puan
+                  {t('points', { puan: olgunlukPuani })}
                 </p>
               )
             ) : (
-               <p className="text-slate-400 font-medium text-center italic mt-6">Lütfen bir puan seçiniz.</p>
+               <p className="text-slate-400 font-medium text-center italic mt-6">{t('select_point')}</p>
             )}
           </div>
         </div>
@@ -194,8 +197,8 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
         <div className="p-6">
           <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-4 text-sm">
             <Settings className="w-4 h-4 text-orange-600" />
-            Olgunluk Düzeyi Gerekçesi (Açıklama)
-            {isReadOnly && <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200">Salt Okunur</span>}
+            {t('justification')}
+            {isReadOnly && <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200">{tCommon('readOnly')}</span>}
           </h3>
           <div className="w-full">
             <RichTextEditor content={aciklama} onChange={setAciklama} readOnly={isReadOnly} />
@@ -210,7 +213,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
               className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              {isSaving ? 'Kaydediliyor...' : 'Puanı ve Gerekçeyi Kaydet'}
+              {isSaving ? tPhase('saving') : t('save_button')}
             </button>
           </div>
         )}

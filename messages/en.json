@@ -291,5 +291,14 @@
     "stage_header": "{stage} STAGE",
     "maturity_score_header": "MATURITY LEVEL SCORE:",
     "no_data_alert": "No data has been entered for any stage of this criterion yet."
+  },
+  "Maturity": {
+    "title": "Process Maturity Score",
+    "description": "Score and justify the current maturity level of the process.",
+    "points": "{puan} Points",
+    "select_point": "Please select a score.",
+    "justification": "Maturity Level Justification (Description)",
+    "save_button": "Save Score and Justification",
+    "save_success": "Maturity score and evaluation saved successfully!"
   }
 }

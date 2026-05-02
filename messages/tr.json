@@ -291,5 +291,14 @@
     "stage_header": "{stage} AŞAMASI",
     "maturity_score_header": "OLGUNLUK DÜZEYİ PUANI:",
     "no_data_alert": "Bu ölçüt için henüz herhangi bir aşamada veri girişi yapılmamıştır."
+  },
+  "Maturity": {
+    "title": "Süreç Olgunluk Puanı",
+    "description": "Sürecin mevcut olgunluk düzeyini puanlayın ve gerekçelendirin.",
+    "points": "{puan} Puan",
+    "select_point": "Lütfen bir puan seçiniz.",
+    "justification": "Olgunluk Düzeyi Gerekçesi (Açıklama)",
+    "save_button": "Puanı ve Gerekçeyi Kaydet",
+    "save_success": "Olgunluk puanı ve değerlendirmesi başarıyla kaydedildi!"
   }
 }

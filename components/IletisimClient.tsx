@@ -31,11 +31,17 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
 
   useEffect(() => {
     async function fetchUsers() {
-      const { data, error } = await supabase
-        .from('profiller')
-        .select('id, tam_adi, unvan')
-        .neq('id', currentUserId);
-      if (data) setUsers(data);
+      const { data, error } = await supabase.rpc('get_kullanicilar');
+      if (data) {
+        const formattedUsers = data
+          .filter((u: any) => u.id !== currentUserId)
+          .map((u: any) => ({
+            id: u.id,
+            tam_adi: u.meta_data?.tam_adi || u.meta_data?.name || 'İsimsiz Kullanıcı',
+            unvan: u.meta_data?.unvan || 'Personel'
+          }));
+        setUsers(formattedUsers);
+      }
     }
     fetchUsers();
   }, [currentUserId]);

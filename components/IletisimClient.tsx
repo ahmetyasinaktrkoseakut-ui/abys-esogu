@@ -35,11 +35,19 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
       if (data) {
         const formattedUsers = data
           .filter((u: any) => u.id !== currentUserId)
-          .map((u: any) => ({
-            id: u.id,
-            tam_adi: u.meta_data?.tam_adi || u.meta_data?.name || 'İsimsiz Kullanıcı',
-            unvan: u.meta_data?.unvan || 'Personel'
-          }));
+          .map((u: any) => {
+            let name = u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad;
+            if (!name) {
+              const email = u.email || '';
+              const prefix = email.split('@')[0];
+              name = prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : 'Kullanıcı';
+            }
+            return {
+              id: u.id,
+              tam_adi: name,
+              unvan: u.meta_data?.unvan || 'Personel'
+            };
+          });
         setUsers(formattedUsers);
       }
     }

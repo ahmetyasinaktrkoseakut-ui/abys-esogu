@@ -33,22 +33,25 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
     async function fetchUsers() {
       const { data, error } = await supabase.rpc('get_kullanicilar');
       if (data) {
-        const formattedUsers = data
-          .filter((u: any) => u.id !== currentUserId)
-          .map((u: any) => {
-            let name = u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad;
-            if (!name) {
-              const email = u.email || '';
-              const prefix = email.split('@')[0];
-              name = prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : 'Kullanıcı';
+        const uniqueUsersMap = new Map();
+        data
+          .filter((u: any) => String(u.id) !== String(currentUserId))
+          .forEach((u: any) => {
+            if (!uniqueUsersMap.has(u.id)) {
+              let name = u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad;
+              if (!name) {
+                const email = u.email || '';
+                const prefix = email.split('@')[0];
+                name = prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : 'Kullanıcı';
+              }
+              uniqueUsersMap.set(u.id, {
+                id: u.id,
+                tam_adi: name,
+                unvan: u.meta_data?.unvan || 'Personel'
+              });
             }
-            return {
-              id: u.id,
-              tam_adi: name,
-              unvan: u.meta_data?.unvan || 'Personel'
-            };
           });
-        setUsers(formattedUsers);
+        setUsers(Array.from(uniqueUsersMap.values()));
       }
     }
     fetchUsers();
@@ -65,10 +68,21 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
         .order('olusturulma_tarihi', { ascending: true });
       if (data) setMessages(data);
     }
+
+    async function markAsRead() {
+      await supabase
+        .from('mesajlar')
+        .update({ okundu: true })
+        .eq('alici_id', currentUserId)
+        .eq('gonderen_id', selectedUser?.id)
+        .eq('okundu', false);
+    }
+
     fetchMessages();
+    markAsRead();
 
     const channel = supabase
-      .channel('public:mesajlar')
+      .channel('schema-db-changes')
       .on(
         'postgres_changes',
         {
@@ -83,6 +97,11 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
             (newMsg.gonderen_id === selectedUser?.id && newMsg.alici_id === currentUserId)
           ) {
             setMessages((prev) => [...prev, newMsg]);
+            
+            // If the message is for me and I'm currently in the chat, mark it as read
+            if (newMsg.alici_id === currentUserId && newMsg.gonderen_id === selectedUser?.id) {
+              markAsRead();
+            }
           }
         }
       )

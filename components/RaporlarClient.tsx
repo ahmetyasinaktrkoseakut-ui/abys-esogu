@@ -326,10 +326,10 @@ export default function RaporlarClient() {
                                   ev = { ...k, no: globalEvidenceCounter++ };
                                   allEvidences.push(ev);
                                 }
-                                phaseEvidenceStrings.push(`(${t('evidence_prefix')} ${ev.no})`);
+                                phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">(${t('evidence_prefix')} ${ev.no})</a>`);
                               });
                               
-                              const evidenceHtml = ` <strong style="color: #ea580c; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</strong>`;
+                              const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
                               
                               if (phaseText.trim().endsWith('</p>')) {
                                 phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
@@ -353,10 +353,10 @@ export default function RaporlarClient() {
                                   ev = { ...k, no: globalEvidenceCounter++ };
                                   allEvidences.push(ev);
                                 }
-                                phaseEvidenceStrings.push(`(${t('evidence_prefix')} ${ev.no})`);
+                                phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">(${t('evidence_prefix')} ${ev.no})</a>`);
                               });
                               
-                              const evidenceHtml = ` <strong style="color: #ea580c; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</strong>`;
+                              const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
                               
                               if (phaseText.trim().endsWith('</p>')) {
                                 phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);

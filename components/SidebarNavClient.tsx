@@ -28,6 +28,7 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
   const tAnn = useTranslations('Announcements');
   const tQM = useTranslations('QualityManual');
   const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadMsgCount, setUnreadMsgCount] = useState(0);
 
   useEffect(() => {
     if (!userId) return;
@@ -58,8 +59,28 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
       })
       .subscribe();
 
+    async function fetchUnreadMessages() {
+      const { count } = await supabase
+        .from('mesajlar')
+        .select('*', { count: 'exact', head: true })
+        .eq('alici_id', userId)
+        .eq('okundu', false);
+      
+      setUnreadMsgCount(count || 0);
+    }
+
+    fetchUnreadMessages();
+
+    const mesajlarChannel = supabase
+      .channel('sidebar_mesajlar')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mesajlar', filter: `alici_id=eq.${userId}` }, () => {
+        fetchUnreadMessages();
+      })
+      .subscribe();
+
     return () => {
       supabase.removeChannel(duyurularChannel);
+      supabase.removeChannel(mesajlarChannel);
     };
   }, [userId]);
 
@@ -117,7 +138,14 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
             </>
           )}
           <Link href="/iletisim" className={getLinkClass('/iletisim')}>
-            <MessageSquare className="w-5 h-5 flex-shrink-0" />
+            <div className="relative">
+              <MessageSquare className="w-5 h-5 flex-shrink-0" />
+              {unreadMsgCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                  {unreadMsgCount}
+                </span>
+              )}
+            </div>
             {t('communication')}
           </Link>
           <Link href="/duyurular" className={getLinkClass('/duyurular')}>

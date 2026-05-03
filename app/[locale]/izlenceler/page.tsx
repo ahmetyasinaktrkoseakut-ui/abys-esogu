@@ -21,7 +21,12 @@ export default async function IzlencelerPage() {
     .from('ders_izlenceleri')
     .select('ders_id, icerik');
 
-  const parsedDersler = (dersler || []).map(d => {
+  const baseDersler = (dersler || []).map(d => {
+    // 1. Yarıyıl ismini güncelle
+    if (d.ad === 'Sosyal Seçmeli Ders' && d.yariyil === 'I. YARIYIL') {
+      return { ...d, ad: 'Sosyal Seçmeli Ders I' };
+    }
+
     const yariyilText = (d.yariyil || '').trim().toUpperCase();
     if (yariyilText === 'SEÇMELİ DERSLER' && d.kod) {
       const semDigit = d.kod.charAt(5);
@@ -38,6 +43,29 @@ export default async function IzlencelerPage() {
       }
     }
     return d;
+  });
+
+  // Her dönem için istenen placeholder'ları enjekte et
+  const placeholders = [
+    { sem: 'III. YARIYIL', ad: 'Seçmeli Ders I', count: 2 },
+    { sem: 'IV. YARIYIL', ad: 'Seçmeli Ders II', count: 2 },
+    { sem: 'V. YARIYIL', ad: 'Seçmeli Ders III', count: 2 },
+    { sem: 'VI. YARIYIL', ad: 'Seçmeli Ders IV', count: 2 },
+    { sem: 'VII. YARIYIL', ad: 'Seçmeli Ders V', count: 2 },
+    { sem: 'VIII. YARIYIL', ad: 'Seçmeli Ders VI', count: 2 },
+  ];
+
+  const parsedDersler = [...baseDersler];
+  placeholders.forEach(p => {
+    for (let i = 0; i < p.count; i++) {
+      parsedDersler.push({
+        kod: '-',
+        ad: p.ad,
+        yariyil: p.sem,
+        tur: 'S',
+        t: 0, u: 0, l: 0, kredi: 0, akts: 0, dil: 'TR'
+      } as any);
+    }
   });
 
   // Kategorileri dinamik olarak veritabanından çek ve mantıklı bir sıraya diz

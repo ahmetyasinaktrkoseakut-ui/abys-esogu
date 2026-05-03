@@ -1,38 +1,31 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import { GraduationCap, Edit3, Eye, Lock } from 'lucide-react';
 import Link from 'next/link';
 
-export default function IzlencelerPage() {
-  const [dersler, setDersler] = useState<any[]>([]);
-  const [izlenceler, setIzlenceler] = useState<any[]>([]);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    async function fetchData() {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+export default async function IzlencelerPage() {
+  const supabase = await createClient();
+  
+  // Kullanıcı bilgisini al (Hoca mı değil mi anlamak için)
+  const { data: { user } } = await supabase.auth.getUser();
 
-      const { data: dersData } = await supabase.from('dersler').select('*').order('yariyil', { ascending: true }).order('tur', { ascending: false });
-      const { data: izlenceData } = await supabase.from('ders_izlenceleri').select('ders_id, icerik');
-      
-      setDersler(dersData || []);
-      setIzlenceler(izlenceData || []);
-      setLoading(false);
-    }
-    fetchData();
-  }, []);
+  // Tüm dersleri ve izlenceleri sunucu tarafında çek
+  const { data: dersler } = await supabase
+    .from('dersler')
+    .select('*')
+    .order('yariyil', { ascending: true })
+    .order('tur', { ascending: false });
+
+  const { data: izlenceler } = await supabase
+    .from('ders_izlenceleri')
+    .select('ders_id, icerik');
 
   const kategoriler = [
     'I. YARIYIL', 'II. YARIYIL', 'III. YARIYIL', 'IV. YARIYIL',
     'V. YARIYIL', 'VI. YARIYIL', 'VII. YARIYIL', 'VIII. YARIYIL',
-    'SEÇMELİ DERSLER' // Havuzdaki tüm seçmeliler buraya gelecek
+    'SEÇMELİ DERSLER'
   ];
-
-  if (loading) return <div className="flex items-center justify-center min-h-screen">Yükleniyor...</div>;
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-8">
@@ -55,12 +48,11 @@ export default function IzlencelerPage() {
 
       <div className="max-w-7xl mx-auto space-y-12 pb-20">
         {kategoriler.map((kat) => {
-          const katDersleri = dersler.filter(d => d.yariyil === kat);
+          const katDersleri = (dersler || []).filter(d => d.yariyil === kat);
           if (katDersleri.length === 0) return null;
 
           return (
             <div key={kat} className="overflow-hidden shadow-sm border border-blue-200 rounded-lg">
-              {/* Kategori Başlığı */}
               <div className="bg-blue-900 py-3 text-center">
                 <h2 className="text-lg font-black text-white tracking-[0.2em]">{kat}</h2>
               </div>
@@ -85,8 +77,8 @@ export default function IzlencelerPage() {
                   </thead>
                   <tbody>
                     {katDersleri.map((ders) => {
-                      const izlence = izlenceler.find(i => i.ders_id === ders.kod);
-                      const isFilled = izlence && Object.keys(izlence.icerik).length > 0;
+                      const izlence = (izlenceler || []).find(i => i.ders_id === ders.kod);
+                      const isFilled = izlence && Object.keys(izlence.icerik || {}).length > 0;
                       const canEdit = user !== null;
 
                       return (

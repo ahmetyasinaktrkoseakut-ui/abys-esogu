@@ -6,7 +6,7 @@ import {
   Save, ArrowLeft, Plus, Trash2, 
   BookOpen, Clock, Target, ListChecks, 
   FileText, BarChart3, Settings, ShieldCheck,
-  ChevronRight, ChevronLeft
+  ChevronRight, ChevronLeft, GraduationCap
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 

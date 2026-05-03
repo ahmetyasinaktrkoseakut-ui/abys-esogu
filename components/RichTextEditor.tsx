@@ -10,9 +10,10 @@ interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
   readOnly?: boolean;
+  minHeight?: string;
 }
 
-export default function RichTextEditor({ content, onChange, readOnly = false }: RichTextEditorProps) {
+export default function RichTextEditor({ content, onChange, readOnly = false, minHeight = '160px' }: RichTextEditorProps) {
   const editor = useEditor({
     editable: !readOnly,
     extensions: [
@@ -111,7 +112,11 @@ export default function RichTextEditor({ content, onChange, readOnly = false }: 
       )}
 
       {/* Editor Content Area */}
-      <div className={`p-4 min-h-[160px] prose prose-sm max-w-none text-slate-700 ${!readOnly ? 'cursor-text' : 'cursor-not-allowed'} focus-within:outline-none`} onClick={() => { if(!readOnly) editor.commands.focus() }}>
+      <div 
+        className={`p-4 prose prose-sm max-w-none text-slate-700 ${!readOnly ? 'cursor-text' : 'cursor-not-allowed'} focus-within:outline-none`} 
+        style={{ minHeight }}
+        onClick={() => { if(!readOnly) editor.commands.focus() }}
+      >
         <EditorContent editor={editor} />
       </div>
     </div>

@@ -2,11 +2,12 @@
 
 import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download } from 'lucide-react';
+import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download, Save, Plus, Link as LinkIcon } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
 import { useTranslations, useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
+import RichTextEditor from '@/components/RichTextEditor';
 
 interface OzdegerlendirmeRaporuClientProps {
   params: Promise<{ id: string }>;
@@ -22,6 +23,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const [olgunlukPuani, setOlgunlukPuani] = useState<number | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
+
   const t = useTranslations('SelfEvaluation');
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
@@ -33,23 +37,31 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     }
     try {
       setIsLoading(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+        const role = profile?.rol?.toLowerCase() || '';
+        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false) {
+          setIsReadOnly(true);
+        }
+      }
+
       const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).single();
       if (olcut) setOlcutDetay(olcut);
       
-      // Check if a report was already generated and saved in 'rapor' stage
-      const { data: pukoData } = await supabase
-        .from('puko_degerlendirmeleri')
+      const { data: raporData } = await supabase
+        .from('ozdegerlendirme_raporlari')
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
-        .eq('puko_asamasi', 'rapor')
         .eq('donem_id', selectedPeriod?.id)
         .order('id', { ascending: false })
         .limit(1)
         .single();
         
-      if (pukoData && pukoData.aciklama) {
-        setRaporMetni(pukoData.aciklama);
-        setKanitlar(Array.isArray(pukoData.kanit_dosyalari) ? pukoData.kanit_dosyalari : []);
+      if (raporData) {
+        setRaporMetni(raporData?.icerik ?? '');
+        setKanitlar(raporData?.kanitlar ?? []);
         setRaporOlusturuldu(true);
       }
     } catch (error) {
@@ -75,14 +87,14 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         h2 { color: #2d3748; margin-top: 20px; }
         h3 { background-color: #edf2f7; padding: 8px; border: 1px solid #cbd5e0; margin-top: 25px; color: #2b6cb0; text-transform: uppercase; font-size: 14px; }
         .kanit-section { margin-top: 40px; border-top: 2px solid #2b6cb0; padding-top: 10px; }
-        .kanit-link { color: #3182ce; text-decoration: underline; }
+        .kanit-link { color: #3182ce; text-decoration: underline; font-weight: bold; }
         .footer { text-align: center; font-size: 11px; color: #718096; margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
       </style>
       </head>
       <body>
         <h1>${t('title')}</h1>
         <p style='text-align:center; font-weight: bold;'>${olcutDetay?.kod || ''} - ${getLocalizedField(olcutDetay, 'olcut_adi', locale) || ''}</p>
-        <p style='text-align:center; color: #718096; font-size: 12px;'>${t('generating_title').replace('...', '')}: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
+        <p style='text-align:center; color: #718096; font-size: 12px;'>Oluşturulma Tarihi: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
         
         <div class='content'>
           ${raporMetni}
@@ -91,7 +103,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         <div class='kanit-section'>
           <h2>${t('evidences')}</h2>
           ${kanitlar.length === 0 ? `<p><i>${t('no_evidence')}</i></p>` : '<ul>'}
-          ${kanitlar.map(doc => `<li><a class='kanit-link' href='${doc.url}'>${doc.name}</a></li>`).join('')}
+          ${kanitlar.map((doc, idx) => `<li><strong id="kanit-${idx}">[Kanıt ${idx + 1}]</strong> <a class='kanit-link' href='${doc.url}'>${doc.name}</a></li>`).join('')}
           ${kanitlar.length === 0 ? '' : '</ul>'}
         </div>
 
@@ -113,7 +125,6 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const handleRaporOlustur = async () => {
     setIsGenerating(true);
     try {
-      // Fetch data from stages 2 to 6
       const adimlar = ['planlama', 'uygulama', 'kontrol', 'onlem', 'olgunluk'];
       const { data } = await supabase
         .from('puko_degerlendirmeleri')
@@ -132,7 +143,6 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       let birlesikKanitlar: any[] = [];
       let puan = null;
 
-      // Order logically
       const orderMap: Record<string, number> = { planlama: 1, uygulama: 2, kontrol: 3, onlem: 4, olgunluk: 5 };
       const siraliData = [...data].sort((a, b) => (orderMap[a.puko_asamasi] || 99) - (orderMap[b.puko_asamasi] || 99));
 
@@ -174,44 +184,71 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         setOlgunlukPuani(puan);
       }
 
-      // Deduplicate files by URL
-      const uniqueKanitlar = Array.from(new Map(birlesikKanitlar.map(item => [item.url, item])).values());
+      const uniqueKanitlar = Array.from(new Map((birlesikKanitlar ?? []).map(item => [item.url, item])).values());
 
-      setRaporMetni(birlesikMetin);
-      setKanitlar(uniqueKanitlar);
-      
-      // Save it automatically to 'rapor' stage
-      const upsertData: Record<string, any> = {
-        alt_olcut_id: resolvedParams.id,
-        puko_asamasi: 'rapor',
-        donem_id: selectedPeriod?.id,
-        aciklama: birlesikMetin,
-        kanit_dosyalari: uniqueKanitlar,
-        durum: 'Beklemede',
-        red_nedeni: null
-      };
-
-      const { data: existingRecord } = await supabase
-        .from('puko_degerlendirmeleri')
-        .select('id')
-        .eq('alt_olcut_id', resolvedParams.id)
-        .eq('puko_asamasi', 'rapor')
-        .eq('donem_id', selectedPeriod?.id)
-        .maybeSingle();
-
-      if (existingRecord?.id) {
-        await supabase.from('puko_degerlendirmeleri').update(upsertData).eq('id', existingRecord.id);
-      } else {
-        await supabase.from('puko_degerlendirmeleri').insert(upsertData);
-      }
-
+      setRaporMetni(birlesikMetin ?? '');
+      setKanitlar(uniqueKanitlar ?? []);
       setRaporOlusturuldu(true);
+      
     } catch (err: any) {
       console.error(err);
       alert(`Error: ${err.message}`);
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const upsertData = {
+        alt_olcut_id: resolvedParams.id,
+        donem_id: selectedPeriod?.id,
+        icerik: raporMetni ?? '',
+        kanitlar: kanitlar ?? [],
+      };
+
+      const { data: existingRecord } = await supabase
+        .from('ozdegerlendirme_raporlari')
+        .select('id')
+        .eq('alt_olcut_id', resolvedParams.id)
+        .eq('donem_id', selectedPeriod?.id)
+        .maybeSingle();
+
+      if (existingRecord?.id) {
+        await supabase.from('ozdegerlendirme_raporlari').update(upsertData).eq('id', existingRecord.id);
+      } else {
+        await supabase.from('ozdegerlendirme_raporlari').insert(upsertData);
+      }
+
+      alert('Rapor başarıyla kaydedildi.');
+    } catch (err: any) {
+      console.error(err);
+      alert(`Hata: ${err.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleKanitEkle = (index: number) => {
+    if (isReadOnly) return;
+    const anchorHTML = `&nbsp;<a href="#kanit-${index}" style="color: #2563eb; font-weight: bold; text-decoration: none; padding: 2px 6px; background-color: #eff6ff; border-radius: 4px; border: 1px solid #bfdbfe; font-size: 0.9em; display: inline-flex; align-items: center; gap: 4px;">[Kanıt ${index + 1}]</a>&nbsp;`;
+    setRaporMetni(prev => (prev || '') + anchorHTML);
+  };
+
+  const handleYeniKanitTanımla = () => {
+    if (isReadOnly) return;
+    const kanitAdi = prompt('Kanıt Adını Giriniz:');
+    if (!kanitAdi) return;
+    const kanitUrl = prompt('Kanıt Linkini (URL) Giriniz:', 'https://');
+    if (!kanitUrl) return;
+
+    const yeniKanit = { name: kanitAdi, url: kanitUrl, size: 0, manual: true };
+    const updateKanitlar = [...kanitlar, yeniKanit];
+    setKanitlar(updateKanitlar);
+    
+    // Automatically add the link to the text for the newly added evidence
+    handleKanitEkle(updateKanitlar.length - 1);
   };
 
   if (isLoading) {
@@ -247,7 +284,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
             </div>
             <h3 className="text-2xl font-black text-slate-800 mb-3">{t('title')}</h3>
             <p className="text-slate-500 max-w-lg mb-8 leading-relaxed">
-              {t('description')}
+              Özdeğerlendirme Raporunuzu oluşturmak için verileri birleştirin.
             </p>
             <button 
               onClick={handleRaporOlustur}
@@ -255,74 +292,112 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
               <FileSearch className="w-6 h-6 relative z-10" />
-              <span className="text-lg relative z-10">{t('create_button')}</span>
+              <span className="text-lg relative z-10">Verileri Çek ve Raporu Düzenle</span>
             </button>
           </div>
         ) : isGenerating ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center bg-white">
              <Loader2 className="w-16 h-16 animate-spin text-blue-600 mb-6" />
-             <h3 className="text-xl font-bold text-slate-700 mb-2">{t('generating_title')}</h3>
-             <p className="text-slate-500">{t('generating_desc')}</p>
+             <h3 className="text-xl font-bold text-slate-700 mb-2">Veriler Birleştiriliyor...</h3>
+             <p className="text-slate-500">Önceki aşamalardaki bilgiler toparlanıyor.</p>
           </div>
         ) : (
           <div className="flex flex-col h-full">
-            <div className="bg-blue-600 p-6 flex items-center justify-between text-white">
+            <div className="bg-blue-600 p-6 flex items-center justify-between text-white flex-wrap gap-4">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-8 h-8 text-blue-200" />
                 <div>
-                  <h3 className="text-xl font-bold">{t('ready_title')}</h3>
-                  <p className="text-blue-100 text-sm">{t('ready_subtitle')}</p>
+                  <h3 className="text-xl font-bold">Rapor Düzenleme</h3>
+                  <p className="text-blue-100 text-sm">Metni düzenleyebilir ve atıflar ekleyebilirsiniz.</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
                 <button 
                   onClick={exportToWord}
-                  className="bg-white text-blue-600 hover:bg-blue-50 px-5 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg"
+                  className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
                 >
-                  <Download className="w-4 h-4" /> {t('download_word')}
+                  <Download className="w-4 h-4" /> Word İndir
                 </button>
                 <button 
                   onClick={handleRaporOlustur}
-                  className="bg-white/20 hover:bg-white/30 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
+                  className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
                 >
-                  <FileSearch className="w-4 h-4" /> {t('recompile')}
+                  <FileSearch className="w-4 h-4" /> Yeniden Çek
                 </button>
+                {!isReadOnly && (
+                  <button 
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="bg-emerald-500 hover:bg-emerald-600 px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg disabled:opacity-70"
+                  >
+                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                    {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="p-8 lg:p-12 prose prose-slate max-w-none bg-[#FAFAFA] border-b border-slate-200">
-               <div dangerouslySetInnerHTML={{ __html: raporMetni }} className="space-y-6" />
+            <div className="p-8 lg:p-12 bg-[#FAFAFA] border-b border-slate-200">
+               <RichTextEditor content={raporMetni} onChange={setRaporMetni} readOnly={isReadOnly} minHeight="500px" />
             </div>
 
             <div className="p-8 lg:p-12 bg-white">
-              <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2 border-b pb-4">
-                <FileText className="w-6 h-6 text-blue-600" />
-                {t('evidences')}
+              <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center justify-between border-b pb-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="w-6 h-6 text-blue-600" />
+                  Kanıt Bilgileri ve Atıf Listesi
+                </div>
+                {!isReadOnly && (
+                  <button 
+                    onClick={handleYeniKanitTanımla}
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95"
+                  >
+                    <Plus className="w-4 h-4" /> Yeni Kanıt Tanımla
+                  </button>
+                )}
               </h3>
               
               {kanitlar.length === 0 ? (
                 <div className="text-slate-500 italic p-6 bg-slate-50 rounded-xl border border-slate-200 border-dashed text-center">
-                  {t('no_evidence')}
+                  Bu ölçüt için henüz kanıt belgesi yüklenmemiş.
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                  {kanitlar.map((doc, idx) => (
-                    <a 
-                      key={idx} 
-                      href={doc.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-4 p-4 rounded-xl border border-slate-200 hover:border-blue-400 hover:shadow-md transition-all bg-white group"
-                    >
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-slate-700 truncate text-sm">{doc.name}</p>
-                        {doc.size && <p className="text-xs text-slate-500 mt-0.5">{doc.size} KB</p>}
-                      </div>
-                    </a>
-                  ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+                        <th className="py-3 px-4 w-24">Atıf No</th>
+                        <th className="py-3 px-4">Kanıt Adı</th>
+                        <th className="py-3 px-4 w-32 text-center">İşlem</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {kanitlar.map((doc, idx) => (
+                        <tr key={idx} id={`kanit-${idx}`} className="hover:bg-slate-50 transition-colors group">
+                          <td className="py-3 px-4 font-bold text-blue-600">
+                            [Kanıt {idx + 1}]
+                          </td>
+                          <td className="py-3 px-4">
+                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-600 font-medium flex items-center gap-2">
+                              <LinkIcon className="w-4 h-4 text-slate-400" />
+                              {doc.name}
+                            </a>
+                            {doc.size && <span className="text-xs text-slate-400 block mt-1">{doc.size} KB</span>}
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            {!isReadOnly && (
+                              <button 
+                                onClick={() => handleKanitEkle(idx)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-semibold transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5" /> Metne Ekle
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

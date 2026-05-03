@@ -22,7 +22,8 @@ export default async function IzlencelerPage() {
     .select('ders_id, icerik');
 
   const parsedDersler = (dersler || []).map(d => {
-    if (d.yariyil === 'SEÇMELİ DERSLER' && d.kod) {
+    const yariyilText = (d.yariyil || '').trim().toUpperCase();
+    if (yariyilText === 'SEÇMELİ DERSLER' && d.kod) {
       const semDigit = d.kod.charAt(5);
       const semMap: Record<string, string> = {
         '3': 'SEÇMELİ I DERSLERİ',
@@ -42,24 +43,26 @@ export default async function IzlencelerPage() {
   // Kategorileri dinamik olarak veritabanından çek ve mantıklı bir sıraya diz
   const rawKategoriler = Array.from(new Set(parsedDersler.map(d => d.yariyil)));
   
-  const romanToInt = (roman: string) => {
+  const getSortOrder = (text: string) => {
     const romanVals: Record<string, number> = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10 };
-    const parts = roman.split('.');
-    return romanVals[parts[0]] || 99;
+    
+    // Standart dönem mi? (I. YARIYIL)
+    if (text.includes('.')) {
+      const roman = text.split('.')[0];
+      return romanVals[roman] || 99;
+    }
+    
+    // Seçmeli havuzu mu? (SEÇMELİ I DERSLERİ)
+    const match = text.match(/SEÇMELİ\s+([IVX]+)/i);
+    if (match && romanVals[match[1]]) {
+      return romanVals[match[1]] + 10; // Seçmelileri dönemlerden sonraya at
+    }
+    
+    return 99;
   };
 
   const kategoriler = rawKategoriler.sort((a, b) => {
-    const isASecmeli = a.toLowerCase().includes('seçmeli');
-    const isBSecmeli = b.toLowerCase().includes('seçmeli');
-    if (isASecmeli && !isBSecmeli) return 1;
-    if (!isASecmeli && isBSecmeli) return -1;
-    
-    if (!isASecmeli && !isBSecmeli) {
-      return romanToInt(a) - romanToInt(b);
-    }
-    
-    // Her ikisi de seçmeliyse döneme göre sırala (Örn: "V. Yarıyıl Seçmeli" önce gelir)
-    return romanToInt(a) - romanToInt(b);
+    return getSortOrder(a) - getSortOrder(b);
   });
 
   return (

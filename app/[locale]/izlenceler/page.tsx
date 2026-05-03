@@ -25,12 +25,12 @@ export default async function IzlencelerPage() {
     if (d.yariyil === 'SEÇMELİ DERSLER' && d.kod) {
       const semDigit = d.kod.charAt(5);
       const semMap: Record<string, string> = {
-        '3': 'III. Yarıyıl Seçmeli Havuzu',
-        '4': 'IV. Yarıyıl Seçmeli Havuzu',
-        '5': 'V. Yarıyıl Seçmeli Havuzu',
-        '6': 'VI. Yarıyıl Seçmeli Havuzu',
-        '7': 'VII. Yarıyıl Seçmeli Havuzu',
-        '8': 'VIII. Yarıyıl Seçmeli Havuzu'
+        '3': 'SEÇMELİ I DERSLERİ',
+        '4': 'SEÇMELİ II DERSLERİ',
+        '5': 'SEÇMELİ III DERSLERİ',
+        '6': 'SEÇMELİ IV DERSLERİ',
+        '7': 'SEÇMELİ V DERSLERİ',
+        '8': 'SEÇMELİ VI DERSLERİ'
       };
       if (semMap[semDigit]) {
         return { ...d, yariyil: semMap[semDigit] };

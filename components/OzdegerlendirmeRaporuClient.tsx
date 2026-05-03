@@ -54,7 +54,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .from('ozdegerlendirme_raporlari')
         .select('*')
         .eq('alt_olcut_id', String(resolvedParams.id))
-        .eq('donem_id', selectedPeriod?.id)
+        .eq('donem_id', String(selectedPeriod?.id))
         .order('olusturulma_tarihi', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -202,8 +202,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     setIsSaving(true);
     try {
       const upsertData = {
-        alt_olcut_id: resolvedParams.id,
-        donem_id: selectedPeriod?.id,
+        alt_olcut_id: String(resolvedParams.id),
+        donem_id: String(selectedPeriod?.id),
         icerik: raporMetni ?? '',
         kanitlar: kanitlar ?? [],
       };
@@ -211,8 +211,10 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       const { data: existingRecord } = await supabase
         .from('ozdegerlendirme_raporlari')
         .select('id')
-        .eq('alt_olcut_id', resolvedParams.id)
-        .eq('donem_id', selectedPeriod?.id)
+        .eq('alt_olcut_id', String(resolvedParams.id))
+        .eq('donem_id', String(selectedPeriod?.id))
+        .order('olusturulma_tarihi', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (existingRecord?.id) {

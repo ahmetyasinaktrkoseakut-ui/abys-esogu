@@ -8,12 +8,10 @@ export default async function IzlencelerLayout({
 }) {
   const messages = await getMessages();
   return (
-    <html lang="tr">
-      <body className="bg-white text-slate-900 font-sans">
-        <NextIntlClientProvider messages={messages}>
-          {children}
-        </NextIntlClientProvider>
-      </body>
-    </html>
+    <NextIntlClientProvider messages={messages}>
+      <div className="bg-white min-h-screen text-slate-900 font-sans">
+        {children}
+      </div>
+    </NextIntlClientProvider>
   );
 }

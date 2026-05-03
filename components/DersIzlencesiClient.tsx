@@ -277,7 +277,7 @@ export default function DersIzlencesiClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {formData.ogrenimCiktilari.map((oc: any, i: number) => (
+                    {(formData.ogrenimCiktilari || []).map((oc: any, i: number) => (
                       <tr key={i}>
                         <td className="border p-2 text-center font-bold">{i + 1}</td>
                         <td className="border p-1"><input className="w-full p-2 outline-none focus:bg-blue-50" value={oc.cikti} onChange={e => {
@@ -346,7 +346,7 @@ export default function DersIzlencesiClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {formData.haftalikIcerik.map((row: any, i: number) => (
+                    {(formData.haftalikIcerik || []).map((row: any, i: number) => (
                       <tr key={i} className={row.hafta === 'Arasınav' || row.hafta === 'Final' ? 'bg-blue-50' : ''}>
                         <td className="border p-2 text-center font-bold">{row.hafta}</td>
                         <td className="border p-1"><input className="w-full p-2 outline-none bg-transparent" value={row.konu} onChange={e => {
@@ -376,7 +376,7 @@ export default function DersIzlencesiClient({
                   </tr>
                 </thead>
                 <tbody>
-                  {formData.degerlendirme.map((d: any, i: number) => (
+                  {(formData.degerlendirme || []).map((d: any, i: number) => (
                     <tr key={i}>
                       <td className="border p-2 font-bold">{d.tur}</td>
                       <td className="border p-1"><input className="w-full p-2 outline-none" value={d.aciklama} onChange={e => {
@@ -417,7 +417,7 @@ export default function DersIzlencesiClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {formData.aktsIsYuku.map((row: any, i: number) => (
+                    {(formData.aktsIsYuku || []).map((row: any, i: number) => (
                       <tr key={i}>
                         <td className="border p-2 font-medium">{row.etkinlik}</td>
                         <td className="border p-1"><input className="w-full p-2 text-center outline-none" value={row.sayisi} onChange={e => {
@@ -451,7 +451,7 @@ export default function DersIzlencesiClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {formData.pcMatris.map((pc: any, i: number) => (
+                    {(formData.pcMatris || []).map((pc: any, i: number) => (
                       <tr key={i}>
                         <td className="border p-2 w-64"><span className="font-black text-blue-900">{pc.id}:</span> {pc.metin}</td>
                         {Array(10).fill(0).map((_, j) => (
@@ -488,7 +488,7 @@ export default function DersIzlencesiClient({
                     </tr>
                   </thead>
                   <tbody>
-                    {formData.docMatris.map((doc: any, i: number) => (
+                    {(formData.docMatris || []).map((doc: any, i: number) => (
                       <tr key={i}>
                         <td className="border p-2 w-64"><span className="font-black text-blue-900">{doc.id}:</span> {doc.metin}</td>
                         {Array(10).fill(0).map((_, j) => (

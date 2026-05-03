@@ -151,7 +151,7 @@ export default function RaporlarClient() {
       if (ilgiliOlcutler.length > 0) {
         htmlContent += `<h2>${anaBaslik.kod} - ${getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>`;
         ilgiliOlcutler.forEach(olcut => {
-          const ozdegerlendirme = raporData.ozdegerlendirmeVerileri.find(ov => ov.alt_olcut_id === olcut.id);
+          const ozdegerlendirme = raporData.ozdegerlendirmeVerileri.find(ov => String(ov.alt_olcut_id) === String(olcut.id));
           const pukoList = getPukoForOlcut(olcut.id);
           
           let combinedText = '';
@@ -315,7 +315,7 @@ export default function RaporlarClient() {
 
                     <div className="space-y-12 pl-4 border-l-4 border-slate-200 ml-4">
                       {ilgiliOlcutler.map((olcut) => {
-                        const ozdegerlendirme = raporData.ozdegerlendirmeVerileri.find(ov => ov.alt_olcut_id === olcut.id);
+                        const ozdegerlendirme = raporData.ozdegerlendirmeVerileri.find(ov => String(ov.alt_olcut_id) === String(olcut.id));
                         const pukoList = getPukoForOlcut(olcut.id);
                         
                         let combinedText = '';

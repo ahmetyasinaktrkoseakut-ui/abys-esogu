@@ -57,7 +57,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .eq('donem_id', selectedPeriod?.id)
         .order('id', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
         
       if (raporData) {
         setRaporMetni(raporData?.icerik ?? '');

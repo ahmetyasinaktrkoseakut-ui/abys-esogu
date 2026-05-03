@@ -13,15 +13,18 @@ export default async function DashboardPage() {
   const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
   const isAdmin = profile?.rol?.toLowerCase().includes('admin') || profile?.rol?.toLowerCase().includes('yönetici') || profile?.rol?.toLowerCase().includes('yonetici');
 
-  const { count: assignmentCount } = await supabase
-    .from('kullanici_olcut_atamalari')
-    .select('*', { count: 'exact', head: true })
-    .eq('kullanici_id', user.id);
+  const { count: assignmentCount } = await supabase.from('kullanici_olcut_atamalari').select('*', { count: 'exact', head: true }).eq('kullanici_id', user.id);
+  const { count: activeOlcutCount } = await supabase.from('olcutler').select('*', { count: 'exact', head: true });
+  const { count: activeEylemCount } = await supabase.from('puko_kayitlari').select('*', { count: 'exact', head: true }).eq('durum', 'Beklemede');
+  const { count: totalBirimCount } = await supabase.from('birimler').select('*', { count: 'exact', head: true });
 
   if (!isAdmin && (assignmentCount || 0) === 0) {
     redirect('/ders-izlenceleri');
   }
 
+  // Dashboard verilerini göstermek için bu redirect'i kaldırabiliriz veya 
+  // kullanıcıları ölçütlere göndermeye devam edebiliriz.
+  // Şimdilik build hatasını çözmek için verileri yukarıda tanımladım.
   redirect('/olcutler');
 
   return (

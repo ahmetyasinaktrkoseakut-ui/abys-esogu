@@ -20,49 +20,82 @@ interface Message {
   olusturulma_tarihi: string;
 }
 
+interface ProfileWithMeta extends Profile {
+  lastMessageDate: string | null;
+  unreadCount: number;
+}
+
 export default function IletisimClient({ currentUserId }: { currentUserId: string }) {
   const t = useTranslations('Messaging');
-  const [users, setUsers] = useState<Profile[]>([]);
-  const [selectedUser, setSelectedUser] = useState<Profile | null>(null);
+  const [users, setUsers] = useState<ProfileWithMeta[]>([]);
+  const [selectedUser, setSelectedUser] = useState<ProfileWithMeta | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    async function fetchUsers() {
-      const { data, error } = await supabase.rpc('get_kullanicilar');
-      if (data) {
-        const uniqueUsersMap = new Map();
-        data
-          .filter((u: any) => String(u.id) !== String(currentUserId))
-          .filter((u: any) => {
-            const name = (u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad || u.email || '').toLowerCase();
-            // Kullanıcı 'tarsalih' ismini kesinlikle istemiyor
-            return !name.includes('tarsalih');
-          })
-          .forEach((u: any) => {
-            let name = u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad;
-            if (!name) {
-              const email = u.email || '';
-              const prefix = email.split('@')[0];
-              name = prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : 'Kullanıcı';
-            }
-            
-            const dedupeKey = name.toLowerCase().trim();
-            
-            if (!uniqueUsersMap.has(dedupeKey)) {
-              uniqueUsersMap.set(dedupeKey, {
-                id: u.id,
-                tam_adi: name,
-                unvan: u.meta_data?.unvan || 'Personel'
-              });
-            }
-          });
-        setUsers(Array.from(uniqueUsersMap.values()));
-      }
+  const fetchUsers = async () => {
+    const { data: usersData } = await supabase.rpc('get_kullanicilar');
+    const { data: allMessages } = await supabase
+      .from('mesajlar')
+      .select('*')
+      .or(`gonderen_id.eq.${currentUserId},alici_id.eq.${currentUserId}`)
+      .order('olusturulma_tarihi', { ascending: false });
+
+    if (usersData) {
+      const uniqueUsersMap = new Map();
+      usersData
+        .filter((u: any) => String(u.id) !== String(currentUserId))
+        .forEach((u: any) => {
+          let name = u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad;
+          if (!name) {
+            const email = u.email || '';
+            const prefix = email.split('@')[0];
+            name = prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : 'Kullanıcı';
+          }
+          
+          const dedupeKey = u.id; // Use ID for strict uniqueness as requested
+          
+          if (!uniqueUsersMap.has(dedupeKey)) {
+            // Find last message and unread count for this user
+            const userMessages = allMessages?.filter(m => m.gonderen_id === u.id || m.alici_id === u.id) || [];
+            const lastMsg = userMessages[0];
+            const unreadCount = userMessages.filter(m => m.alici_id === currentUserId && m.gonderen_id === u.id && !m.okundu).length;
+
+            uniqueUsersMap.set(dedupeKey, {
+              id: u.id,
+              tam_adi: name,
+              unvan: u.meta_data?.unvan || 'Personel',
+              lastMessageDate: lastMsg ? lastMsg.olusturulma_tarihi : null,
+              unreadCount
+            });
+          }
+        });
+
+      const sortedUsers = Array.from(uniqueUsersMap.values()) as ProfileWithMeta[];
+      sortedUsers.sort((a, b) => {
+        if (!a.lastMessageDate) return 1;
+        if (!b.lastMessageDate) return -1;
+        return new Date(b.lastMessageDate).getTime() - new Date(a.lastMessageDate).getTime();
+      });
+
+      setUsers(sortedUsers);
     }
+  };
+
+  useEffect(() => {
     fetchUsers();
+
+    const channel = supabase
+      .channel('iletisim_global')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mesajlar' }, () => {
+        fetchUsers();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [currentUserId]);
 
   useEffect(() => {
@@ -84,6 +117,7 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
         .eq('alici_id', currentUserId)
         .eq('gonderen_id', selectedUser?.id)
         .eq('okundu', false);
+      fetchUsers(); // Update unread dots
     }
 
     fetchMessages();
@@ -111,6 +145,17 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
               markAsRead();
             }
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'mesajlar',
+        },
+        () => {
+          fetchMessages();
         }
       )
       .subscribe();
@@ -167,17 +212,36 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
             <button
               key={user.id}
               onClick={() => setSelectedUser(user)}
-              className={`w-full p-4 flex items-center gap-3 transition-colors hover:bg-white ${
+              className={`w-full p-4 flex items-center gap-3 transition-colors hover:bg-white relative ${
                 selectedUser?.id === user.id ? 'bg-white border-r-4 border-blue-600' : ''
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-bold">
+              <div className="w-12 h-12 rounded-full bg-slate-200 text-slate-600 flex-shrink-0 flex items-center justify-center font-bold text-lg border-2 border-white shadow-sm">
                 {user.tam_adi?.charAt(0).toUpperCase()}
               </div>
-              <div className="text-left">
-                <div className="font-bold text-slate-800 text-sm">{user.tam_adi}</div>
-                <div className="text-xs text-slate-500">{user.unvan}</div>
+              <div className="text-left flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2">
+                  <div className={`text-sm truncate ${user.unreadCount > 0 ? 'font-black text-slate-900' : 'font-semibold text-slate-700'}`}>
+                    {user.tam_adi}
+                  </div>
+                  {user.lastMessageDate && (
+                    <span className="text-[10px] text-slate-400 whitespace-nowrap">
+                      {new Date(user.lastMessageDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-slate-500 truncate">{user.unvan}</div>
+                  {user.unreadCount > 0 && (
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white ring-2 ring-white animate-pulse">
+                      {user.unreadCount}
+                    </span>
+                  )}
+                </div>
               </div>
+              {user.unreadCount > 0 && (
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-blue-600 rounded-full shadow-[0_0_8px_rgba(37,99,235,0.6)]" />
+              )}
             </button>
           ))}
         </div>

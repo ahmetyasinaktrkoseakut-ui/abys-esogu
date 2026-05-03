@@ -17,6 +17,7 @@ interface EylemPlani {
   sorumlu: string;
   basari_gostergesi: string;
   izleme_durumu: string;
+  riskler: string;
   alt_olcut_id: string;
   alt_olcutler?: {
     kod: string;
@@ -150,6 +151,7 @@ export default function TakvimClient() {
               <th style="width: 25%;">${t('table.action_activity')}</th>
               <th style="width: 15%;">${t('table.responsible')}</th>
               <th style="width: 15%;">${t('table.success_indicator')}</th>
+              <th style="width: 10%;">${t('table.riskler') || 'Riskler'}</th>
               <th style="width: 10%;">${t('table.tracking')}</th>
             </tr>
           </thead>
@@ -163,6 +165,7 @@ export default function TakvimClient() {
             <td>${p.eylem_faaliyet || '-'}</td>
             <td>${p.sorumlu || '-'}</td>
             <td>${p.basari_gostergesi || '-'}</td>
+            <td>${p.riskler || '-'}</td>
             <td>${p.izleme_durumu || '-'}</td>
           </tr>
         `;
@@ -242,6 +245,7 @@ export default function TakvimClient() {
                   <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[15%]">{t('table.action_activity')}</th>
                   <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">{t('table.responsible')}</th>
                   <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">{t('table.success_indicator')}</th>
+                  <th className="p-4 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">Riskler</th>
                   <th className="p-4 pr-6 text-xs font-semibold text-slate-500 uppercase tracking-wider w-[10%]">{t('table.tracking')}</th>
                 </tr>
               </thead>
@@ -290,6 +294,11 @@ export default function TakvimClient() {
                     <td className="p-4 align-top">
                       <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap max-w-[150px]">
                         {kayit.basari_gostergesi || '-'}
+                      </p>
+                    </td>
+                    <td className="p-4 align-top">
+                      <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap max-w-[150px]">
+                        {kayit.riskler || '-'}
                       </p>
                     </td>
                     <td className="p-4 pr-6 align-top">

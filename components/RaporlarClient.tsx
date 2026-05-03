@@ -88,8 +88,8 @@ export default function RaporlarClient() {
       const { data: anaBasliklar } = await supabase.from('ana_basliklar').select('*').order('kod', { ascending: true });
       const { data: altOlcutler } = await supabase.from('alt_olcutler').select('*').order('kod', { ascending: true });
       const { data: pukoVerileri } = await supabase.from('puko_degerlendirmeleri')
-        .select('alt_olcut_id, puko_asamasi, aciklama, olgunluk_puani, kanit_dosyalari')
-        .eq('donem_id', selectedPeriod?.id);
+        .select('alt_olcut_id, puko_asamasi, aciklama, olgunluk_puani, kanit_dosyalari, risk_analizi')
+        .eq('donem_id', String(selectedPeriod?.id));
       const { data: ozdegerlendirmeVerileri } = await supabase.from('ozdegerlendirme_raporlari')
         .select('alt_olcut_id, icerik, kanitlar, olusturulma_tarihi')
         .eq('donem_id', String(selectedPeriod?.id))
@@ -168,7 +168,15 @@ export default function RaporlarClient() {
             phases.forEach(phase => {
               const data = pukoList.find(p => p.puko_asamasi === phase);
               if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
-                combinedText += (combinedText ? '<br/><br/>' : '') + data.aciklama;
+                let phaseText = data.aciklama;
+                
+                if (phase === 'planlama' && (data as any).risk_analizi) {
+                  phaseText += `<div style="margin-top: 10px; padding: 10px; background-color: #fef2f2; border: 1px solid #fee2e2; color: #991b1b;">
+                    <strong>Risk Analizi:</strong> ${ (data as any).risk_analizi }
+                  </div>`;
+                }
+
+                combinedText += (combinedText ? '<br/><br/>' : '') + phaseText;
                 if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
                   allEvidences = [...allEvidences, ...data.kanit_dosyalari];
                 }
@@ -339,6 +347,14 @@ export default function RaporlarClient() {
                             const data = pukoList.find(p => p.puko_asamasi === phase);
                             if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
                               let phaseText = data.aciklama;
+
+                              if (phase === 'planlama' && (data as any).risk_analizi) {
+                                phaseText += `<div style="margin-top: 10px; padding: 10px; background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px;">
+                                  <strong style="color: #991b1b;">Risk Analizi:</strong><br/>
+                                  ${(data as any).risk_analizi}
+                                </div>`;
+                              }
+
                               if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari) && data.kanit_dosyalari.length > 0) {
                                 const phaseEvidenceStrings: string[] = [];
                                 data.kanit_dosyalari.forEach(k => {

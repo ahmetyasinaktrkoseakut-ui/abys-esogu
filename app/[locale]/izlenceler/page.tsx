@@ -23,24 +23,18 @@ export default async function IzlencelerPage() {
 
   const parsedDersler = (dersler || []).map(d => {
     const yariyilText = (d.yariyil || '').trim().toUpperCase();
-    const adLower = (d.ad || '').toLowerCase();
-    const isPlaceholder = adLower.includes('seçmeli');
-
-    // Eğer ders seçmeli (S) ise ve placeholder değilse, ya da zaten "SEÇMELİ DERSLER" grubundaysa havuza aktar
-    if ((d.tur === 'S' && !isPlaceholder) || yariyilText === 'SEÇMELİ DERSLER') {
-      if (d.kod && d.kod.length >= 6) {
-        const semDigit = d.kod.charAt(5);
-        const semMap: Record<string, string> = {
-          '3': 'SEÇMELİ I DERSLERİ',
-          '4': 'SEÇMELİ II DERSLERİ',
-          '5': 'SEÇMELİ III DERSLERİ',
-          '6': 'SEÇMELİ IV DERSLERİ',
-          '7': 'SEÇMELİ V DERSLERİ',
-          '8': 'SEÇMELİ VI DERSLERİ'
-        };
-        if (semMap[semDigit]) {
-          return { ...d, yariyil: semMap[semDigit] };
-        }
+    if (yariyilText === 'SEÇMELİ DERSLER' && d.kod) {
+      const semDigit = d.kod.charAt(5);
+      const semMap: Record<string, string> = {
+        '3': 'SEÇMELİ I DERSLERİ',
+        '4': 'SEÇMELİ II DERSLERİ',
+        '5': 'SEÇMELİ III DERSLERİ',
+        '6': 'SEÇMELİ IV DERSLERİ',
+        '7': 'SEÇMELİ V DERSLERİ',
+        '8': 'SEÇMELİ VI DERSLERİ'
+      };
+      if (semMap[semDigit]) {
+        return { ...d, yariyil: semMap[semDigit] };
       }
     }
     return d;

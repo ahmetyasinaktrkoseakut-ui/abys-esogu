@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
@@ -24,55 +24,55 @@ interface Course {
   tur: string;
 }
 
-const DEFAULT_POLICIES = `â€¢ Ders SÃ¼resi ve Ä°ÅŸleyiÅŸi: Ders toplamda 3 saat sÃ¼recek ÅŸekilde planlanmÄ±ÅŸtÄ±r ve 1 saatlik iki blok halinde iÅŸlenecektir. Bloklar arasÄ±nda 15 dakikalÄ±k bir ara verilecektir.
-â€¢ Dijital AraÃ§larÄ±n KullanÄ±mÄ±: Ders sÄ±rasÄ±nda cep telefonu, tablet, dizÃ¼stÃ¼ bilgisayar vb. kiÅŸisel elektronik/dijital cihazlarla dersin herhangi bir bÃ¶lÃ¼mÃ¼nÃ¼ kaydedemezsiniz.
-â€¢ Devam Durumu: EskiÅŸehir Osmangazi Ãœniversitesi Ã–n Lisans ve Lisans EÄŸitim-Ã–ÄŸretim ve SÄ±nav YÃ¶netmeliÄŸi 16. Madde gereÄŸi "Ã–ÄŸrenci, teorik ders Ã§alÄ±ÅŸmalarÄ±nÄ±n %70'ine, laboratuvar ve uygulama Ã§alÄ±ÅŸmalarÄ±nÄ±n %80'ine devam etmek zorundadÄ±r."
-â€¢ Ã–ÄŸrenci Merkezli Ã–ÄŸrenme: Ders, Ã¶ÄŸrenci merkezli bir yaklaÅŸÄ±mla yÃ¼rÃ¼tÃ¼lecektir. Bu kapsamda Ã¶ÄŸrencilerin katÄ±lÄ±mÄ± desteklenecek, Ã¶ÄŸrenme sÃ¼recine dair sorumluluk almalarÄ± beklenecek ve ders sÃ¼recine dair geri bildirimleri alÄ±nacaktÄ±r.
-â€¢ Engelli Ã–ÄŸrenci DesteÄŸi: Sizin iÃ§in engel oluÅŸturabilecek durumlarla (gÃ¶rme, iÅŸitme vb.) ilgili olarak doÄŸrudan benimle iletiÅŸime geÃ§ebilirsiniz.
-â€¢ SÃ¶zlÃ¼ ve YazÄ±lÄ± Ä°letiÅŸim EtiÄŸi: SÄ±nÄ±f tartÄ±ÅŸmalarÄ± sÄ±rasÄ±nda birbirinize saygÄ± gÃ¶stererek ve nefret sÃ¶ylemi kullanmadan yorumlar yapabilirsiniz. SunumlarÄ±nÄ±zda veya yazÄ±lÄ± Ã¶devlerinizde herhangi bir kaynaÄŸÄ± kullanÄ±rken yazarlarÄ± ve web materyallerini referans gÃ¶stermeyi unutmayÄ±n.
-â€¢ Grup Ã‡alÄ±ÅŸmalarÄ± ve Ekip Ã‡alÄ±ÅŸmasÄ± EtiÄŸi: Grup Ã§alÄ±ÅŸmalarÄ± sÄ±rasÄ±nda tÃ¼m Ã¶ÄŸrencilerin eÅŸit katÄ±lÄ±m gÃ¶stermesi ve iÅŸ birliÄŸi iÃ§inde Ã§alÄ±ÅŸmasÄ± beklenmektedir.
-â€¢ Ã–dev Teslimi: Ã–zellikle vize sonrasÄ± ek puan talebinde bulunan Ã¶ÄŸrenciler iÃ§in ekstra Ã¶dev seÃ§enekleri sunulabilir. Bu Ã¶devler, Ã¶ÄŸretim elemanÄ± tarafÄ±ndan belirlenecek bir konu Ã§erÃ§evesinde hazÄ±rlanmalÄ± ve teslim edilmelidir.
-â€¢ Yapay Zeka KullanÄ±mÄ±: Bu derste yapay zeka araÃ§larÄ± sÄ±nÄ±rlÄ± ve sorumlu biÃ§imde kullanÄ±labilir. Yapay zeka, Ã¶ÄŸrencinin kendi Ã¶ÄŸrenme sÃ¼recini destekleyen bir yardÄ±mcÄ± olarak gÃ¶rÃ¼lÃ¼r; Ã¶ÄŸrencinin yerine dÃ¼ÅŸÃ¼nme, analiz etme veya akademik Ã¼retim yapma aracÄ± deÄŸildir.`;
+const DEFAULT_POLICIES = `• Ders Süresi ve İşleyişi: Ders toplamda 3 saat sürecek şekilde planlanmıştır ve 1 saatlik iki blok halinde işlenecektir. Bloklar arasında 15 dakikalık bir ara verilecektir.
+• Dijital Araçların Kullanımı: Ders sırasında cep telefonu, tablet, dizüstü bilgisayar vb. kişisel elektronik/dijital cihazlarla dersin herhangi bir bölümünü kaydedemezsiniz.
+• Devam Durumu: Eskişehir Osmangazi Üniversitesi Ön Lisans ve Lisans Eğitim-Öğretim ve Sınav Yönetmeliği 16. Madde gereği "Öğrenci, teorik ders çalışmalarının %70'ine, laboratuvar ve uygulama çalışmalarının %80'ine devam etmek zorundadır."
+• Öğrenci Merkezli Öğrenme: Ders, öğrenci merkezli bir yaklaşımla yürütülecektir. Bu kapsamda öğrencilerin katılımı desteklenecek, öğrenme sürecine dair sorumluluk almaları beklenecek ve ders sürecine dair geri bildirimleri alınacaktır.
+• Engelli Öğrenci Desteği: Sizin için engel oluşturabilecek durumlarla (görme, işitme vb.) ilgili olarak doğrudan benimle iletişime geçebilirsiniz.
+• Sözlü ve Yazılı İletişim Etiği: Sınıf tartışmaları sırasında birbirinize saygı göstererek ve nefret söylemi kullanmadan yorumlar yapabilirsiniz. Sunumlarınızda veya yazılı ödevlerinizde herhangi bir kaynağı kullanırken yazarları ve web materyallerini referans göstermeyi unutmayın.
+• Grup Çalışmaları ve Ekip Çalışması Etiği: Grup çalışmaları sırasında tüm öğrencilerin eşit katılım göstermesi ve iş birliği içinde çalışması beklenmektedir.
+• Ödev Teslimi: Özellikle vize sonrası ek puan talebinde bulunan öğrenciler için ekstra ödev seçenekleri sunulabilir. Bu ödevler, öğretim elemanı tarafından belirlenecek bir konu çerçevesinde hazırlanmalı ve teslim edilmelidir.
+• Yapay Zeka Kullanımı: Bu derste yapay zeka araçları sınırlı ve sorumlu biçimde kullanılabilir. Yapay zeka, öğrencinin kendi öğrenme sürecini destekleyen bir yardımcı olarak görülür; öğrencinin yerine düşünme, analiz etme veya akademik üretim yapma aracı değildir.`;
 
 const AKTS_ROWS = [
-  "Ders SÃ¼resi (SÄ±nav HaftasÄ± Dahil HaftalÄ±k Toplam Ders Saati)",
-  "SÄ±nÄ±f DÄ±ÅŸÄ± Ders Ã‡alÄ±ÅŸma SÃ¼resi (Tekrar, PekiÅŸtirme, Ã–n Ã‡alÄ±ÅŸma vb.)",
-  "Ã–dev", "KÄ±sa SÄ±nav", "KÄ±sa SÄ±nav HazÄ±rlÄ±k", "SÃ¶zlÃ¼ SÄ±nav", "SÃ¶zlÃ¼ SÄ±nav HazÄ±rlÄ±k",
-  "Rapor (HazÄ±rlÄ±k ve Sunum SÃ¼resi Dahil)", "Proje (HazÄ±rlÄ±k ve Sunum SÃ¼resi Dahil)",
-  "Sunum (HazÄ±rlÄ±k SÃ¼resi Dahil)", "Ara SÄ±nav", "Ara SÄ±nav HazÄ±rlÄ±k",
-  "YarÄ±yÄ±l Sonu SÄ±navÄ±", "YarÄ±yÄ±l Sonu SÄ±navÄ± HazÄ±rlÄ±k"
+  "Ders Süresi (Sınav Haftası Dahil Haftalık Toplam Ders Saati)",
+  "Sınıf Dışı Ders Çalışma Süresi (Tekrar, Pekiştirme, Ön Çalışma vb.)",
+  "Ödev", "Kısa Sınav", "Kısa Sınav Hazırlık", "Sözlü Sınav", "Sözlü Sınav Hazırlık",
+  "Rapor (Hazırlık ve Sunum Süresi Dahil)", "Proje (Hazırlık ve Sunum Süresi Dahil)",
+  "Sunum (Hazırlık Süresi Dahil)", "Ara Sınav", "Ara Sınav Hazırlık",
+  "Yarıyıl Sonu Sınavı", "Yarıyıl Sonu Sınavı Hazırlık"
 ];
 
 const PROGRAM_OUTCOMES = [
-  "Ä°lahiyat alanÄ±na iliÅŸkin temel kavram ve kuramlarÄ± bilir, bunlarÄ± kullanarak gÃ¼ncel olay ve olgularÄ± aÃ§Ä±klar.",
-  "Sahip olduÄŸu yabancÄ± dil bilgisi ile alanÄ±ndaki yeni Ã§alÄ±ÅŸmalarÄ± ve bilimsel geliÅŸmeleri takip eder, elde ettiÄŸi yabancÄ± literatÃ¼rdeki bilgileri ilgililerle paylaÅŸÄ±r.",
-  "Sosyal, kÃ¼ltÃ¼rel ve evrensel deÄŸerleri benimser, araÅŸtÄ±rma, iletiÅŸim ve eylemlerinde erdemli davranÄ±ÅŸlar sergiler, tarihi ve kÃ¼ltÃ¼rel mirasÄ±n aktarÄ±mÄ±na katkÄ± saÄŸlar.",
-  "AlanÄ±yla ilgili karÅŸÄ±laÅŸtÄ±ÄŸÄ± sorunlarÄ± doÄŸru bir ÅŸekilde tanÄ±mlar, bunlara disipliner ve disiplinlerarasÄ± Ã§alÄ±ÅŸmalarla uygun Ã§Ã¶zÃ¼m ve alternatifler geliÅŸtirir ve bunlarÄ± ilgili kurumlarla paylaÅŸÄ±r.",
-  "DeÄŸiÅŸen ve geliÅŸen yerel / kÃ¼resel sosyal ve politik konjonktÃ¼rÃ¼ yakÄ±ndan takip eder ve yeni ÅŸartlara uygun anlayÄ±ÅŸ ve yaklaÅŸÄ±mlar geliÅŸtirir.",
-  "Dini anlayÄ±ÅŸ ve uygulamalarÄ±n bireysel, toplumsal ve evrensel boyuttaki yansÄ±malarÄ±nÄ± fark eder. Toplumsal hayatta ortaya Ã§Ä±kan ihtiyaÃ§ ve sorunlara dini alandan bilimsel Ã§Ã¶zÃ¼mler sunar ve bunlarÄ± ilgili kurumlarla paylaÅŸÄ±r.",
-  "AlanÄ±na iliÅŸkin eÄŸitimsel sÃ¼reÃ§leri etkin bir ÅŸekilde planlar, bu planlarÄ± uygular ve mesleki ve akademik geliÅŸimine yÃ¶nelik sosyal, kÃ¼ltÃ¼rel ve sanatsal etkinliklere katÄ±lÄ±r.",
-  "AlanÄ±na iliÅŸkin akademik ve kÃ¼ltÃ¼rel birikimi eleÅŸtirel bir yaklaÅŸÄ±mla analiz eder, hayatÄ± boyunca alanÄ±na iliÅŸkin yeni Ã¶ÄŸrenme ortamlarÄ±na katÄ±lmaya istekli olur.",
-  "Sahip olduÄŸu bilgi ve yetkinlikleri alanÄ±yla ilgili eÄŸitim, araÅŸtÄ±rma ve topluma hizmet faaliyetlerinde yetkin ÅŸekilde kullanÄ±r.",
-  "AlanÄ±na iliÅŸkin gerÃ§ekleÅŸtireceÄŸi her tÃ¼rlÃ¼ araÅŸtÄ±rma, eÄŸitim ve topluma hizmet faaliyetlerinde birey hak ve Ã¶zgÃ¼rlÃ¼klerine saygÄ± duyar, toplumsal, ahlaki ve hukuki ilkelere uygun davranÄ±ÅŸlar sergiler.",
-  "GÃ¼ncel biliÅŸim ve iletiÅŸim teknolojilerine iliÅŸkin bilgi ve becerilerini geliÅŸtirir, bunlardaki yetkinliklerini alanÄ±yla ilgili faaliyetlerde aktif ÅŸekilde kullanÄ±r.",
-  "Ä°lahiyat alanÄ±nda eÄŸitim, araÅŸtÄ±rma ve topluma hizmet boyutlarÄ±nda sorun Ã§Ã¶zme ve iyileÅŸtirmeye yÃ¶nelik bireysel ve kurumsal dÃ¼zeyde faaliyetler planlar ve bunlarÄ±n uygulanmasÄ±nda sorumluluk Ã¼stlenir."
+  "İlahiyat alanına ilişkin temel kavram ve kuramları bilir, bunları kullanarak güncel olay ve olguları açıklar.",
+  "Sahip olduğu yabancı dil bilgisi ile alanındaki yeni çalışmaları ve bilimsel gelişmeleri takip eder, elde ettiği yabancı literatürdeki bilgileri ilgililerle paylaşır.",
+  "Sosyal, kültürel ve evrensel değerleri benimser, araştırma, iletişim ve eylemlerinde erdemli davranışlar sergiler, tarihi ve kültürel mirasın aktarımına katkı sağlar.",
+  "Alanıyla ilgili karşılaştığı sorunları doğru bir şekilde tanımlar, bunlara disipliner ve disiplinlerarası çalışmalarla uygun çözüm ve alternatifler geliştirir ve bunları ilgili kurumlarla paylaşır.",
+  "Değişen ve gelişen yerel / küresel sosyal ve politik konjonktürü yakından takip eder ve yeni şartlara uygun anlayış ve yaklaşımlar geliştirir.",
+  "Dini anlayış ve uygulamaların bireysel, toplumsal ve evrensel boyuttaki yansımalarını fark eder. Toplumsal hayatta ortaya çıkan ihtiyaç ve sorunlara dini alandan bilimsel çözümler sunar ve bunları ilgili kurumlarla paylaşır.",
+  "Alanına ilişkin eğitimsel süreçleri etkin bir şekilde planlar, bu planları uygular ve mesleki ve akademik gelişimine yönelik sosyal, kültürel ve sanatsal etkinliklere katılır.",
+  "Alanına ilişkin akademik ve kültürel birikimi eleştirel bir yaklaşımla analiz eder, hayatı boyunca alanına ilişkin yeni öğrenme ortamlarına katılmaya istekli olur.",
+  "Sahip olduğu bilgi ve yetkinlikleri alanıyla ilgili eğitim, araştırma ve topluma hizmet faaliyetlerinde yetkin şekilde kullanır.",
+  "Alanına ilişkin gerçekleştireceği her türlü araştırma, eğitim ve topluma hizmet faaliyetlerinde birey hak ve özgürlüklerine saygı duyar, toplumsal, ahlaki ve hukuki ilkelere uygun davranışlar sergiler.",
+  "Güncel bilişim ve iletişim teknolojilerine ilişkin bilgi ve becerilerini geliştirir, bunlardaki yetkinliklerini alanıyla ilgili faaliyetlerde aktif şekilde kullanır.",
+  "İlahiyat alanında eğitim, araştırma ve topluma hizmet boyutlarında sorun çözme ve iyileştirmeye yönelik bireysel ve kurumsal düzeyde faaliyetler planlar ve bunların uygulanmasında sorumluluk üstlenir."
 ];
 
 const DISCIPLINE_OUTCOMES = [
-  "Kur'an-Ä± Kerim bilgisine, doÄŸru tilavet becerisine ve yeterli ezbere sahip olma",
-  "ArapÃ§a temel kaynaklarÄ± okuma ve anlama yetkinliÄŸine sahip olma",
-  "Ä°tikat, ibadet, ahlak ve muamelata dair usul ve esaslarÄ± kavrama ve bu esaslarÄ±n dayandÄ±ÄŸÄ± temelleri bilme",
-  "Kur'an ve sÃ¼nnet bÃ¼tÃ¼nlÃ¼ÄŸÃ¼nÃ¼ esas alan bir yaklaÅŸÄ±ma sahip olma",
-  "BÃ¼tÃ¼ncÃ¼l ve sistematik bir dini dÃ¼ÅŸÃ¼nce ve kavrayÄ±ÅŸa sahip olma",
-  "Zaman ve mekÃ¢na gÃ¶re ortaya Ã§Ä±kan farklÄ± dini yaklaÅŸÄ±mlarÄ± doÄŸru anlama ve tutarlÄ± deÄŸerlendirme yetkinliÄŸine sahip olma",
-  "Din istismarÄ±, ÅŸiddet, Ä°slam karÅŸÄ±tlÄ±ÄŸÄ± gibi dine ve topluma zararlÄ± eÄŸilimlere karÅŸÄ± sÃ¶ylem ve tutum geliÅŸtirebilme yetkinliÄŸine sahip olma",
-  "FarklÄ± dÃ¼ÅŸÃ¼nce ve yorumlar karÅŸÄ±sÄ±nda saygÄ± ve adaleti esas alma yetkinliÄŸine sahip olma",
-  "KiÅŸi ve kurumlar yerine ilke ve deÄŸerleri Ã¼stÃ¼n tutan bir anlayÄ±ÅŸa sahip olma",
-  "Dinin temel kaynaklarÄ± ve bilimsel verilere dayalÄ± din eÄŸitimi ve din hizmetleri verme yetkinliÄŸine sahip olma",
-  "Toplumun inanÃ§, ibadet, ahlak, Ã¶rf ve adetlerini Ä°slam'Ä±n temel kaynaklarÄ± Ä±ÅŸÄ±ÄŸÄ±nda yorumlama ve toplumu aydÄ±nlatma yetkinliÄŸine sahip olma",
-  "Dini danÄ±ÅŸmanlÄ±k ve rehberlik bilgi ve becerisine sahip olma",
-  "AkÄ±l, bilgi, istiÅŸare, emanete riayet, ehliyet ve adalet gibi temel deÄŸerler/ilkeler Ä±ÅŸÄ±ÄŸÄ±nda Ã§alÄ±ÅŸma ve sorumluluk Ã¼stlenebilme yetkinliÄŸine sahip olma",
-  "Ä°slam kÃ¼ltÃ¼r, sanat ve medeniyeti hakkÄ±nda temel ve bÃ¼tÃ¼ncÃ¼l bilgilere sahip olma"
+  "Kur'an-ı Kerim bilgisine, doğru tilavet becerisine ve yeterli ezbere sahip olma",
+  "Arapça temel kaynakları okuma ve anlama yetkinliğine sahip olma",
+  "İtikat, ibadet, ahlak ve muamelata dair usul ve esasları kavrama ve bu esasların dayandığı temelleri bilme",
+  "Kur'an ve sünnet bütünlüğünü esas alan bir yaklaşıma sahip olma",
+  "Bütüncül ve sistematik bir dini düşünce ve kavrayışa sahip olma",
+  "Zaman ve mekâna göre ortaya çıkan farklı dini yaklaşımları doğru anlama ve tutarlı değerlendirme yetkinliğine sahip olma",
+  "Din istismarı, şiddet, İslam karşıtlığı gibi dine ve topluma zararlı eğilimlere karşı söylem ve tutum geliştirebilme yetkinliğine sahip olma",
+  "Farklı düşünce ve yorumlar karşısında saygı ve adaleti esas alma yetkinliğine sahip olma",
+  "Kişi ve kurumlar yerine ilke ve değerleri üstün tutan bir anlayışa sahip olma",
+  "Dinin temel kaynakları ve bilimsel verilere dayalı din eğitimi ve din hizmetleri verme yetkinliğine sahip olma",
+  "Toplumun inanç, ibadet, ahlak, örf ve adetlerini İslam'ın temel kaynakları ışığında yorumlama ve toplumu aydınlatma yetkinliğine sahip olma",
+  "Dini danışmanlık ve rehberlik bilgi ve becerisine sahip olma",
+  "Akıl, bilgi, istişare, emanete riayet, ehliyet ve adalet gibi temel değerler/ilkeler ışığında çalışma ve sorumluluk üstlenebilme yetkinliğine sahip olma",
+  "İslam kültür, sanat ve medeniyeti hakkında temel ve bütüncül bilgilere sahip olma"
 ];
 
 export default function DersIzlencesiClient({ 
@@ -116,8 +116,8 @@ export default function DersIzlencesiClient({
         ofis: '',
         donem: course.yariyil,
         gunSaat: '',
-        egitimDili: course.dil || 'TÃ¼rkÃ§e',
-        ogretimTuru: 'Ã–rgÃ¼n Ã–ÄŸretim',
+        egitimDili: course.dil || 'Türkçe',
+        ogretimTuru: 'Örgün Öğretim',
         derslik: '',
         onkosul: '-',
         amac: '',
@@ -128,28 +128,28 @@ export default function DersIzlencesiClient({
         yardimciKaynaklar: '',
         politikalar: DEFAULT_POLICIES,
         haftalikIcerik: Array(14).fill(0).map((_, i) => ({ 
-          hafta: i + 1, konu: '', kaynaklar: '', isYuku: '' 
+          hafta: String(i + 1), konu: '', kaynaklar: '', isYuku: '' 
         })).concat([
-          { hafta: 'ArasÄ±nav', konu: 'ArasÄ±nav HaftasÄ±', kaynaklar: '', isYuku: '' },
-          { hafta: 'Final', konu: 'Final HaftasÄ±', kaynaklar: '', isYuku: '' }
+          { hafta: 'Arasınav', konu: 'Arasınav Haftası', kaynaklar: '', isYuku: '' },
+          { hafta: 'Final', konu: 'Final Haftası', kaynaklar: '', isYuku: '' }
         ]),
         degerlendirme: [
-          { tur: 'Ara SÄ±nav', aciklama: '', yuzde: 40 },
-          { tur: 'Ã–dev', aciklama: '', yuzde: 0 },
+          { tur: 'Ara Sınav', aciklama: '', yuzde: 40 },
+          { tur: 'Ödev', aciklama: '', yuzde: 0 },
           { tur: 'Sunum', aciklama: '', yuzde: 0 },
           { tur: 'Uygulama', aciklama: '', yuzde: 0 },
           { tur: 'Final', aciklama: '', yuzde: 60 },
-          { tur: 'BÃ¼tÃ¼nleme', aciklama: '', yuzde: 0 }
+          { tur: 'Bütünleme', aciklama: '', yuzde: 0 }
         ],
         harfNotu: 'AA: / BA: / BB: / CB: / CC: / DC: / DD:',
         aktsIsYuku: AKTS_ROWS.map(row => ({ 
           etkinlik: row, sayisi: '', suresi: '', toplam: '' 
         })),
         pcMatris: PROGRAM_OUTCOMES.map((pc, i) => ({ 
-          id: `PÃ‡${i+1}`, metin: pc, ocValues: Array(10).fill('') 
+          id: `PÇ${i+1}`, metin: pc, ocValues: Array(10).fill('') 
         })),
         docMatris: DISCIPLINE_OUTCOMES.map((doc, i) => ({ 
-          id: `DÃ–Ã‡${i+1}`, metin: doc, ocValues: Array(10).fill('') 
+          id: `DÖÇ${i+1}`, metin: doc, ocValues: Array(10).fill('') 
         }))
       });
     }
@@ -169,10 +169,10 @@ export default function DersIzlencesiClient({
         }, { onConflict: 'ders_id, hoca_id' });
 
       if (error) throw error;
-      toast.success('Ä°zlence baÅŸarÄ±yla kaydedildi!');
+      toast.success('İzlence başarıyla kaydedildi!');
     } catch (err) {
       console.error(err);
-      toast.error('Kaydedilirken bir hata oluÅŸtu.');
+      toast.error('Kaydedilirken bir hata oluştu.');
     } finally {
       setLoading(false);
     }
@@ -183,10 +183,10 @@ export default function DersIzlencesiClient({
       <div className="p-8 text-center bg-slate-50 min-h-screen flex flex-col items-center justify-center">
         <div className="bg-white p-10 rounded-3xl shadow-xl max-w-lg border border-slate-200">
           <GraduationCap className="w-20 h-20 text-blue-600 mx-auto mb-6" />
-          <h2 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">Ders Ä°zlencesi EditÃ¶rÃ¼</h2>
-          <p className="text-slate-500 mb-8 leading-relaxed">LÃ¼tfen dÃ¼zenlemek istediÄŸiniz dersi seÃ§in.</p>
+          <h2 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">Ders İzlencesi Editörü</h2>
+          <p className="text-slate-500 mb-8 leading-relaxed">Lütfen düzenlemek istediğiniz dersi seçin.</p>
           <Link href="/izlenceler" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold px-8 py-4 rounded-2xl transition-all shadow-lg">
-            <ArrowLeft className="w-5 h-5" /> EÄŸitim PlanÄ±na Git
+            <ArrowLeft className="w-5 h-5" /> Eğitim Planına Git
           </Link>
         </div>
       </div>
@@ -222,13 +222,13 @@ export default function DersIzlencesiClient({
         </div>
 
         <button onClick={handleSave} disabled={loading} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-6 py-3 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50">
-          <Save className="w-4 h-4" /> {loading ? 'KAYDEDÄ°LÄ°YOR...' : 'KAYDET'}
+          <Save className="w-4 h-4" /> {loading ? 'KAYDEDİLİYOR...' : 'KAYDET'}
         </button>
       </div>
 
       <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-10">
         
-        {/* Sayfa 1: Header, Bilgiler ve Ã–ÄŸrenim Ã‡Ä±ktÄ±larÄ± */}
+        {/* Sayfa 1: Header, Bilgiler ve Öğrenim Çıktıları */}
         {activeStep === 1 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <section className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200">
@@ -237,7 +237,7 @@ export default function DersIzlencesiClient({
                 {['ogretimElemani', 'eposta', 'gorusmeGunSaat', 'ofis', 'gunSaat', 'derslik', 'onkosul'].map((field) => (
                   <div key={field} className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
-                      {field === 'ogretimElemani' ? 'Ã–ÄŸretim ElemanÄ±' : field === 'eposta' ? 'E-Posta' : field === 'gorusmeGunSaat' ? 'GÃ¶rÃ¼ÅŸme GÃ¼n ve Saatleri' : field === 'onkosul' ? 'Ã–nkoÅŸul Dersleri' : field}
+                      {field === 'ogretimElemani' ? 'Öğretim Elemanı' : field === 'eposta' ? 'E-Posta' : field === 'gorusmeGunSaat' ? 'Görüşme Gün ve Saatleri' : field === 'onkosul' ? 'Önkoşul Dersleri' : field}
                     </label>
                     <input
                       className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-xl px-5 py-3 font-bold text-slate-700 transition-all outline-none"
@@ -247,7 +247,7 @@ export default function DersIzlencesiClient({
                   </div>
                 ))}
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dersin AmacÄ±</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Dersin Amacı</label>
                   <textarea
                     rows={4}
                     className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-xl px-5 py-3 font-bold text-slate-700 transition-all outline-none"
@@ -259,18 +259,18 @@ export default function DersIzlencesiClient({
             </section>
 
             <section className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">Dersin Ã–ÄŸrenim Ã‡Ä±ktÄ±larÄ±</h3>
+              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">Dersin Öğrenim Çıktıları</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-slate-200 text-[11px]">
                   <thead>
                     <tr className="bg-slate-50">
                       <th className="border p-2 w-8">#</th>
-                      <th className="border p-2 text-left">Dersin Ã–ÄŸrenim Ã‡Ä±ktÄ±larÄ±</th>
+                      <th className="border p-2 text-left">Dersin Öğrenim Çıktıları</th>
                       <th className="border p-2 w-12 text-center">Bilgi</th>
                       <th className="border p-2 w-12 text-center">Beceri</th>
                       <th className="border p-2 w-12 text-center">Yetkinlik</th>
-                      <th className="border p-2 text-left">Ã–ÄŸretim YÃ¶ntemleri*</th>
-                      <th className="border p-2 text-left">Ã–lÃ§me YÃ¶ntemleri**</th>
+                      <th className="border p-2 text-left">Öğretim Yöntemleri*</th>
+                      <th className="border p-2 text-left">Ölçme Yöntemleri**</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -308,43 +308,43 @@ export default function DersIzlencesiClient({
         {activeStep === 2 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <section className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200">
-              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">Ders KaynaklarÄ±</h3>
+              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">Ders Kaynakları</h3>
               <div className="space-y-6">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Temel Ders KitabÄ±</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Temel Ders Kitabı</label>
                   <textarea rows={3} className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-xl px-5 py-3 font-bold text-slate-700 outline-none" value={formData.temelKaynaklar} onChange={e => setFormData({...formData, temelKaynaklar: e.target.value})} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">YardÄ±mcÄ± Kaynaklar</label>
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Yardımcı Kaynaklar</label>
                   <textarea rows={3} className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-xl px-5 py-3 font-bold text-slate-700 outline-none" value={formData.yardimciKaynaklar} onChange={e => setFormData({...formData, yardimciKaynaklar: e.target.value})} />
                 </div>
               </div>
             </section>
             <section className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200">
-              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">Ders PolitikalarÄ±</h3>
+              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">Ders Politikaları</h3>
               <textarea rows={15} className="w-full bg-slate-50 border-2 border-transparent focus:border-blue-500 focus:bg-white rounded-xl px-5 py-4 font-medium text-slate-700 outline-none text-sm leading-relaxed" value={formData.politikalar} onChange={e => setFormData({...formData, politikalar: e.target.value})} />
             </section>
           </div>
         )}
 
-        {/* Sayfa 3: HaftalÄ±k Ä°Ã§erik ve DeÄŸerlendirme */}
+        {/* Sayfa 3: Haftalık İçerik ve Değerlendirme */}
         {activeStep === 3 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <section className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">HaftalÄ±k Ders Ä°Ã§eriÄŸi</h3>
+              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">Haftalık Ders İçeriği</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-slate-200 text-[11px]">
                   <thead>
                     <tr className="bg-slate-50">
                       <th className="border p-2 w-16">Hafta</th>
-                      <th className="border p-2 text-left">Konu BaÅŸlÄ±ÄŸÄ±</th>
-                      <th className="border p-2 text-left">Ä°lgili Kaynaklar</th>
-                      <th className="border p-2 w-32 text-center">Ã–ÄŸrenci Ä°ÅŸ YÃ¼kÃ¼</th>
+                      <th className="border p-2 text-left">Konu Başlığı</th>
+                      <th className="border p-2 text-left">İlgili Kaynaklar</th>
+                      <th className="border p-2 w-32 text-center">Öğrenci İş Yükü</th>
                     </tr>
                   </thead>
                   <tbody>
                     {formData.haftalikIcerik.map((row: any, i: number) => (
-                      <tr key={i} className={row.hafta === 'ArasÄ±nav' || row.hafta === 'Final' ? 'bg-blue-50' : ''}>
+                      <tr key={i} className={row.hafta === 'Arasınav' || row.hafta === 'Final' ? 'bg-blue-50' : ''}>
                         <td className="border p-2 text-center font-bold">{row.hafta}</td>
                         <td className="border p-1"><input className="w-full p-2 outline-none bg-transparent" value={row.konu} onChange={e => {
                           const newH = [...formData.haftalikIcerik]; newH[i].konu = e.target.value; setFormData({...formData, haftalikIcerik: newH});
@@ -363,12 +363,12 @@ export default function DersIzlencesiClient({
             </section>
             
             <section className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200">
-              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">Ders DeÄŸerlendirme</h3>
+              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">Ders Değerlendirme</h3>
               <table className="w-full border-collapse border border-slate-200 text-[11px] mb-6">
                 <thead>
                   <tr className="bg-slate-50">
-                    <th className="border p-2 text-left">DeÄŸerlendirme TÃ¼rÃ¼</th>
-                    <th className="border p-2 text-left">AÃ§Ä±klama</th>
+                    <th className="border p-2 text-left">Değerlendirme Türü</th>
+                    <th className="border p-2 text-left">Açıklama</th>
                     <th className="border p-2 w-20 text-center">%</th>
                   </tr>
                 </thead>
@@ -398,19 +398,19 @@ export default function DersIzlencesiClient({
           </div>
         )}
 
-        {/* Sayfa 4: AKTS Ä°ÅŸ YÃ¼kÃ¼ ve PÃ‡ Matrisi (PÃ‡1-8) */}
+        {/* Sayfa 4: AKTS İş Yükü ve PÇ Matrisi (PÇ1-8) */}
         {activeStep === 4 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <section className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">AKTS - Ä°ÅŸ YÃ¼kÃ¼ Tablosu</h3>
+              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-8 uppercase tracking-widest">AKTS - İş Yükü Tablosu</h3>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-slate-200 text-[11px]">
                   <thead>
                     <tr className="bg-slate-50">
                       <th className="border p-2 text-left">Etkinlikler</th>
-                      <th className="border p-2 w-24 text-center">SayÄ±sÄ±</th>
-                      <th className="border p-2 w-24 text-center">SÃ¼resi (Saat)</th>
-                      <th className="border p-2 w-24 text-center">Toplam Ä°ÅŸ YÃ¼kÃ¼ (Saat)</th>
+                      <th className="border p-2 w-24 text-center">Sayısı</th>
+                      <th className="border p-2 w-24 text-center">Süresi (Saat)</th>
+                      <th className="border p-2 w-24 text-center">Toplam İş Yükü (Saat)</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -434,17 +434,17 @@ export default function DersIzlencesiClient({
             </section>
 
             <section className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-4 uppercase tracking-widest">Dersin Ã–ÄŸrenim Ã‡Ä±ktÄ±larÄ±nÄ±n (Ã–Ã‡) Program Ã‡Ä±ktÄ±larÄ± (PÃ‡) ile Olan Ä°liÅŸkisi</h3>
-              <p className="text-[10px] text-slate-400 mb-6 font-bold">(5: Ã‡ok yÃ¼ksek, 4: YÃ¼ksek, 3: Orta, 2: DÃ¼ÅŸÃ¼k, 1: Ã‡ok dÃ¼ÅŸÃ¼k)</p>
+              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-4 uppercase tracking-widest">Dersin Öğrenim Çıktılarının (ÖÇ) Program Çıktıları (PÇ) ile Olan İlişkisi</h3>
+              <p className="text-[10px] text-slate-400 mb-6 font-bold">(5: Çok yüksek, 4: Yüksek, 3: Orta, 2: Düşük, 1: Çok düşük)</p>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-slate-200 text-[10px]">
                   <thead>
                     <tr className="bg-slate-50">
-                      <th rowSpan={2} className="border p-2 text-left">PÃ‡ No / Metin</th>
-                      <th colSpan={10} className="border p-2 text-center bg-blue-50 text-blue-900">Ã–ÄŸrenme Ã‡Ä±ktÄ±larÄ±</th>
+                      <th rowSpan={2} className="border p-2 text-left">PÇ No / Metin</th>
+                      <th colSpan={10} className="border p-2 text-center bg-blue-50 text-blue-900">Öğrenme Çıktıları</th>
                     </tr>
                     <tr className="bg-slate-50">
-                      {Array(10).fill(0).map((_, i) => <th key={i} className="border p-1 w-8 text-center">Ã–Ã‡{i+1}</th>)}
+                      {Array(10).fill(0).map((_, i) => <th key={i} className="border p-1 w-8 text-center">ÖÇ{i+1}</th>)}
                     </tr>
                   </thead>
                   <tbody>
@@ -467,21 +467,21 @@ export default function DersIzlencesiClient({
           </div>
         )}
 
-        {/* Sayfa 5: DÃ–Ã‡ Matrisi (DÃ–Ã‡1-14) */}
+        {/* Sayfa 5: DÖÇ Matrisi (DÖÇ1-14) */}
         {activeStep === 5 && (
           <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <section className="bg-white p-10 rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-4 uppercase tracking-widest">Ders Ã–ÄŸrenim Ã‡Ä±ktÄ±larÄ±nÄ±n (Ã–Ã‡) Ä°AA Disipline Ã–zgÃ¼ Ã‡Ä±ktÄ±lar (DÃ–Ã‡) ile Olan Ä°liÅŸkisi</h3>
-              <p className="text-[10px] text-slate-400 mb-6 font-bold">(5: Ã‡ok yÃ¼ksek, 4: YÃ¼ksek, 3: Orta, 2: DÃ¼ÅŸÃ¼k, 1: Ã‡ok dÃ¼ÅŸÃ¼k)</p>
+              <h3 className="text-sm font-black text-blue-900 border-l-4 border-blue-900 pl-3 mb-4 uppercase tracking-widest">Ders Öğrenim Çıktılarının (ÖÇ) İAA Disipline Özgü Çıktılar (DÖÇ) ile Olan İlişkisi</h3>
+              <p className="text-[10px] text-slate-400 mb-6 font-bold">(5: Çok yüksek, 4: Yüksek, 3: Orta, 2: Düşük, 1: Çok düşük)</p>
               <div className="overflow-x-auto">
                 <table className="w-full border-collapse border border-slate-200 text-[10px]">
                   <thead>
                     <tr className="bg-slate-50">
-                      <th rowSpan={2} className="border p-2 text-left">DÃ–Ã‡ No / Metin</th>
-                      <th colSpan={10} className="border p-2 text-center bg-blue-50 text-blue-900">Ã–ÄŸrenme Ã‡Ä±ktÄ±larÄ±</th>
+                      <th rowSpan={2} className="border p-2 text-left">DÖÇ No / Metin</th>
+                      <th colSpan={10} className="border p-2 text-center bg-blue-50 text-blue-900">Öğrenme Çıktıları</th>
                     </tr>
                     <tr className="bg-slate-50">
-                      {Array(10).fill(0).map((_, i) => <th key={i} className="border p-1 w-8 text-center">Ã–Ã‡{i+1}</th>)}
+                      {Array(10).fill(0).map((_, i) => <th key={i} className="border p-1 w-8 text-center">ÖÇ{i+1}</th>)}
                     </tr>
                   </thead>
                   <tbody>
@@ -507,7 +507,7 @@ export default function DersIzlencesiClient({
         {/* Navigation Dots */}
         <div className="mt-12 flex items-center justify-between">
           <button onClick={() => setActiveStep(prev => Math.max(1, prev - 1))} disabled={activeStep === 1} className="flex items-center gap-2 text-slate-500 hover:text-blue-600 font-black text-[10px] px-4 py-2 disabled:opacity-30 transition-colors uppercase tracking-widest">
-            <ChevronLeft className="w-4 h-4" /> Ã–nceki Sayfa
+            <ChevronLeft className="w-4 h-4" /> Önceki Sayfa
           </button>
           <div className="flex gap-2">
             {[1, 2, 3, 4, 5].map(s => (
@@ -522,5 +522,3 @@ export default function DersIzlencesiClient({
     </div>
   );
 }
-
-

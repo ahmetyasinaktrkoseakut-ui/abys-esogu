@@ -21,8 +21,26 @@ export default async function IzlencelerPage() {
     .from('ders_izlenceleri')
     .select('ders_id, icerik');
 
+  const parsedDersler = (dersler || []).map(d => {
+    if (d.yariyil === 'SEÇMELİ DERSLER' && d.kod) {
+      const semDigit = d.kod.charAt(5);
+      const semMap: Record<string, string> = {
+        '3': 'III. Yarıyıl Seçmeli Havuzu',
+        '4': 'IV. Yarıyıl Seçmeli Havuzu',
+        '5': 'V. Yarıyıl Seçmeli Havuzu',
+        '6': 'VI. Yarıyıl Seçmeli Havuzu',
+        '7': 'VII. Yarıyıl Seçmeli Havuzu',
+        '8': 'VIII. Yarıyıl Seçmeli Havuzu'
+      };
+      if (semMap[semDigit]) {
+        return { ...d, yariyil: semMap[semDigit] };
+      }
+    }
+    return d;
+  });
+
   // Kategorileri dinamik olarak veritabanından çek ve mantıklı bir sıraya diz
-  const rawKategoriler = Array.from(new Set((dersler || []).map(d => d.yariyil)));
+  const rawKategoriler = Array.from(new Set(parsedDersler.map(d => d.yariyil)));
   
   const romanToInt = (roman: string) => {
     const romanVals: Record<string, number> = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10 };
@@ -31,8 +49,8 @@ export default async function IzlencelerPage() {
   };
 
   const kategoriler = rawKategoriler.sort((a, b) => {
-    const isASecmeli = a.includes('SEÇMELİ');
-    const isBSecmeli = b.includes('SEÇMELİ');
+    const isASecmeli = a.toLowerCase().includes('seçmeli');
+    const isBSecmeli = b.toLowerCase().includes('seçmeli');
     if (isASecmeli && !isBSecmeli) return 1;
     if (!isASecmeli && isBSecmeli) return -1;
     
@@ -40,7 +58,8 @@ export default async function IzlencelerPage() {
       return romanToInt(a) - romanToInt(b);
     }
     
-    return a.localeCompare(b, 'tr');
+    // Her ikisi de seçmeliyse döneme göre sırala (Örn: "V. Yarıyıl Seçmeli" önce gelir)
+    return romanToInt(a) - romanToInt(b);
   });
 
   return (
@@ -64,7 +83,7 @@ export default async function IzlencelerPage() {
 
       <div className="max-w-7xl mx-auto space-y-12 pb-20">
         {kategoriler.map((kat) => {
-          const katDersleri = (dersler || []).filter(d => d.yariyil === kat);
+          const katDersleri = parsedDersler.filter(d => d.yariyil === kat);
           if (katDersleri.length === 0) return null;
 
           return (
@@ -96,8 +115,8 @@ export default async function IzlencelerPage() {
                       const izlence = (izlenceler || []).find(i => i.ders_id === ders.kod);
                       const isFilled = izlence && Object.keys(izlence.icerik || {}).length > 0;
                       
-                      // Seçmeli ders placeholder'larını (kodsuz veya 'Seçmeli' yazan) tıklanamaz yap
-                      const isPlaceholder = ders.ad.toLowerCase().includes('seçmeli') && (!ders.kod || ders.kod === '-' || ders.kod.startsWith('SEC'));
+                      // Seçmeli ders placeholder'larını tıklanamaz yap ("Seçmeli Ders", "Sosyal Seçmeli Ders", "Seçmeli I" vb.)
+                      const isPlaceholder = ders.ad.toLowerCase().includes('seçmeli');
                       const canEdit = user !== null && !isPlaceholder;
                       const canView = isFilled && !isPlaceholder;
 

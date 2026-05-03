@@ -48,11 +48,13 @@ export default async function IzlenceTakipPage() {
     .select('id, ad_soyad, unvan');
 
   // İzlence durumlarını hesapla
+  const total = dersler?.length || 0;
+  const filled = izlenceler?.filter(i => Object.keys(i.icerik || {}).length > 0).length || 0;
   const stats = {
-    total: dersler?.length || 0,
-    filled: izlenceler?.filter(i => Object.keys(i.icerik || {}).length > 0).length || 0,
+    total,
+    filled,
+    pending: total - filled
   };
-  stats.pending = stats.total - stats.filled;
   const completionRate = stats.total > 0 ? Math.round((stats.filled / stats.total) * 100) : 0;
 
   return (

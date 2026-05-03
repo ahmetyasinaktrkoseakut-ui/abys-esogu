@@ -94,6 +94,8 @@ export default function RaporlarClient() {
         .select('alt_olcut_id, icerik, kanitlar')
         .eq('donem_id', selectedPeriod?.id);
 
+      console.log('Fetched Ozdegerlendirme:', ozdegerlendirmeVerileri);
+
       setRaporData({
         anaBasliklar: anaBasliklar || [],
         altOlcutler: altOlcutler || [],

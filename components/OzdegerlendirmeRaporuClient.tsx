@@ -216,9 +216,11 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .maybeSingle();
 
       if (existingRecord?.id) {
-        await supabase.from('ozdegerlendirme_raporlari').update(upsertData).eq('id', existingRecord.id);
+        const { error: err } = await supabase.from('ozdegerlendirme_raporlari').update(upsertData).eq('id', existingRecord.id);
+        if (err) throw err;
       } else {
-        await supabase.from('ozdegerlendirme_raporlari').insert(upsertData);
+        const { error: err } = await supabase.from('ozdegerlendirme_raporlari').insert(upsertData);
+        if (err) throw err;
       }
 
       alert('Rapor başarıyla kaydedildi.');

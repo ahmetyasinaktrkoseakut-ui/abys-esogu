@@ -91,8 +91,9 @@ export default function RaporlarClient() {
         .select('alt_olcut_id, puko_asamasi, aciklama, olgunluk_puani, kanit_dosyalari')
         .eq('donem_id', selectedPeriod?.id);
       const { data: ozdegerlendirmeVerileri } = await supabase.from('ozdegerlendirme_raporlari')
-        .select('alt_olcut_id, icerik, kanitlar')
-        .eq('donem_id', selectedPeriod?.id);
+        .select('alt_olcut_id, icerik, kanitlar, olusturulma_tarihi')
+        .eq('donem_id', selectedPeriod?.id)
+        .order('olusturulma_tarihi', { ascending: false });
 
       console.log('Fetched Ozdegerlendirme:', ozdegerlendirmeVerileri);
 

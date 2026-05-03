@@ -53,9 +53,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       const { data: raporData } = await supabase
         .from('ozdegerlendirme_raporlari')
         .select('*')
-        .eq('alt_olcut_id', resolvedParams.id)
+        .eq('alt_olcut_id', String(resolvedParams.id))
         .eq('donem_id', selectedPeriod?.id)
-        .order('id', { ascending: false })
+        .order('olusturulma_tarihi', { ascending: false })
         .limit(1)
         .maybeSingle();
         

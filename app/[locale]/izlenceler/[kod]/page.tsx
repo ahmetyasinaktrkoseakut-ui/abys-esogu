@@ -42,10 +42,10 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
         </button>
       </div>
 
-      <div className="max-w-[210mm] mx-auto space-y-12 mt-8 print:mt-0 print:space-y-8">
+      <div className="max-w-[210mm] mx-auto mt-8 print:mt-0 shadow-2xl bg-white border border-slate-200 print:shadow-none print:border-none">
         
-        {/* SAYFA 1: GENEL BİLGİLER & ÖÇ (Foto 4-5) */}
-        <div className="bg-white p-16 shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0 page-break-after-always">
+        {/* SAYFA 1: GENEL BİLGİLER & ÖÇ */}
+        <div className="p-16 border-b border-dashed border-slate-200 page-break-after-always">
           <div className="text-center mb-12 border-b-4 border-blue-900 pb-10">
             <h1 className="text-xl font-black text-blue-900 mb-1">ESKİŞEHİR OSMANGAZİ ÜNİVERSİTESİ</h1>
             <h2 className="text-lg font-bold text-slate-800 mb-1">İLAHİYAT FAKÜLTESİ</h2>
@@ -94,8 +94,8 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
           </table>
         </div>
 
-        {/* SAYFA 2: KAYNAKLAR & POLİTİKALAR (Foto 2) */}
-        <div className="bg-white p-16 shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0 page-break-after-always">
+        {/* SAYFA 2: KAYNAKLAR & POLİTİKALAR */}
+        <div className="p-16 border-b border-dashed border-slate-200 page-break-after-always">
           <h4 className="text-xs font-black text-blue-900 uppercase tracking-widest mb-6 bg-blue-50 p-3 border-l-4 border-blue-900">Ders Kaynakları</h4>
           <div className="space-y-6 mb-12 text-sm">
             <div><p className="font-black text-blue-900 mb-2">Temel Ders Kitabı:</p><p className="text-slate-700 italic leading-relaxed">{c.temelKaynaklar}</p></div>
@@ -105,8 +105,8 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
           <div className="text-[13px] leading-[1.8] text-slate-700 whitespace-pre-wrap font-medium">{c.politikalar}</div>
         </div>
 
-        {/* SAYFA 3: HAFTALIK İÇERİK & DEĞERLENDİRME (Foto 1) */}
-        <div className="bg-white p-16 shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0 page-break-after-always">
+        {/* SAYFA 3: HAFTALIK İÇERİK & DEĞERLENDİRME */}
+        <div className="p-16 border-b border-dashed border-slate-200 page-break-after-always">
           <h4 className="text-xs font-black text-blue-900 uppercase tracking-widest mb-6 bg-blue-50 p-3 border-l-4 border-blue-900">Haftalık Ders İçeriği</h4>
           <table className="w-full border-collapse border border-slate-200 text-[11px] mb-12">
             <thead>
@@ -136,8 +136,8 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
           <p className="text-xs font-black text-blue-900">HARF NOTU BAREMİ: <span className="text-slate-500 font-bold ml-2">{c.harfNotu}</span></p>
         </div>
 
-        {/* SAYFA 4: AKTS & PÇ MATRİS (Foto 3) */}
-        <div className="bg-white p-16 shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0 page-break-after-always">
+        {/* SAYFA 4: AKTS & PÇ MATRİS */}
+        <div className="p-16 border-b border-dashed border-slate-200 page-break-after-always">
           <h4 className="text-xs font-black text-blue-900 uppercase tracking-widest mb-6 bg-blue-50 p-3 border-l-4 border-blue-900">AKTS - İş Yükü Tablosu</h4>
           <table className="w-full border-collapse border border-slate-200 text-[11px] mb-12">
             <thead><tr className="bg-blue-900 text-white"><th>Etkinlikler</th><th className="w-20">Sayısı</th><th className="w-20">Süresi</th><th className="w-20">Toplam</th></tr></thead>
@@ -162,8 +162,8 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
           </div>
         </div>
 
-        {/* SAYFA 5: DÖÇ MATRİS (Foto 5) */}
-        <div className="bg-white p-16 shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0 page-break-after-always">
+        {/* SAYFA 5: DÖÇ MATRİS */}
+        <div className="p-16 page-break-after-always">
           <h4 className="text-xs font-black text-blue-900 uppercase tracking-widest mb-6 bg-blue-50 p-3 border-l-4 border-blue-900">DÖÇ Matrisi</h4>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-slate-200 text-[9px]">

@@ -37,7 +37,8 @@ export default function RaporlarClient() {
   const [raporData, setRaporData] = useState<{
     anaBasliklar: AnaBaslik[],
     altOlcutler: AltOlcut[],
-    pukoVerileri: PukoVerisi[]
+    pukoVerileri: PukoVerisi[],
+    ozdegerlendirmeVerileri: any[]
   } | null>(null);
   const locale = useLocale();
 
@@ -84,18 +85,20 @@ export default function RaporlarClient() {
   const handleKurumRaporuOlustur = async () => {
     setIsGenerating(true);
     try {
-      const [anaBasliklarRes, altOlcutlerRes, pukoRes] = await Promise.all([
-        supabase.from('ana_basliklar').select('*').order('kod', { ascending: true }),
-        supabase.from('alt_olcutler').select('*').order('kod', { ascending: true }),
-        supabase.from('puko_degerlendirmeleri')
-          .select('alt_olcut_id, puko_asamasi, aciklama, olgunluk_puani, kanit_dosyalari')
-          .eq('donem_id', selectedPeriod?.id)
-      ]);
+      const { data: anaBasliklar } = await supabase.from('ana_basliklar').select('*').order('kod', { ascending: true });
+      const { data: altOlcutler } = await supabase.from('alt_olcutler').select('*').order('kod', { ascending: true });
+      const { data: pukoVerileri } = await supabase.from('puko_degerlendirmeleri')
+        .select('alt_olcut_id, puko_asamasi, aciklama, olgunluk_puani, kanit_dosyalari')
+        .eq('donem_id', selectedPeriod?.id);
+      const { data: ozdegerlendirmeVerileri } = await supabase.from('ozdegerlendirme_raporlari')
+        .select('alt_olcut_id, icerik, kanitlar')
+        .eq('donem_id', selectedPeriod?.id);
 
       setRaporData({
-        anaBasliklar: anaBasliklarRes.data || [],
-        altOlcutler: altOlcutlerRes.data || [],
-        pukoVerileri: pukoRes.data || []
+        anaBasliklar: anaBasliklar || [],
+        altOlcutler: altOlcutler || [],
+        pukoVerileri: pukoVerileri || [],
+        ozdegerlendirmeVerileri: ozdegerlendirmeVerileri || []
       });
     } catch (e: any) {
       alert(`${t('error_generating')}: ${e.message}`);
@@ -148,29 +151,33 @@ export default function RaporlarClient() {
       if (ilgiliOlcutler.length > 0) {
         htmlContent += `<h2>${anaBaslik.kod} - ${getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>`;
         ilgiliOlcutler.forEach(olcut => {
+          const ozdegerlendirme = raporData.ozdegerlendirmeVerileri.find(ov => ov.alt_olcut_id === olcut.id);
           const pukoList = getPukoForOlcut(olcut.id);
-          const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
           
           let combinedText = '';
           let allEvidences: any[] = [];
-          
-          phases.forEach(phase => {
-            const data = pukoList.find(p => p.puko_asamasi === phase);
-            if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
-              // HTML temizleme veya düzenleme gerekebilir ama genelde paragraf paragraf eklemek yeterli
-              combinedText += (combinedText ? '<br/><br/>' : '') + data.aciklama;
-              if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
-                allEvidences = [...allEvidences, ...data.kanit_dosyalari];
-              }
-            }
-          });
 
-          // Eğer aşamalarda veri yoksa 'rapor' aşamasına bak (summary olarak kullanılmış olabilir)
-          if (!combinedText) {
-            const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
-            if (raporPuko && raporPuko.aciklama) {
-              combinedText = raporPuko.aciklama;
-              if (raporPuko.kanit_dosyalari) allEvidences = raporPuko.kanit_dosyalari;
+          if (ozdegerlendirme && ozdegerlendirme.icerik) {
+            combinedText = ozdegerlendirme.icerik;
+            allEvidences = ozdegerlendirme.kanitlar || [];
+          } else {
+            const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
+            phases.forEach(phase => {
+              const data = pukoList.find(p => p.puko_asamasi === phase);
+              if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
+                combinedText += (combinedText ? '<br/><br/>' : '') + data.aciklama;
+                if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
+                  allEvidences = [...allEvidences, ...data.kanit_dosyalari];
+                }
+              }
+            });
+
+            if (!combinedText) {
+              const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
+              if (raporPuko && raporPuko.aciklama) {
+                combinedText = raporPuko.aciklama;
+                if (raporPuko.kanit_dosyalari) allEvidences = raporPuko.kanit_dosyalari;
+              }
             }
           }
 
@@ -308,63 +315,75 @@ export default function RaporlarClient() {
 
                     <div className="space-y-12 pl-4 border-l-4 border-slate-200 ml-4">
                       {ilgiliOlcutler.map((olcut) => {
+                        const ozdegerlendirme = raporData.ozdegerlendirmeVerileri.find(ov => ov.alt_olcut_id === olcut.id);
                         const pukoList = getPukoForOlcut(olcut.id);
-                        const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
                         
                         let combinedText = '';
                         let allEvidences: any[] = [];
-                        
-                        phases.forEach(phase => {
-                          const data = pukoList.find(p => p.puko_asamasi === phase);
-                          if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
-                            let phaseText = data.aciklama;
-                            if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari) && data.kanit_dosyalari.length > 0) {
-                              const phaseEvidenceStrings: string[] = [];
-                              data.kanit_dosyalari.forEach(k => {
-                                let ev = allEvidences.find(e => e.url === k.url);
-                                if (!ev) {
-                                  ev = { ...k, no: globalEvidenceCounter++ };
-                                  allEvidences.push(ev);
-                                }
-                                phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">(${t('evidence_prefix')} ${ev.no})</a>`);
-                              });
-                              
-                              const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
-                              
-                              if (phaseText.trim().endsWith('</p>')) {
-                                phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
-                              } else {
-                                phaseText += evidenceHtml;
-                              }
-                            }
-                            combinedText += (combinedText ? '<br/><br/>' : '') + phaseText;
-                          }
-                        });
 
-                        if (!combinedText) {
-                          const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
-                          if (raporPuko && raporPuko.aciklama) {
-                            let phaseText = raporPuko.aciklama;
-                            if (raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0) {
-                              const phaseEvidenceStrings: string[] = [];
-                              raporPuko.kanit_dosyalari.forEach((k: any) => {
-                                let ev = allEvidences.find(e => e.url === k.url);
-                                if (!ev) {
-                                  ev = { ...k, no: globalEvidenceCounter++ };
-                                  allEvidences.push(ev);
-                                }
-                                phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">(${t('evidence_prefix')} ${ev.no})</a>`);
-                              });
-                              
-                              const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
-                              
-                              if (phaseText.trim().endsWith('</p>')) {
-                                phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
-                              } else {
-                                phaseText += evidenceHtml;
-                              }
+                        if (ozdegerlendirme && ozdegerlendirme.icerik) {
+                          combinedText = ozdegerlendirme.icerik;
+                          (ozdegerlendirme.kanitlar || []).forEach((k: any) => {
+                            let ev = allEvidences.find(e => e.url === k.url);
+                            if (!ev) {
+                              ev = { ...k, no: globalEvidenceCounter++ };
+                              allEvidences.push(ev);
                             }
-                            combinedText = phaseText;
+                          });
+                        } else {
+                          const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
+                          phases.forEach(phase => {
+                            const data = pukoList.find(p => p.puko_asamasi === phase);
+                            if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
+                              let phaseText = data.aciklama;
+                              if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari) && data.kanit_dosyalari.length > 0) {
+                                const phaseEvidenceStrings: string[] = [];
+                                data.kanit_dosyalari.forEach(k => {
+                                  let ev = allEvidences.find(e => e.url === k.url);
+                                  if (!ev) {
+                                    ev = { ...k, no: globalEvidenceCounter++ };
+                                    allEvidences.push(ev);
+                                  }
+                                  phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">(${t('evidence_prefix')} ${ev.no})</a>`);
+                                });
+                                
+                                const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
+                                
+                                if (phaseText.trim().endsWith('</p>')) {
+                                  phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
+                                } else {
+                                  phaseText += evidenceHtml;
+                                }
+                              }
+                              combinedText += (combinedText ? '<br/><br/>' : '') + phaseText;
+                            }
+                          });
+
+                          if (!combinedText) {
+                            const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
+                            if (raporPuko && raporPuko.aciklama) {
+                              let phaseText = raporPuko.aciklama;
+                              if (raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0) {
+                                const phaseEvidenceStrings: string[] = [];
+                                raporPuko.kanit_dosyalari.forEach((k: any) => {
+                                  let ev = allEvidences.find(e => e.url === k.url);
+                                  if (!ev) {
+                                    ev = { ...k, no: globalEvidenceCounter++ };
+                                    allEvidences.push(ev);
+                                  }
+                                  phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">(${t('evidence_prefix')} ${ev.no})</a>`);
+                                });
+                                
+                                const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
+                                
+                                if (phaseText.trim().endsWith('</p>')) {
+                                  phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
+                                } else {
+                                  phaseText += evidenceHtml;
+                                }
+                              }
+                              combinedText = phaseText;
+                            }
                           }
                         }
 

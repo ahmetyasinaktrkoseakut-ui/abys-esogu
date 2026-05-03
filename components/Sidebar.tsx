@@ -28,7 +28,7 @@ export default async function Sidebar() {
     const { count } = await supabase
       .from('kullanici_olcut_atamalari')
       .select('*', { count: 'exact', head: true })
-      .eq('kullanici_id', user.id);
+      .eq('user_id', user.id);
     hasAssignment = (count || 0) > 0;
   }
 

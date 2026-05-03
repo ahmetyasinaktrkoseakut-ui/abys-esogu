@@ -1,7 +1,8 @@
 import { createClient } from '@/lib/supabase/server';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ArrowLeft, Printer, CheckSquare, Square } from 'lucide-react';
+import { ArrowLeft, CheckSquare, Square } from 'lucide-react';
+import PrintButtonClient from '@/components/PrintButtonClient';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,9 +38,7 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
         <Link href="/izlenceler" className="flex items-center gap-2 text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors">
           <ArrowLeft className="w-4 h-4" /> Eğitim Planı
         </Link>
-        <button onClick={() => typeof window !== 'undefined' && window.print()} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black px-6 py-3 rounded-xl shadow-lg transition-all active:scale-95">
-          <Printer className="w-4 h-4" /> YAZDIR / PDF KAYDET
-        </button>
+        <PrintButtonClient />
       </div>
 
       <div className="max-w-[210mm] mx-auto mt-8 print:mt-0 shadow-2xl bg-white border border-slate-200 print:shadow-none print:border-none">

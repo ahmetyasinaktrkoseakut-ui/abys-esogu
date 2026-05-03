@@ -36,6 +36,11 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
         const uniqueUsersMap = new Map();
         data
           .filter((u: any) => String(u.id) !== String(currentUserId))
+          .filter((u: any) => {
+            const name = (u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad || u.email || '').toLowerCase();
+            // Kullanıcı 'tarsalih' ismini kesinlikle istemiyor
+            return !name.includes('tarsalih');
+          })
           .forEach((u: any) => {
             let name = u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad;
             if (!name) {
@@ -44,8 +49,7 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
               name = prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : 'Kullanıcı';
             }
             
-            // Fuzzy deduplication: use name without trailing numbers as key
-            const dedupeKey = name.toLowerCase().trim().replace(/\d+$/, '');
+            const dedupeKey = name.toLowerCase().trim();
             
             if (!uniqueUsersMap.has(dedupeKey)) {
               uniqueUsersMap.set(dedupeKey, {

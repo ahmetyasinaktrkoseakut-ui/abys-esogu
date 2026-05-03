@@ -199,19 +199,27 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
         <LogoutButton />
       </div>
       {notification && (
-        <div className="fixed top-0 left-0 right-0 z-[9999] animate-in slide-in-from-top duration-500">
-          <div className="bg-red-600 text-white p-4 shadow-2xl flex items-center justify-between">
-            <div className="flex items-center gap-4 max-w-4xl mx-auto w-full">
-              <div className="bg-white/20 p-2 rounded-full animate-pulse">
-                <MessageSquare className="w-6 h-6 text-white" />
+        <div 
+          className="fixed top-0 left-0 right-0 z-[9999] animate-in slide-in-from-top duration-500"
+          key={Date.now()} // Force re-mount on new notification
+        >
+          <div className="bg-red-700 text-white p-6 shadow-2xl border-b-4 border-yellow-400">
+            <div className="max-w-4xl mx-auto w-full flex flex-col items-center text-center gap-2">
+              <div className="flex items-center gap-3 animate-bounce">
+                <MessageSquare className="w-8 h-8 text-white fill-white/20" />
+                <span className="text-xs font-black bg-white text-red-700 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                  YENİ MESAJ GELDİ
+                </span>
               </div>
-              <div className="flex-1">
-                <p className="text-base font-black uppercase tracking-tight">YENİ MESAJ: {notification.sender}</p>
-                <p className="text-sm font-medium opacity-90 truncate">{notification.text}</p>
-              </div>
+              <h3 className="text-3xl font-black uppercase tracking-tighter drop-shadow-lg">
+                {notification.sender}
+              </h3>
+              <p className="text-lg font-medium opacity-90 italic line-clamp-1 max-w-2xl">
+                "{notification.text}"
+              </p>
               <button 
                 onClick={() => setNotification(null)} 
-                className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors font-bold text-xs uppercase"
+                className="mt-4 bg-white text-red-700 hover:bg-slate-100 px-8 py-2 rounded-full font-black text-sm uppercase transition-all transform hover:scale-105 shadow-lg"
               >
                 Kapat
               </button>

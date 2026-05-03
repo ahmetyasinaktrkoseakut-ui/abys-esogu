@@ -12,7 +12,6 @@
     "reports": "التقارير",
     "notifications": "الإشعارات",
     "settings": "الإعدادات",
-    "communication": "التواصل",
     "profile": "الملف الشخصي",
     "logout": "تسجيل خروج",
     "quality_manual": "دليل الجودة"
@@ -36,13 +35,6 @@
     "save": "مشاركة",
     "save_success": "تمت مشاركة الإعلان بنجاح."
   },
-  "Messaging": {
-    "title": "التواصل",
-    "description": "راسل أعضاء الطاقم الآخرين في الوقت الفعلي.",
-    "search_user": "البحث عن شخص...",
-    "no_user_selected": "اختر شخصًا من اليسار للدردشة.",
-    "type_message": "اكتب رسالتك...",
-    "send": "إرسال"
   },
   "Roles": {
     "admin": "مدير",

@@ -13,7 +13,6 @@
     "notifications": "Bildirimler",
     "periods": "Dönem Yönetimi",
     "settings": "Ayarlar",
-    "communication": "İletişim",
     "profile": "Profil",
     "logout": "Çıkış Yap",
     "quality_manual": "Kalite El Kitabı"
@@ -37,13 +36,6 @@
     "save": "Paylaş",
     "save_success": "Duyuru başarıyla paylaşıldı."
   },
-  "Messaging": {
-    "title": "İletişim",
-    "description": "Diğer personellerle anlık olarak mesajlaşın.",
-    "search_user": "Kişi ara...",
-    "no_user_selected": "Sohbet etmek için soldan bir kişi seçin.",
-    "type_message": "Mesajınızı yazın...",
-    "send": "Gönder"
   },
   "Roles": {
     "admin": "Yönetici",

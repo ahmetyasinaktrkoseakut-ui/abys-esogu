@@ -13,7 +13,6 @@
     "notifications": "Notifications",
     "periods": "Period Management",
     "settings": "Settings",
-    "communication": "Communication",
     "profile": "Profile",
     "logout": "Logout",
     "quality_manual": "Quality Manual"
@@ -37,13 +36,6 @@
     "save": "Share",
     "save_success": "Announcement shared successfully."
   },
-  "Messaging": {
-    "title": "Communication",
-    "description": "Message other staff members in real-time.",
-    "search_user": "Search person...",
-    "no_user_selected": "Select a person from the left to chat.",
-    "type_message": "Type your message...",
-    "send": "Send"
   },
   "Roles": {
     "admin": "Administrator",

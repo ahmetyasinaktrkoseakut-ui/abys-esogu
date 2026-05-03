@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import Link from 'next/link';
 import { 
   Save, ArrowLeft, Plus, Trash2, 
   BookOpen, Clock, Target, ListChecks, 

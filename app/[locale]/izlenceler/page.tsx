@@ -15,12 +15,11 @@ export default async function IzlencelerPage() {
 
   const { data: izlenceler } = await supabase
     .from('ders_izlenceleri')
-    .select('ders_id, id, hoca_id')
+    .select('ders_id, id, hoca_id, icerik')
     .not('icerik', 'eq', '{}');
 
   const doldurulmusKodlar = new Set(
     (izlenceler || [])
-      .filter(i => i.icerik !== null)
       .map(i => i.ders_id)
   );
 

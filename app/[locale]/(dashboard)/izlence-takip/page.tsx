@@ -34,10 +34,13 @@ export default async function IzlenceTakipPage() {
   }
 
   // Tüm verileri çek
-  const { data: dersler } = await supabase
+  const { data: derslerRaw } = await supabase
     .from('dersler')
     .select('*')
     .order('kod', { ascending: true });
+
+  // Placeholder'ları (Seçmeli Ders X) takipten çıkar, sadece gerçek dersleri göster
+  const dersler = (derslerRaw || []).filter(d => !d.ad.toLowerCase().includes('seçmeli'));
 
   const { data: izlenceler } = await supabase
     .from('ders_izlenceleri')

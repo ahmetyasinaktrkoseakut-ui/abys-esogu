@@ -81,7 +81,7 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
               </tr>
             </thead>
             <tbody>
-              {c.ogrenimCiktilari.map((oc: any, i: number) => oc.cikti && (
+              {(c.ogrenimCiktilari || []).map((oc: any, i: number) => oc.cikti && (
                 <tr key={i} className="border-b border-slate-100">
                   <td className="border p-2 text-center font-bold text-slate-400">{i + 1}</td>
                   <td className="border p-2 font-medium text-slate-800">{oc.cikti}</td>
@@ -115,7 +115,7 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
               </tr>
             </thead>
             <tbody>
-              {c.haftalikIcerik.map((h: any, i: number) => (
+              {(c.haftalikIcerik || []).map((h: any, i: number) => (
                 <tr key={i} className={`border-b ${h.hafta === 'Arasınav' || h.hafta === 'Final' ? 'bg-blue-50 font-black' : ''}`}>
                   <td className="p-2.5 text-center text-blue-900/50">{h.hafta}</td><td className="p-2.5 font-bold text-slate-800">{h.konu}</td><td className="p-2.5 text-slate-500 italic">{h.kaynaklar}</td><td className="p-2.5 text-center">{h.isYuku}</td>
                 </tr>
@@ -126,7 +126,7 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
           <table className="w-full border-collapse border border-slate-200 text-[11px] mb-6">
             <thead><tr className="bg-slate-50"><th>Değerlendirme Türü</th><th>Açıklama</th><th className="w-16">%</th></tr></thead>
             <tbody>
-              {c.degerlendirme.map((d: any, i: number) => d.yuzde > 0 && (
+              {(c.degerlendirme || []).map((d: any, i: number) => d.yuzde > 0 && (
                 <tr key={i} className="border-b">
                   <td className="p-2.5 font-bold">{d.tur}</td><td className="p-2.5 text-slate-600">{d.aciklama}</td><td className="p-2.5 text-center font-black">{d.yuzde}</td>
                 </tr>
@@ -142,7 +142,7 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
           <table className="w-full border-collapse border border-slate-200 text-[11px] mb-12">
             <thead><tr className="bg-blue-900 text-white"><th>Etkinlikler</th><th className="w-20">Sayısı</th><th className="w-20">Süresi</th><th className="w-20">Toplam</th></tr></thead>
             <tbody>
-              {c.aktsIsYuku.map((row: any, i: number) => row.toplam && (
+              {(c.aktsIsYuku || []).map((row: any, i: number) => row.toplam && (
                 <tr key={i} className="border-b"><td className="p-2 font-medium">{row.etkinlik}</td><td className="p-2 text-center">{row.sayisi}</td><td className="p-2 text-center">{row.suresi}</td><td className="p-2 text-center font-black">{row.toplam}</td></tr>
               ))}
             </tbody>
@@ -154,8 +154,25 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
                 <tr className="bg-slate-50"><th className="p-1 text-left">PÇ No</th>{Array(10).fill(0).map((_, i) => <th key={i} className="p-1 w-6 text-center">ÖÇ{i+1}</th>)}</tr>
               </thead>
               <tbody>
-                {c.pcMatris.map((pc: any, i: number) => (
-                  <tr key={i} className="border-b"><td className="p-1 font-black text-blue-900">{pc.id}</td>{pc.ocValues.map((v: any, j: number) => <td key={j} className="p-1 text-center font-bold bg-blue-50/30">{v}</td>)}</tr>
+                {(c.pcMatris || []).map((pc: any, i: number) => (
+                  <tr key={i} className="border-b"><td className="p-1 font-black text-blue-900">{pc.id}</td>{(pc.ocValues || []).map((v: any, j: number) => <td key={j} className="p-1 text-center font-bold bg-blue-50/30">{v}</td>)}</tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* SAYFA 5: DÖÇ MATRİS (Foto 5) */}
+        <div className="bg-white p-16 shadow-2xl border border-slate-200 print:shadow-none print:border-none print:p-0 page-break-after-always">
+          <h4 className="text-xs font-black text-blue-900 uppercase tracking-widest mb-6 bg-blue-50 p-3 border-l-4 border-blue-900">DÖÇ Matrisi</h4>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-slate-200 text-[9px]">
+              <thead>
+                <tr className="bg-slate-50"><th className="p-1 text-left">DÖÇ No</th>{Array(10).fill(0).map((_, i) => <th key={i} className="p-1 w-6 text-center">ÖÇ{i+1}</th>)}</tr>
+              </thead>
+              <tbody>
+                {(c.docMatris || []).map((doc: any, i: number) => (
+                  <tr key={i} className="border-b"><td className="p-1 font-black text-blue-900">{doc.id}</td>{(doc.ocValues || []).map((v: any, j: number) => <td key={j} className="p-1 text-center font-bold bg-blue-50/30">{v}</td>)}</tr>
                 ))}
               </tbody>
             </table>

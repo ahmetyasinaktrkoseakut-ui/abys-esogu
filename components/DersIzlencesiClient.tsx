@@ -106,52 +106,55 @@ export default function DersIzlencesiClient({
     setSelectedCourse(course);
     const existing = izlenceler.find(i => i.ders_id === course.kod);
     
+    const defaultData = {
+      ogretimElemani: defaultOgretimElemani,
+      eposta: defaultEposta,
+      gorusmeGunSaat: '',
+      ofis: '',
+      donem: course.yariyil,
+      gunSaat: '',
+      egitimDili: course.dil || 'Türkçe',
+      ogretimTuru: 'Örgün Öğretim',
+      derslik: '',
+      onkosul: '-',
+      amac: '',
+      ogrenimCiktilari: Array(10).fill(0).map(() => ({ 
+        cikti: '', bilgi: false, beceri: false, yetkinlik: false, ogretim: '', olcme: '' 
+      })),
+      temelKaynaklar: '',
+      yardimciKaynaklar: '',
+      politikalar: DEFAULT_POLICIES,
+      haftalikIcerik: Array(14).fill(0).map((_, i) => ({ 
+        hafta: String(i + 1), konu: '', kaynaklar: '', isYuku: '' 
+      })).concat([
+        { hafta: 'Arasınav', konu: 'Arasınav Haftası', kaynaklar: '', isYuku: '' },
+        { hafta: 'Final', konu: 'Final Haftası', kaynaklar: '', isYuku: '' }
+      ]),
+      degerlendirme: [
+        { tur: 'Ara Sınav', aciklama: '', yuzde: 40 },
+        { tur: 'Ödev', aciklama: '', yuzde: 0 },
+        { tur: 'Sunum', aciklama: '', yuzde: 0 },
+        { tur: 'Uygulama', aciklama: '', yuzde: 0 },
+        { tur: 'Final', aciklama: '', yuzde: 60 },
+        { tur: 'Bütünleme', aciklama: '', yuzde: 0 }
+      ],
+      harfNotu: 'AA: / BA: / BB: / CB: / CC: / DC: / DD:',
+      aktsIsYuku: AKTS_ROWS.map(row => ({ 
+        etkinlik: row, sayisi: '', suresi: '', toplam: '' 
+      })),
+      pcMatris: PROGRAM_OUTCOMES.map((pc, i) => ({ 
+        id: `PÇ${i+1}`, metin: pc, ocValues: Array(10).fill('') 
+      })),
+      docMatris: DISCIPLINE_OUTCOMES.map((doc, i) => ({ 
+        id: `DÖÇ${i+1}`, metin: doc, ocValues: Array(10).fill('') 
+      }))
+    };
+
     if (existing && Object.keys(existing.icerik).length > 0) {
-      setFormData(existing.icerik);
+      // Safe merge to prevent missing properties from crashing
+      setFormData({ ...defaultData, ...existing.icerik });
     } else {
-      setFormData({
-        ogretimElemani: defaultOgretimElemani,
-        eposta: defaultEposta,
-        gorusmeGunSaat: '',
-        ofis: '',
-        donem: course.yariyil,
-        gunSaat: '',
-        egitimDili: course.dil || 'Türkçe',
-        ogretimTuru: 'Örgün Öğretim',
-        derslik: '',
-        onkosul: '-',
-        amac: '',
-        ogrenimCiktilari: Array(10).fill(0).map(() => ({ 
-          cikti: '', bilgi: false, beceri: false, yetkinlik: false, ogretim: '', olcme: '' 
-        })),
-        temelKaynaklar: '',
-        yardimciKaynaklar: '',
-        politikalar: DEFAULT_POLICIES,
-        haftalikIcerik: Array(14).fill(0).map((_, i) => ({ 
-          hafta: String(i + 1), konu: '', kaynaklar: '', isYuku: '' 
-        })).concat([
-          { hafta: 'Arasınav', konu: 'Arasınav Haftası', kaynaklar: '', isYuku: '' },
-          { hafta: 'Final', konu: 'Final Haftası', kaynaklar: '', isYuku: '' }
-        ]),
-        degerlendirme: [
-          { tur: 'Ara Sınav', aciklama: '', yuzde: 40 },
-          { tur: 'Ödev', aciklama: '', yuzde: 0 },
-          { tur: 'Sunum', aciklama: '', yuzde: 0 },
-          { tur: 'Uygulama', aciklama: '', yuzde: 0 },
-          { tur: 'Final', aciklama: '', yuzde: 60 },
-          { tur: 'Bütünleme', aciklama: '', yuzde: 0 }
-        ],
-        harfNotu: 'AA: / BA: / BB: / CB: / CC: / DC: / DD:',
-        aktsIsYuku: AKTS_ROWS.map(row => ({ 
-          etkinlik: row, sayisi: '', suresi: '', toplam: '' 
-        })),
-        pcMatris: PROGRAM_OUTCOMES.map((pc, i) => ({ 
-          id: `PÇ${i+1}`, metin: pc, ocValues: Array(10).fill('') 
-        })),
-        docMatris: DISCIPLINE_OUTCOMES.map((doc, i) => ({ 
-          id: `DÖÇ${i+1}`, metin: doc, ocValues: Array(10).fill('') 
-        }))
-      });
+      setFormData(defaultData);
     }
   };
 

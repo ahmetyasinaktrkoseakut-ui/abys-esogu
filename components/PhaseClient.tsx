@@ -18,6 +18,7 @@ interface Eylem {
   takvim: string;
   basari_gostergesi: string;
   izleme_durumu: string;
+  riskler: string;
 }
 
 interface PhaseClientProps {
@@ -31,6 +32,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   const resolvedParams = use(params);
   const [olcutDetay, setOlcutDetay] = useState<any>(null);
   const [aciklama, setAciklama] = useState('');
+  const [riskAnalizi, setRiskAnalizi] = useState('');
   const [eylemler, setEylemler] = useState<Eylem[]>([]);
   const [dokumanlar, setDokumanlar] = useState<any[]>([]); // Array of { name: string, url: string, size?: number }
   const [isLoading, setIsLoading] = useState(true);
@@ -79,6 +81,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         setPukoId(pukoData.id);
         setOnayDurumu(pukoData.durum || 'Beklemede');
         setAciklama(pukoData.aciklama || '');
+        setRiskAnalizi(pukoData.risk_analizi || '');
         // handle JSONB or Text array for kanit_dosyalari
         setDokumanlar(Array.isArray(pukoData.kanit_dosyalari) ? pukoData.kanit_dosyalari : []);
         // handle string array backward compatibility
@@ -101,7 +104,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         if (eylemlerData && eylemlerData.length > 0) {
           setEylemler(eylemlerData);
         } else {
-          setEylemler([{ iyilestirme_alani: '', bulgular: '', eylem_faaliyet: '', sorumlu: '', takvim: '', basari_gostergesi: '', izleme_durumu: '' }]);
+          setEylemler([{ iyilestirme_alani: '', bulgular: '', eylem_faaliyet: '', sorumlu: '', takvim: '', basari_gostergesi: '', izleme_durumu: '', riskler: '' }]);
         }
       }
       
@@ -117,7 +120,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   }, [resolvedParams.id, phaseId, selectedPeriod]);
 
   const handleAddEylem = () => {
-    setEylemler([...eylemler, { iyilestirme_alani: '', bulgular: '', eylem_faaliyet: '', sorumlu: '', takvim: '', basari_gostergesi: '', izleme_durumu: '' }]);
+    setEylemler([...eylemler, { iyilestirme_alani: '', bulgular: '', eylem_faaliyet: '', sorumlu: '', takvim: '', basari_gostergesi: '', izleme_durumu: '', riskler: '' }]);
   };
 
   const handleEylemChange = (index: number, field: keyof Eylem, value: string) => {
@@ -136,6 +139,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         puko_asamasi: phaseId,
         donem_id: selectedPeriod?.id,
         aciklama: aciklama,
+        risk_analizi: riskAnalizi,
         kanit_dosyalari: dokumanlar,
         durum: 'Beklemede',
         red_nedeni: null
@@ -348,6 +352,22 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
             <div className="flex justify-end mt-2 text-xs text-slate-400">
               {t('word_count')} {aciklama.replace(/<[^>]*>?/gm, '').split(/\s+/).filter(w => w.length > 0).length}
             </div>
+
+            {phaseId === 'planlama' && (
+              <div className="mt-8 border-t border-slate-200 pt-6">
+                <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-4 text-sm">
+                  <Info className="w-4 h-4 text-amber-500" />
+                  Risk Analizi
+                </h3>
+                <textarea 
+                  value={riskAnalizi} 
+                  onChange={(e) => setRiskAnalizi(e.target.value)} 
+                  disabled={isReadOnly}
+                  placeholder="Bu planlama aşamasında öngörülen riskleri ve alınacak tedbirleri belirtiniz..."
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 min-h-[120px] resize-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none disabled:opacity-80"
+                />
+              </div>
+            )}
           </div>
 
           <div className="col-span-1 p-6 bg-[#F8FAFC]">
@@ -500,13 +520,14 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               <table className="w-full text-sm text-left border border-slate-200 rounded-lg overflow-hidden">
                 <thead className="bg-[#F8FAFC] text-slate-600 text-xs font-semibold whitespace-nowrap">
                   <tr>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '15%'}}>{t('headers.iyilestirme_alani')}</th>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '20%'}}>{t('headers.bulgular')}</th>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '18%'}}>{t('headers.eylem_faaliyet')}</th>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '12%'}}>{t('headers.sorumlu')}</th>
-                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '10%'}}>{t('headers.takvim')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '13%'}}>{t('headers.iyilestirme_alani')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '15%'}}>{t('headers.bulgular')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '15%'}}>{t('headers.eylem_faaliyet')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '10%'}}>{t('headers.sorumlu')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '8%'}}>{t('headers.takvim')}</th>
                     <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '13%'}}>{t('headers.basari_gostergesi')}</th>
-                    <th className="px-4 py-3 border-b border-slate-200" style={{width: '12%'}}>{t('headers.izleme')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '13%'}}>Riskler</th>
+                    <th className="px-4 py-3 border-b border-slate-200" style={{width: '13%'}}>{t('headers.izleme')}</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white">
@@ -518,6 +539,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                       <td className="p-2 border-r border-slate-100"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.sorumlu} onChange={(e) => handleEylemChange(index, 'sorumlu', e.target.value)} /></td>
                       <td className="p-2 border-r border-slate-100"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.takvim} onChange={(e) => handleEylemChange(index, 'takvim', e.target.value)} /></td>
                       <td className="p-2 border-r border-slate-100"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.basari_gostergesi} onChange={(e) => handleEylemChange(index, 'basari_gostergesi', e.target.value)} /></td>
+                      <td className="p-2 border-r border-slate-100"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.riskler} onChange={(e) => handleEylemChange(index, 'riskler', e.target.value)} /></td>
                       <td className="p-2"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.izleme_durumu} onChange={(e) => handleEylemChange(index, 'izleme_durumu', e.target.value)} /></td>
                     </tr>
                   ))}

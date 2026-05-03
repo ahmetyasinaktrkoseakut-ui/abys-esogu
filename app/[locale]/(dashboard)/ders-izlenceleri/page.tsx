@@ -4,10 +4,13 @@ import DersIzlencesiClient from '@/components/DersIzlencesiClient';
 
 export const dynamic = 'force-dynamic';
 
-export default async function DersIzlenceleriPage() {
+export default async function DersIzlenceleriPage({ searchParams }: { searchParams: Promise<{ kod?: string }> }) {
+  const { kod } = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
+
+  if (!kod) redirect('/izlenceler');
 
   const { data: dersler } = await supabase
     .from('dersler')

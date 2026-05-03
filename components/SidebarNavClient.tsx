@@ -93,7 +93,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment }: { i
           </>
         )}
 
-        <Link href="/ders-izlenceleri" className={getLinkClass('/ders-izlenceleri')}>
+        <Link href="/izlenceler" className={getLinkClass('/izlenceler')}>
           <GraduationCap className="w-5 h-5 flex-shrink-0" />
           {t('syllabi')}
         </Link>

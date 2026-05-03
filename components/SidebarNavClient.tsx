@@ -29,6 +29,14 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
   const tQM = useTranslations('QualityManual');
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadMsgCount, setUnreadMsgCount] = useState(0);
+  const [notification, setNotification] = useState<{ sender: string; text: string } | null>(null);
+
+  useEffect(() => {
+    if (notification) {
+      const timer = setTimeout(() => setNotification(null), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [notification]);
 
   useEffect(() => {
     if (!userId) return;
@@ -73,7 +81,20 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
 
     const mesajlarChannel = supabase
       .channel('sidebar_mesajlar')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'mesajlar', filter: `alici_id=eq.${userId}` }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mesajlar', filter: `alici_id=eq.${userId}` }, async (payload) => {
+        fetchUnreadMessages();
+        
+        // Fetch sender name
+        const { data: users } = await supabase.rpc('get_kullanicilar');
+        const sender = users?.find((u: any) => u.id === payload.new.gonderen_id);
+        const name = sender?.meta_data?.name || sender?.meta_data?.full_name || sender?.email?.split('@')[0] || 'Biri';
+        
+        setNotification({
+          sender: name.charAt(0).toUpperCase() + name.slice(1),
+          text: payload.new.mesaj.substring(0, 50) + (payload.new.mesaj.length > 50 ? '...' : '')
+        });
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mesajlar', filter: `alici_id=eq.${userId}` }, () => {
         fetchUnreadMessages();
       })
       .subscribe();
@@ -141,7 +162,7 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
             <div className="relative">
               <MessageSquare className="w-5 h-5 flex-shrink-0" />
               {unreadMsgCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-1 ring-white animate-pulse">
                   {unreadMsgCount}
                 </span>
               )}
@@ -177,6 +198,22 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
         )}
         <LogoutButton />
       </div>
+      {notification && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] animate-in fade-in slide-in-from-top-4 duration-300">
+          <div className="bg-white border-l-4 border-red-500 shadow-2xl rounded-lg p-4 flex items-center gap-4 min-w-[320px]">
+            <div className="bg-red-100 p-2 rounded-full">
+              <MessageSquare className="w-6 h-6 text-red-600" />
+            </div>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-slate-900">{notification.sender}</p>
+              <p className="text-xs text-slate-500 truncate">{notification.text}</p>
+            </div>
+            <button onClick={() => setNotification(null)} className="text-slate-400 hover:text-slate-600">
+              <Settings className="w-4 h-4 rotate-45" />
+            </button>
+          </div>
+        </div>
+      )}
     </>
   );
 }

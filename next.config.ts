@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   /* config options here */
+  // Vercel build trigger - Ders Izlenceleri module
 };
 
 export default withNextIntl(nextConfig);

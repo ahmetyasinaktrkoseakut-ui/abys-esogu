@@ -1,5 +1,5 @@
 import { createClient } from '@/lib/supabase/server';
-import { GraduationCap, Edit3, Eye, Lock } from 'lucide-react';
+import { GraduationCap, Edit3, Eye, Lock, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -68,9 +68,16 @@ export default async function IzlencelerPage() {
   return (
     <div className="min-h-screen bg-white p-4 md:p-8">
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-10 flex items-center justify-between border-b-2 border-blue-900 pb-6">
+      <div className="max-w-7xl mx-auto mb-10 flex flex-col md:flex-row md:items-center justify-between border-b-2 border-blue-900 pb-6 gap-6">
         <div className="flex items-center gap-5">
-          <div className="w-16 h-16 bg-blue-900 rounded-xl flex items-center justify-center">
+          <Link 
+            href="/" 
+            className="group flex items-center justify-center w-12 h-12 bg-slate-100 hover:bg-blue-900 rounded-xl transition-all shadow-sm hover:shadow-md"
+            title="Ana Sayfa"
+          >
+            <ArrowLeft className="w-6 h-6 text-slate-600 group-hover:text-white transition-colors" />
+          </Link>
+          <div className="w-16 h-16 bg-blue-900 rounded-xl flex items-center justify-center shadow-lg">
             <GraduationCap className="w-10 h-10 text-white" />
           </div>
           <div>

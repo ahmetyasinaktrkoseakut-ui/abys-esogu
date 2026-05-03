@@ -21,11 +21,27 @@ export default async function IzlencelerPage() {
     .from('ders_izlenceleri')
     .select('ders_id, icerik');
 
-  const kategoriler = [
-    'I. YARIYIL', 'II. YARIYIL', 'III. YARIYIL', 'IV. YARIYIL',
-    'V. YARIYIL', 'VI. YARIYIL', 'VII. YARIYIL', 'VIII. YARIYIL',
-    'SEÇMELİ DERSLER'
-  ];
+  // Kategorileri dinamik olarak veritabanından çek ve mantıklı bir sıraya diz
+  const rawKategoriler = Array.from(new Set((dersler || []).map(d => d.yariyil)));
+  
+  const romanToInt = (roman: string) => {
+    const romanVals: Record<string, number> = { 'I': 1, 'II': 2, 'III': 3, 'IV': 4, 'V': 5, 'VI': 6, 'VII': 7, 'VIII': 8, 'IX': 9, 'X': 10 };
+    const parts = roman.split('.');
+    return romanVals[parts[0]] || 99;
+  };
+
+  const kategoriler = rawKategoriler.sort((a, b) => {
+    const isASecmeli = a.includes('SEÇMELİ');
+    const isBSecmeli = b.includes('SEÇMELİ');
+    if (isASecmeli && !isBSecmeli) return 1;
+    if (!isASecmeli && isBSecmeli) return -1;
+    
+    if (!isASecmeli && !isBSecmeli) {
+      return romanToInt(a) - romanToInt(b);
+    }
+    
+    return a.localeCompare(b, 'tr');
+  });
 
   return (
     <div className="min-h-screen bg-white p-4 md:p-8">
@@ -79,10 +95,14 @@ export default async function IzlencelerPage() {
                     {katDersleri.map((ders) => {
                       const izlence = (izlenceler || []).find(i => i.ders_id === ders.kod);
                       const isFilled = izlence && Object.keys(izlence.icerik || {}).length > 0;
-                      const canEdit = user !== null;
+                      
+                      // Seçmeli ders placeholder'larını (kodsuz veya 'Seçmeli' yazan) tıklanamaz yap
+                      const isPlaceholder = ders.ad.toLowerCase().includes('seçmeli') && (!ders.kod || ders.kod === '-' || ders.kod.startsWith('SEC'));
+                      const canEdit = user !== null && !isPlaceholder;
+                      const canView = isFilled && !isPlaceholder;
 
                       return (
-                        <tr key={ders.kod} className="hover:bg-blue-50 transition-colors group border-b border-blue-100">
+                        <tr key={ders.id || ders.kod + ders.ad} className="hover:bg-blue-50 transition-colors group border-b border-blue-100">
                           <td className="border-x border-blue-200 p-3 text-center font-mono font-bold text-slate-500">{ders.kod}</td>
                           <td className="border-x border-blue-200 p-3 text-center font-black text-blue-900">{ders.tur}</td>
                           <td className="border-x border-blue-200 p-3 font-bold">
@@ -91,7 +111,7 @@ export default async function IzlencelerPage() {
                                 {ders.ad}
                                 <Edit3 className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-amber-500" />
                               </Link>
-                            ) : isFilled ? (
+                            ) : canView ? (
                               <Link href={`/izlenceler/${ders.kod}`} className="text-blue-700 hover:text-blue-900 hover:underline flex items-center justify-between">
                                 {ders.ad}
                                 <Eye className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity text-emerald-500" />
@@ -99,7 +119,7 @@ export default async function IzlencelerPage() {
                             ) : (
                               <div className="text-slate-400 flex items-center justify-between">
                                 {ders.ad}
-                                <Lock className="w-3 h-3 opacity-30" />
+                                {!isPlaceholder && <Lock className="w-3 h-3 opacity-30" />}
                               </div>
                             )}
                           </td>

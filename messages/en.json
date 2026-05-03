@@ -36,7 +36,6 @@
     "save": "Share",
     "save_success": "Announcement shared successfully."
   },
-  },
   "Roles": {
     "admin": "Administrator",
     "unit_admin": "Unit Manager",

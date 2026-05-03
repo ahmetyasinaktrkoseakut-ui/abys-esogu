@@ -68,6 +68,16 @@ export default function DersIzlencesiClient({
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
+  // URL'den gelen 'kod' parametresini kontrol et
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const kodParam = urlParams.get('kod');
+    if (kodParam && dersler.length > 0) {
+      const course = dersler.find(d => d.kod === kodParam);
+      if (course) setSelectedCourse(course);
+    }
+  }, [dersler]);
+
   const doldurulmusDersler = new Set(izlenceler.map(i => i.ders_id));
 
   useEffect(() => {

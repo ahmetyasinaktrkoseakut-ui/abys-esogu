@@ -28,7 +28,7 @@ async function translateText(text, targetLang) {
 async function processAnaBasliklar() {
   console.log('--- ana_basliklar tablosu işleniyor ---');
   const { data, error } = await supabase.from('ana_basliklar').select('*');
-  
+
   if (error) {
     console.error('ana_basliklar çekilemedi:', error);
     return;
@@ -36,7 +36,7 @@ async function processAnaBasliklar() {
 
   for (const row of data) {
     if (!row.baslik_adi) continue;
-    
+
     let needsUpdate = false;
     const updates = {};
 
@@ -66,7 +66,7 @@ async function processAnaBasliklar() {
         console.log(`Başarıyla güncellendi: ID ${row.id}`);
       }
     }
-    
+
     // API rate limit'e takılmamak için kısa bekleme
     await new Promise(r => setTimeout(r, 500));
   }
@@ -75,7 +75,7 @@ async function processAnaBasliklar() {
 async function processAltOlcutler() {
   console.log('--- alt_olcutler tablosu işleniyor ---');
   const { data, error } = await supabase.from('alt_olcutler').select('*');
-  
+
   if (error) {
     console.error('alt_olcutler çekilemedi:', error);
     return;
@@ -83,7 +83,7 @@ async function processAltOlcutler() {
 
   for (const row of data) {
     if (!row.olcut_adi) continue;
-    
+
     let needsUpdate = false;
     const updates = {};
 
@@ -113,7 +113,7 @@ async function processAltOlcutler() {
         console.log(`Başarıyla güncellendi: ID ${row.id}`);
       }
     }
-    
+
     // API rate limit'e takılmamak için kısa bekleme
     await new Promise(r => setTimeout(r, 500));
   }

@@ -30,6 +30,18 @@ export default function IzlenceListClient({ initialDersler, izlenceler, user, ka
     return kategoriler;
   }, [kategoriler, selectedKategori]);
 
+  const isTrulyFilled = (icerik: any) => {
+    if (!icerik) return false;
+    const hasGenel = icerik.amac && icerik.amac.length > 5;
+    const hasOC = Array.isArray(icerik.ogrenimCiktilari) && icerik.ogrenimCiktilari.some((oc: any) => oc.cikti);
+    const hasHaftalik = Array.isArray(icerik.haftalikIcerik) && icerik.haftalikIcerik.length > 5;
+    const hasDegerlendirme = Array.isArray(icerik.degerlendirme) && icerik.degerlendirme.some((d: any) => d.yuzde > 0);
+    const hasAKTS = Array.isArray(icerik.aktsIsYuku) && icerik.aktsIsYuku.length > 0;
+    const hasMatris = Array.isArray(icerik.pcMatris) && icerik.pcMatris.length > 0;
+    
+    return hasGenel && hasOC && hasHaftalik && hasDegerlendirme && hasAKTS && hasMatris;
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Search & Filter Bar */}
@@ -93,7 +105,7 @@ export default function IzlenceListClient({ initialDersler, izlenceler, user, ka
                   <tbody className="divide-y divide-slate-100">
                     {katDersleri.map((ders) => {
                       const izlence = (izlenceler || []).find(i => i.ders_id === ders.kod);
-                      const isFilled = izlence && Object.keys(izlence.icerik || {}).length > 0;
+                      const isFilled = isTrulyFilled(izlence?.icerik);
                       
                       const isPlaceholder = ders.ad.toLowerCase().includes('seçmeli');
                       const canEdit = user !== null && !isPlaceholder;

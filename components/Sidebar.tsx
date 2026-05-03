@@ -22,6 +22,16 @@ export default async function Sidebar() {
 
   const isAdmin = role.toLowerCase().includes('yonetici') || role.toLowerCase().includes('yönetici') || role.toLowerCase().includes('admin');
 
+  // Ölçüt ataması var mı kontrol et
+  let hasAssignment = false;
+  if (user) {
+    const { count } = await supabase
+      .from('kullanici_olcut_atamalari')
+      .select('*', { count: 'exact', head: true })
+      .eq('kullanici_id', user.id);
+    hasAssignment = (count || 0) > 0;
+  }
+
   return (
     <aside className="w-64 bg-[#0f172a] text-slate-300 flex flex-col h-full border-r border-[#1e293b]">
       <div className="p-6 flex items-center gap-3">
@@ -34,7 +44,7 @@ export default async function Sidebar() {
         </div>
       </div>
 
-      <SidebarNavClient isAdmin={isAdmin} userId={user?.id || ''} />
+      <SidebarNavClient isAdmin={isAdmin} userId={user?.id || ''} hasAssignment={hasAssignment} />
     </aside>
   );
 }

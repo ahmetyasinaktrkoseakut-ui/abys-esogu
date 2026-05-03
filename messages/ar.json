@@ -11,10 +11,12 @@
     "calendar": "التقويم",
     "reports": "التقارير",
     "notifications": "الإشعارات",
+    "periods": "إدارة الفترات",
     "settings": "الإعدادات",
     "profile": "الملف الشخصي",
     "logout": "تسجيل خروج",
-    "quality_manual": "دليل الجودة"
+    "quality_manual": "دليل الجودة",
+    "syllabi": "الخطط الدراsية"
   },
   "Common": {
     "save": "حفظ",

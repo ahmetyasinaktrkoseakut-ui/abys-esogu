@@ -15,7 +15,8 @@
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Logout",
-    "quality_manual": "Quality Manual"
+    "quality_manual": "Quality Manual",
+    "syllabi": "Course Syllabi"
   },
   "Common": {
     "save": "Save",

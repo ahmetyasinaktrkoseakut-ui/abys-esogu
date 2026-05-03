@@ -10,14 +10,19 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  let activeOlcutCount = 0;
-  let activeEylemCount = 0;
-  let totalBirimCount = 0;
-  let isAdmin = false;
+  const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+  const isAdmin = profile?.rol?.toLowerCase().includes('admin') || profile?.rol?.toLowerCase().includes('yönetici') || profile?.rol?.toLowerCase().includes('yonetici');
 
-  try {
-    redirect('/olcutler');
-  } catch(e) { console.error(e) }
+  const { count: assignmentCount } = await supabase
+    .from('kullanici_olcut_atamalari')
+    .select('*', { count: 'exact', head: true })
+    .eq('kullanici_id', user.id);
+
+  if (!isAdmin && (assignmentCount || 0) === 0) {
+    redirect('/ders-izlenceleri');
+  }
+
+  redirect('/olcutler');
 
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in duration-500">

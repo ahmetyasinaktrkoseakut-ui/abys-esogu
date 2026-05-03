@@ -18,11 +18,12 @@ import {
   Bell,
   Lightbulb,
   BookOpen,
-  Megaphone
+  Megaphone,
+  GraduationCap
 } from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
 
-export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean, userId: string }) {
+export default function SidebarNavClient({ isAdmin, userId, hasAssignment }: { isAdmin: boolean, userId: string, hasAssignment: boolean }) {
   const pathname = usePathname();
   const t = useTranslations('Navigation');
   const tAnn = useTranslations('Announcements');
@@ -72,48 +73,63 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
     }`;
   };
 
+  const showFullMenu = isAdmin || hasAssignment;
+
   return (
     <>
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        <Link href="/olcutler" className={getLinkClass('/olcutler')}>
-          <Home className="w-5 h-5 flex-shrink-0" />
-          {t('dashboard')}
-        </Link>
-        {isAdmin && (
-          <Link href="/izleme" className={getLinkClass('/izleme')}>
-            <BarChart2 className="w-5 h-5 flex-shrink-0" />
-            {t('tracking')}
-          </Link>
+        {showFullMenu && (
+          <>
+            <Link href="/olcutler" className={getLinkClass('/olcutler')}>
+              <Home className="w-5 h-5 flex-shrink-0" />
+              {t('dashboard')}
+            </Link>
+            {isAdmin && (
+              <Link href="/izleme" className={getLinkClass('/izleme')}>
+                <BarChart2 className="w-5 h-5 flex-shrink-0" />
+                {t('tracking')}
+              </Link>
+            )}
+          </>
         )}
+
+        <Link href="/ders-izlenceleri" className={getLinkClass('/ders-izlenceleri')}>
+          <GraduationCap className="w-5 h-5 flex-shrink-0" />
+          {t('syllabi')}
+        </Link>
 
         {/* Generic Links */}
         <div className="pt-2">
-          <Link href="/bildirimler" className={getLinkClass('/bildirimler')}>
-            <Bell className="w-5 h-5 flex-shrink-0" />
-            {t('notifications')}
-          </Link>
-          <Link href="/takvim" className={getLinkClass('/takvim')}>
-            <Calendar className="w-5 h-5 flex-shrink-0" />
-            {t('calendar')}
-          </Link>
-          <Link href="/kalite-el-kitabi" className={getLinkClass('/kalite-el-kitabi')}>
-            <BookOpen className="w-5 h-5 flex-shrink-0" />
-            {tQM('title')}
-          </Link>
-          <Link href="/raporlar" className={getLinkClass('/raporlar')}>
-            <LineChart className="w-5 h-5 flex-shrink-0" />
-            {t('reports')}
-          </Link>
-          {isAdmin && (
+          {showFullMenu && (
             <>
-              <Link href="/onerilenler" className={getLinkClass('/onerilenler')}>
-                <Lightbulb className="w-5 h-5 flex-shrink-0" />
-                {t('suggestions')}
+              <Link href="/bildirimler" className={getLinkClass('/bildirimler')}>
+                <Bell className="w-5 h-5 flex-shrink-0" />
+                {t('notifications')}
               </Link>
-              <Link href="/dokumanlar" className={getLinkClass('/dokumanlar')}>
-                <FolderOpen className="w-5 h-5 flex-shrink-0" />
-                {t('documents')}
+              <Link href="/takvim" className={getLinkClass('/takvim')}>
+                <Calendar className="w-5 h-5 flex-shrink-0" />
+                {t('calendar')}
               </Link>
+              <Link href="/kalite-el-kitabi" className={getLinkClass('/kalite-el-kitabi')}>
+                <BookOpen className="w-5 h-5 flex-shrink-0" />
+                {tQM('title')}
+              </Link>
+              <Link href="/raporlar" className={getLinkClass('/raporlar')}>
+                <LineChart className="w-5 h-5 flex-shrink-0" />
+                {t('reports')}
+              </Link>
+              {isAdmin && (
+                <>
+                  <Link href="/onerilenler" className={getLinkClass('/onerilenler')}>
+                    <Lightbulb className="w-5 h-5 flex-shrink-0" />
+                    {t('suggestions')}
+                  </Link>
+                  <Link href="/dokumanlar" className={getLinkClass('/dokumanlar')}>
+                    <FolderOpen className="w-5 h-5 flex-shrink-0" />
+                    {t('documents')}
+                  </Link>
+                </>
+              )}
             </>
           )}
           <Link href="/duyurular" className={getLinkClass('/duyurular')}>

@@ -20,7 +20,7 @@ export default async function DersIzlenceleriPage({ searchParams }: { searchPara
 
   const { data: izlenceler } = await supabase
     .from('ders_izlenceleri')
-    .select('id, ders_id, guncelleme_tarihi')
+    .select('id, ders_id, guncelleme_tarihi, icerik')
     .eq('hoca_id', user.id);
 
   // Profilden ad bilgisi al

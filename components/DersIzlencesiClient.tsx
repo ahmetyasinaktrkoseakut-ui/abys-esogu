@@ -150,7 +150,7 @@ export default function DersIzlencesiClient({
       }))
     };
 
-    if (existing && Object.keys(existing.icerik).length > 0) {
+    if (existing && existing.icerik && Object.keys(existing.icerik).length > 0) {
       // Safe merge to prevent missing properties from crashing
       setFormData({ ...defaultData, ...existing.icerik });
     } else {

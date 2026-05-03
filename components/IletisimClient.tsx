@@ -37,14 +37,18 @@ export default function IletisimClient({ currentUserId }: { currentUserId: strin
         data
           .filter((u: any) => String(u.id) !== String(currentUserId))
           .forEach((u: any) => {
-            if (!uniqueUsersMap.has(u.id)) {
-              let name = u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad;
-              if (!name) {
-                const email = u.email || '';
-                const prefix = email.split('@')[0];
-                name = prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : 'Kullanıcı';
-              }
-              uniqueUsersMap.set(u.id, {
+            let name = u.meta_data?.name || u.meta_data?.full_name || u.meta_data?.ad_soyad || u.meta_data?.ad;
+            if (!name) {
+              const email = u.email || '';
+              const prefix = email.split('@')[0];
+              name = prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : 'Kullanıcı';
+            }
+            
+            // Fuzzy deduplication: use name without trailing numbers as key
+            const dedupeKey = name.toLowerCase().trim().replace(/\d+$/, '');
+            
+            if (!uniqueUsersMap.has(dedupeKey)) {
+              uniqueUsersMap.set(dedupeKey, {
                 id: u.id,
                 tam_adi: name,
                 unvan: u.meta_data?.unvan || 'Personel'

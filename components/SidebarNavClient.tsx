@@ -80,7 +80,7 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
     fetchUnreadMessages();
 
     const mesajlarChannel = supabase
-      .channel('sidebar_mesajlar')
+      .channel('public:mesajlar')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'mesajlar', filter: `alici_id=eq.${userId}` }, async (payload) => {
         fetchUnreadMessages();
         
@@ -91,7 +91,7 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
         
         setNotification({
           sender: name.charAt(0).toUpperCase() + name.slice(1),
-          text: payload.new.mesaj.substring(0, 50) + (payload.new.mesaj.length > 50 ? '...' : '')
+          text: payload.new.mesaj.substring(0, 70) + (payload.new.mesaj.length > 70 ? '...' : '')
         });
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'mesajlar', filter: `alici_id=eq.${userId}` }, () => {
@@ -199,18 +199,23 @@ export default function SidebarNavClient({ isAdmin, userId }: { isAdmin: boolean
         <LogoutButton />
       </div>
       {notification && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-[9999] animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="bg-white border-l-4 border-red-500 shadow-2xl rounded-lg p-4 flex items-center gap-4 min-w-[320px]">
-            <div className="bg-red-100 p-2 rounded-full">
-              <MessageSquare className="w-6 h-6 text-red-600" />
+        <div className="fixed top-0 left-0 right-0 z-[9999] animate-in slide-in-from-top duration-500">
+          <div className="bg-red-600 text-white p-4 shadow-2xl flex items-center justify-between">
+            <div className="flex items-center gap-4 max-w-4xl mx-auto w-full">
+              <div className="bg-white/20 p-2 rounded-full animate-pulse">
+                <MessageSquare className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex-1">
+                <p className="text-base font-black uppercase tracking-tight">YENİ MESAJ: {notification.sender}</p>
+                <p className="text-sm font-medium opacity-90 truncate">{notification.text}</p>
+              </div>
+              <button 
+                onClick={() => setNotification(null)} 
+                className="bg-white/10 hover:bg-white/20 p-2 rounded-lg transition-colors font-bold text-xs uppercase"
+              >
+                Kapat
+              </button>
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-slate-900">{notification.sender}</p>
-              <p className="text-xs text-slate-500 truncate">{notification.text}</p>
-            </div>
-            <button onClick={() => setNotification(null)} className="text-slate-400 hover:text-slate-600">
-              <Settings className="w-4 h-4 rotate-45" />
-            </button>
           </div>
         </div>
       )}

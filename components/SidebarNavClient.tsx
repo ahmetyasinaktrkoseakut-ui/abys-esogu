@@ -97,8 +97,8 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment }: { i
           <GraduationCap className="w-5 h-5 flex-shrink-0" />
           {t('syllabi')}
         </Link>
-        {isAdmin && pathname.includes('/izlenceler') && (
-          <div className="pl-6 animate-in slide-in-from-top-2 duration-300">
+        {isAdmin && (
+          <div className="pl-6">
             <Link href="/izlence-takip" className={getLinkClass('/izlence-takip')}>
               <BarChart2 className="w-4 h-4 flex-shrink-0" />
               İzlence Verileri

@@ -18,17 +18,12 @@ export default async function DersIzlenceleriPage({ searchParams }: { searchPara
     .order('yariyil')
     .order('kod');
 
-  const { data: izlenceler } = await supabase
-    .from('ders_izlenceleri')
-    .select('id, ders_id, guncelleme_tarihi, icerik')
-    .eq('hoca_id', user.id);
-
-  // Profilden ad ve rol bilgisini al
-  const { data: profile } = await supabase
+  // Profilden ad ve rol bilgisini al (Daha güvenli fetch)
+  const { data: profileData } = await supabase
     .from('profiller')
-    .select('tam_adi, unvan, rol')
-    .eq('id', user.id)
-    .single();
+    .select('*')
+    .eq('id', user.id);
+  const profile = profileData?.[0];
 
   const { data: authUser } = await supabase.auth.getUser();
   const email = authUser.user?.email?.toLowerCase() || '';
@@ -37,10 +32,8 @@ export default async function DersIzlenceleriPage({ searchParams }: { searchPara
   // 1. Yönetici ise doğrudan izin ver
   // 2. Yönetici değilse kurumsal e-posta adresi kontrolü yap (@ogu.edu.tr veya @esogu.edu.tr olmalı ve ogrenci/std geçmemeli)
   const userRole = (profile?.rol || user.user_metadata?.role || '').toLowerCase();
-  const isYonetici = userRole.includes('yonetici') || 
-                     userRole.includes('yönetici') || 
-                     userRole.includes('admin') ||
-                     user.user_metadata?.isAdmin === true;
+  // Daha kapsayıcı Regex kontrolü (Türkçe karakter ve farklı yazım türleri için)
+  const isYonetici = /admin|yonetici|yönetici|manager/i.test(userRole) || user.user_metadata?.isAdmin === true;
 
   const isKurumsalPersonel = (
     email.endsWith('@ogu.edu.tr') || 
@@ -53,6 +46,19 @@ export default async function DersIzlenceleriPage({ searchParams }: { searchPara
     // Yetkisi yoksa genel izlenceler (sadece görüntüleme) sayfasına yönlendir
     redirect(`/izlenceler/${kod}`);
   }
+
+  // İzlenceleri çek: 
+  // Eğer yönetici ise tüm izlenceleri görsün (başkalarınınkine bakabilsin), 
+  // personel ise sadece kendisininkini görsün.
+  let izlenceQuery = supabase
+    .from('ders_izlenceleri')
+    .select('id, ders_id, guncelleme_tarihi, icerik, hoca_id');
+  
+  if (!isYonetici) {
+    izlenceQuery = izlenceQuery.eq('hoca_id', user.id);
+  }
+
+  const { data: izlenceler } = await izlenceQuery;
 
   return (
     <DersIzlencesiClient

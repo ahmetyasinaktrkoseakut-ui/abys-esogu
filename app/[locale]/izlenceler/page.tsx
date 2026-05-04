@@ -11,19 +11,17 @@ export default async function IzlencelerPage() {
 
   let isAuthorizedToEdit = false;
   if (user) {
-    const { data: profile } = await supabase
+    const { data: profileData } = await supabase
       .from('profiller')
       .select('rol')
-      .eq('id', user.id)
-      .single();
+      .eq('id', user.id);
     
+    const profile = profileData?.[0];
     const email = user.email?.toLowerCase() || '';
     const userRole = (profile?.rol || user.user_metadata?.role || '').toLowerCase();
     
-    const isYonetici = userRole.includes('yonetici') || 
-                       userRole.includes('yönetici') || 
-                       userRole.includes('admin') ||
-                       user.user_metadata?.isAdmin === true;
+    // Daha kapsayıcı Regex kontrolü (Türkçe karakter ve farklı yazım türleri için)
+    const isYonetici = /admin|yonetici|yönetici|manager/i.test(userRole) || user.user_metadata?.isAdmin === true;
 
     const isKurumsalPersonel = (
       email.endsWith('@ogu.edu.tr') || 

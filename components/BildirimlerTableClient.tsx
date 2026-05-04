@@ -156,11 +156,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                     <Hash className="w-4 h-4" /> {t('table.criterion')}
                   </div>
                 </th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                  <div className="flex items-center gap-2">
-                    <Activity className="w-4 h-4" /> {t('table.phase')}
-                  </div>
-                </th>
+                {/* Phase Column Removed */}
                 <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-4 h-4" /> {t('table.date')}
@@ -191,7 +187,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                     <td className="px-6 py-4">
                       <div 
                         className="flex items-center gap-2 cursor-pointer group"
-                        onClick={() => router.push(`/olcutler/${row.alt_olcut_id}/${getAsamaSlug(row.puko_asamasi)}`)}
+                        onClick={() => router.push(`/olcutler/${row.alt_olcut_id}/ozdegerlendirme`)}
                       >
                         <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
                           {row.alt_olcutler?.kod || '-'}
@@ -201,11 +197,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold border capitalize ${getPukoBadgeColor(row.puko_asamasi)}`}>
-                        {row.puko_asamasi || '-'}
-                      </span>
-                    </td>
+                    {/* Phase Column Removed */}
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm font-medium text-slate-500">
                         {formatDate(row.olusturulma_tarihi || row.created_at)}

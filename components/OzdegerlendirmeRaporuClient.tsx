@@ -25,6 +25,13 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Onay / Ret Sistematiği
+  const [onayDurumu, setOnayDurumu] = useState<string>('');
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isActionSubmitting, setIsActionSubmitting] = useState(false);
 
   const t = useTranslations('SelfEvaluation');
   const locale = useLocale();
@@ -42,7 +49,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       if (user) {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = profile?.rol?.toLowerCase() || '';
-        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false) {
+        const userIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+        setIsAdmin(userIsAdmin);
+        if (userIsAdmin || selectedPeriod?.is_active === false) {
           setIsReadOnly(true);
         }
       }
@@ -64,6 +73,16 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         setKanitlar(raporData?.kanitlar ?? []);
         setRaporOlusturuldu(true);
       }
+
+      // Tüm aşamaların ortak durumunu öğrenmek için bir tane puko kaydı çek
+      const { data: pukoDurumData } = await supabase
+        .from('puko_degerlendirmeleri')
+        .select('durum')
+        .eq('alt_olcut_id', resolvedParams.id)
+        .eq('donem_id', selectedPeriod?.id)
+        .limit(1)
+        .maybeSingle();
+      if (pukoDurumData) setOnayDurumu(pukoDurumData.durum || '');
     } catch (error) {
       console.error("Fetch Data Error:", error);
     } finally {
@@ -225,12 +244,64 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         if (err) throw err;
       }
 
+      // Hoca raporu kaydettiğinde, tüm aşamaların durumunu "Beklemede" yap
+      if (!isAdmin) {
+        await supabase
+          .from('puko_degerlendirmeleri')
+          .update({ durum: 'Beklemede', red_nedeni: null })
+          .eq('alt_olcut_id', resolvedParams.id)
+          .eq('donem_id', selectedPeriod?.id);
+        setOnayDurumu('Beklemede');
+      }
+
       alert('Rapor başarıyla kaydedildi.');
     } catch (err: any) {
       console.error(err);
       alert(`Hata: ${err.message}`);
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleApprove = async () => {
+    setIsActionSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('puko_degerlendirmeleri')
+        .update({ durum: 'Onaylandı', red_nedeni: null })
+        .eq('alt_olcut_id', resolvedParams.id)
+        .eq('donem_id', selectedPeriod?.id);
+      if (error) throw error;
+      setOnayDurumu('Onaylandı');
+      alert(t('approve_success'));
+    } catch (err: any) {
+      alert(`Onay sırasında hata: ${err.message}`);
+    } finally {
+      setIsActionSubmitting(false);
+    }
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectReason.trim()) {
+      alert('Lütfen red nedeni giriniz.');
+      return;
+    }
+    setIsActionSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('puko_degerlendirmeleri')
+        .update({ durum: 'Reddedildi', red_nedeni: rejectReason })
+        .eq('alt_olcut_id', resolvedParams.id)
+        .eq('donem_id', selectedPeriod?.id);
+      if (error) throw error;
+      setOnayDurumu('Reddedildi');
+      setIsRejectModalOpen(false);
+      setRejectReason('');
+      alert(t('reject_success'));
+    } catch (err: any) {
+      alert(`Red işlemi sırasında hata: ${err.message}`);
+    } finally {
+      setIsActionSubmitting(false);
     }
   };
 
@@ -296,7 +367,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
               <FileSearch className="w-6 h-6 relative z-10" />
-              <span className="text-lg relative z-10">Verileri Çek ve Raporu Düzenle</span>
+              <span className="text-lg relative z-10">{t('pull_and_edit')}</span>
             </button>
           </div>
         ) : isGenerating ? (
@@ -311,8 +382,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-8 h-8 text-blue-200" />
                 <div>
-                  <h3 className="text-xl font-bold">Rapor Düzenleme</h3>
-                  <p className="text-blue-100 text-sm">Metni düzenleyebilir ve atıflar ekleyebilirsiniz.</p>
+                  <h3 className="text-xl font-bold">{t('editor_title')}</h3>
+                  <p className="text-blue-100 text-sm">{t('editor_desc')}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -320,13 +391,13 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                   onClick={exportToWord}
                   className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
                 >
-                  <Download className="w-4 h-4" /> Word İndir
+                  <Download className="w-4 h-4" /> {t('download_word')}
                 </button>
                 <button 
                   onClick={handleRaporOlustur}
                   className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
                 >
-                  <FileSearch className="w-4 h-4" /> Yeniden Çek
+                  <FileSearch className="w-4 h-4" /> {t('re_pull')}
                 </button>
                 {!isReadOnly && (
                   <button 
@@ -335,7 +406,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                     className="bg-emerald-500 hover:bg-emerald-600 px-5 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-lg disabled:opacity-70"
                   >
                     {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    {isSaving ? 'Kaydediliyor...' : 'Kaydet'}
+                    {isSaving ? t('saving_report') : t('save_report')}
                   </button>
                 )}
               </div>
@@ -349,30 +420,30 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
               <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center justify-between border-b pb-4">
                 <div className="flex items-center gap-2">
                   <FileText className="w-6 h-6 text-blue-600" />
-                  Kanıt Bilgileri ve Atıf Listesi
+                  {t('evidence_list_title')}
                 </div>
                 {!isReadOnly && (
                   <button 
                     onClick={handleYeniKanitTanımla}
                     className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95"
                   >
-                    <Plus className="w-4 h-4" /> Yeni Kanıt Tanımla
+                    <Plus className="w-4 h-4" /> {t('add_new_evidence')}
                   </button>
                 )}
               </h3>
               
               {kanitlar.length === 0 ? (
                 <div className="text-slate-500 italic p-6 bg-slate-50 rounded-xl border border-slate-200 border-dashed text-center">
-                  Bu ölçüt için henüz kanıt belgesi yüklenmemiş.
+                  {t('no_evidence_uploaded')}
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
-                        <th className="py-3 px-4 w-24">Atıf No</th>
-                        <th className="py-3 px-4">Kanıt Adı</th>
-                        <th className="py-3 px-4 w-32 text-center">İşlem</th>
+                        <th className="py-3 px-4 w-24">{t('evidence_no')}</th>
+                        <th className="py-3 px-4">{t('evidence_name')}</th>
+                        <th className="py-3 px-4 w-32 text-center">{t('actions')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
@@ -394,7 +465,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                                 onClick={() => handleKanitEkle(idx)}
                                 className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-semibold transition-colors"
                               >
-                                <Plus className="w-3.5 h-3.5" /> Metne Ekle
+                                <Plus className="w-3.5 h-3.5" /> {t('add_to_text')}
                               </button>
                             )}
                           </td>
@@ -408,6 +479,91 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           </div>
         )}
       </div>
+
+      {/* Reject Modal */}
+      {isRejectModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                Tüm Ölçütü Reddet
+              </h3>
+              <button 
+                onClick={() => setIsRejectModalOpen(false)}
+                className="text-slate-400 hover:text-slate-600 transition-colors"
+                disabled={isActionSubmitting}
+              >
+                Kapat
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-500 leading-relaxed">
+                {t('reject_desc')}
+              </p>
+              
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-slate-700">{t('reject_reason')} (<span className="text-red-500">*</span>)</label>
+                <textarea 
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  placeholder="Eksik kanıt, yanlış veri vb."
+                  rows={4}
+                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm resize-none"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button 
+                onClick={() => setIsRejectModalOpen(false)}
+                disabled={isActionSubmitting}
+                className="px-5 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                İptal
+              </button>
+              <button 
+                onClick={handleRejectSubmit}
+                disabled={isActionSubmitting || !rejectReason.trim()}
+                className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isActionSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                {t('confirm_reject')}
+              </button>
+            </div>
+          </div>
+          
+          {/* Ortak Onay/Ret Butonları (Yöneticiler için) */}
+          {isAdmin && (
+            <div className="flex items-center gap-3">
+              {onayDurumu && (
+              <div className={`px-4 py-1.5 rounded-lg text-sm font-bold border ${
+                onayDurumu === 'Onaylandı' ? 'bg-green-50 text-green-700 border-green-200' : 
+                onayDurumu === 'Reddedildi' ? 'bg-red-50 text-red-700 border-red-200' :
+                'bg-amber-50 text-amber-700 border-amber-200'
+              }`}>
+                {onayDurumu}
+              </div>
+              )}
+              <button 
+                onClick={handleApprove}
+                disabled={isActionSubmitting || onayDurumu === 'Onaylandı'}
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+              >
+                {t('approve_criterion')}
+              </button>
+              <button 
+                onClick={() => setIsRejectModalOpen(true)}
+                disabled={isActionSubmitting || onayDurumu === 'Reddedildi'}
+                className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+              >
+                {t('reject_criterion')}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
     </div>
   );
 }

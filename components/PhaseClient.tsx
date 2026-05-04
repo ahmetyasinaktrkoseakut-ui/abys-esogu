@@ -47,9 +47,6 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   // Onay / Ret Sistematiği
   const [pukoId, setPukoId] = useState<string | null>(null);
   const [onayDurumu, setOnayDurumu] = useState<string>('');
-  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
-  const [rejectReason, setRejectReason] = useState('');
-  const [isActionSubmitting, setIsActionSubmitting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -140,9 +137,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         donem_id: selectedPeriod?.id,
         aciklama: aciklama,
         risk_analizi: riskAnalizi,
-        kanit_dosyalari: dokumanlar,
-        durum: 'Beklemede',
-        red_nedeni: null
+        kanit_dosyalari: dokumanlar
       };
 
       if (phaseId === 'onlem') {
@@ -250,40 +245,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
     }
   };
 
-  const handleApprove = async () => {
-    if (!pukoId) return;
-    setIsActionSubmitting(true);
-    try {
-      const { error } = await supabase.from('puko_degerlendirmeleri').update({ durum: 'Onaylandı', red_nedeni: null }).eq('id', pukoId);
-      if (error) throw error;
-      setOnayDurumu('Onaylandı');
-      alert(t('approve_success'));
-    } catch (err: any) {
-      alert(`Onay sırasında hata: ${err.message}`);
-    } finally {
-      setIsActionSubmitting(false);
-    }
-  };
-
-  const handleRejectSubmit = async () => {
-    if (!pukoId || !rejectReason.trim()) {
-      alert(t('reject_empty'));
-      return;
-    }
-    setIsActionSubmitting(true);
-    try {
-      const { error } = await supabase.from('puko_degerlendirmeleri').update({ durum: 'Reddedildi', red_nedeni: rejectReason }).eq('id', pukoId);
-      if (error) throw error;
-      setOnayDurumu('Reddedildi');
-      setIsRejectModalOpen(false);
-      setRejectReason('');
-      alert(t('reject_success'));
-    } catch (err: any) {
-      alert(`Red işlemi sırasında hata: ${err.message}`);
-    } finally {
-      setIsActionSubmitting(false);
-    }
-  };
+  // Onay ve Ret işlemleri Stage 7'ye (OzdegerlendirmeRaporuClient) taşındı.
 
   if (isLoading) {
     return <div className="h-full flex items-center justify-center p-20"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;
@@ -317,20 +279,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               }`}>
                 {onayDurumu}
               </div>
-              <button 
-                onClick={handleApprove}
-                disabled={isActionSubmitting || onayDurumu === 'Onaylandı'}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-              >
-                {t('approve')}
-              </button>
-              <button 
-                onClick={() => setIsRejectModalOpen(true)}
-                disabled={isActionSubmitting || onayDurumu === 'Reddedildi'}
-                className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-              >
-                {t('reject')}
-              </button>
+            {/* Onay/Ret butonları Stage 7'ye taşındı */}
             </div>
           )}
         </div>
@@ -566,60 +515,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       </div>
     </div>
       
-      {/* Reject Modal */}
-      {isRejectModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                {t('reject_record')}
-              </h3>
-              <button 
-                onClick={() => setIsRejectModalOpen(false)}
-                className="text-slate-400 hover:text-slate-600 transition-colors"
-                disabled={isActionSubmitting}
-              >
-                {t('close')}
-              </button>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <p className="text-sm text-slate-500 leading-relaxed">
-                {t('reject_description')}
-              </p>
-              
-              <div className="space-y-1.5">
-                <label className="text-sm font-semibold text-slate-700">{t('reject_reason')} (<span className="text-red-500">*</span>)</label>
-                <textarea 
-                  value={rejectReason}
-                  onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder={t('reject_reason_placeholder')}
-                  rows={4}
-                  className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm resize-none"
-                />
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
-              <button 
-                onClick={() => setIsRejectModalOpen(false)}
-                disabled={isActionSubmitting}
-                className="px-5 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
-              >
-                {t('cancel')}
-              </button>
-              <button 
-                onClick={handleRejectSubmit}
-                disabled={isActionSubmitting || !rejectReason.trim()}
-                className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50"
-              >
-                {isActionSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {t('confirm_reject')}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Reject Modal Stage 7'ye taşındı */}
     </>
   );
 }

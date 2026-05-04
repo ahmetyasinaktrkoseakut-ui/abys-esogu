@@ -41,7 +41,12 @@ export default function BildirimlerPage() {
             .eq('donem_id', selectedPeriod.id)
             .order('olusturulma_tarihi', { ascending: false });
           
-          setNotifications(data || []);
+          if (data) {
+            const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
+            setNotifications(uniqueData);
+          } else {
+            setNotifications([]);
+          }
         } else {
           const { data: atamalar } = await supabase
             .from('kullanici_olcut_atamalari')
@@ -58,7 +63,12 @@ export default function BildirimlerPage() {
               .eq('donem_id', selectedPeriod.id)
               .order('olusturulma_tarihi', { ascending: false });
 
-            setNotifications(data || []);
+            if (data) {
+              const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
+              setNotifications(uniqueData);
+            } else {
+              setNotifications([]);
+            }
           } else {
             setNotifications([]);
           }

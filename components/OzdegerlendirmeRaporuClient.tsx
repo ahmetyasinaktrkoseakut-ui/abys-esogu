@@ -51,7 +51,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         const role = profile?.rol?.toLowerCase() || '';
         const userIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
         setIsAdmin(userIsAdmin);
-        if (userIsAdmin || selectedPeriod?.is_active === false) {
+        
+        // Adminlerin de düzenleme yapabilmesi için ReadOnly kısıtlamasını esnetiyoruz
+        if (selectedPeriod?.is_active === false) {
           setIsReadOnly(true);
         }
       }

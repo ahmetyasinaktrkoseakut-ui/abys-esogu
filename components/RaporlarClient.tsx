@@ -166,6 +166,14 @@ export default function RaporlarClient() {
 
           if (ozdegerlendirme && ozdegerlendirme.icerik) {
             combinedText = ozdegerlendirme.icerik;
+            
+            // Eski kayıtlarda kalan başlıkları ve puan metinlerini temizle
+            combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
+            combinedText = combinedText.replace(/<hr\s*\/?>/gi, '');
+            combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
+            combinedText = combinedText.replace(/<p[^>]*>.*?Kalite güvencesi.*?<\/p>/gi, ''); // Fallback rubric
+            combinedText = combinedText.replace(/<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">.*?<\/p>/gi, '');
+            
             (ozdegerlendirme.kanitlar || []).forEach((k: any) => {
               let ev = allEvidences.find(e => e.url === k.url);
               if (!ev) {
@@ -376,6 +384,14 @@ export default function RaporlarClient() {
 
                         if (ozdegerlendirme && ozdegerlendirme.icerik) {
                           combinedText = ozdegerlendirme.icerik;
+                          
+                          // Eski kayıtlarda kalan başlıkları ve puan metinlerini temizle
+                          combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
+                          combinedText = combinedText.replace(/<hr\s*\/?>/gi, '');
+                          combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
+                          combinedText = combinedText.replace(/<p[^>]*>.*?Kalite güvencesi.*?<\/p>/gi, ''); // Fallback rubric
+                          combinedText = combinedText.replace(/<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">.*?<\/p>/gi, '');
+                          
                           (ozdegerlendirme.kanitlar || []).forEach((k: any) => {
                             let ev = allEvidences.find(e => e.url === k.url);
                             if (!ev) {

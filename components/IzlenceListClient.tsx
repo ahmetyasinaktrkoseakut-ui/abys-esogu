@@ -9,9 +9,10 @@ interface IzlenceListClientProps {
   izlenceler: any[];
   user: any;
   kategoriler: string[];
+  isAuthorizedToEdit?: boolean;
 }
 
-export default function IzlenceListClient({ initialDersler, izlenceler, user, kategoriler }: IzlenceListClientProps) {
+export default function IzlenceListClient({ initialDersler, izlenceler, user, kategoriler, isAuthorizedToEdit }: IzlenceListClientProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedKategori, setSelectedKategori] = useState('HEPSİ');
 
@@ -108,7 +109,7 @@ export default function IzlenceListClient({ initialDersler, izlenceler, user, ka
                       const isFilled = isTrulyFilled(izlence?.icerik);
                       
                       const isPlaceholder = ders.ad.toLowerCase().includes('seçmeli');
-                      const canEdit = user !== null && !isPlaceholder;
+                      const canEdit = isAuthorizedToEdit && !isPlaceholder;
                       const canView = isFilled && !isPlaceholder;
 
                       return (

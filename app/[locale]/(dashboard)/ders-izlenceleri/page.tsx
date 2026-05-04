@@ -36,7 +36,8 @@ export default async function DersIzlenceleriPage({ searchParams }: { searchPara
   // Yetki Kontrolü: 
   // 1. Yönetici ise doğrudan izin ver
   // 2. Yönetici değilse kurumsal e-posta adresi kontrolü yap (@ogu.edu.tr veya @esogu.edu.tr olmalı ve ogrenci/std geçmemeli)
-  const isYonetici = profile?.rol?.toLowerCase() === 'yonetici' || profile?.rol?.toLowerCase() === 'yönetici';
+  const role = profile?.rol?.toLowerCase() || '';
+  const isYonetici = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
   const isKurumsalPersonel = (email.endsWith('@ogu.edu.tr') || email.endsWith('@esogu.edu.tr')) 
                               && !email.includes('ogrenci') 
                               && !email.includes('std');

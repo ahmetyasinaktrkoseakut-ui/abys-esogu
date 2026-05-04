@@ -9,6 +9,24 @@ export default async function IzlencelerPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
+  let isAuthorizedToEdit = false;
+  if (user) {
+    const { data: profile } = await supabase
+      .from('profiller')
+      .select('rol')
+      .eq('id', user.id)
+      .single();
+    
+    const email = user.email?.toLowerCase() || '';
+    const role = profile?.rol?.toLowerCase() || '';
+    const isYonetici = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+    const isKurumsalPersonel = (email.endsWith('@ogu.edu.tr') || email.endsWith('@esogu.edu.tr')) 
+                                && !email.includes('ogrenci') 
+                                && !email.includes('std');
+    
+    isAuthorizedToEdit = isYonetici || isKurumsalPersonel;
+  }
+
   // Tüm dersleri ve izlenceleri çek
   const { data: dersler } = await supabase
     .from('dersler')
@@ -129,6 +147,7 @@ export default async function IzlencelerPage() {
           izlenceler={izlenceler || []} 
           user={user} 
           kategoriler={kategoriler} 
+          isAuthorizedToEdit={isAuthorizedToEdit}
         />
       </div>
       

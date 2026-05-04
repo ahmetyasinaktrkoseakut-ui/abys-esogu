@@ -23,15 +23,28 @@ export default async function DersIzlenceleriPage({ searchParams }: { searchPara
     .select('id, ders_id, guncelleme_tarihi, icerik')
     .eq('hoca_id', user.id);
 
-  // Profilden ad bilgisi al
+  // Profilden ad ve rol bilgisini al
   const { data: profile } = await supabase
     .from('profiller')
-    .select('tam_adi, unvan')
+    .select('tam_adi, unvan, rol')
     .eq('id', user.id)
     .single();
 
   const { data: authUser } = await supabase.auth.getUser();
-  const email = authUser.user?.email || '';
+  const email = authUser.user?.email?.toLowerCase() || '';
+
+  // Yetki Kontrolü: 
+  // 1. Yönetici ise doğrudan izin ver
+  // 2. Yönetici değilse kurumsal e-posta adresi kontrolü yap (@ogu.edu.tr veya @esogu.edu.tr olmalı ve ogrenci/std geçmemeli)
+  const isYonetici = profile?.rol?.toLowerCase() === 'yonetici' || profile?.rol?.toLowerCase() === 'yönetici';
+  const isKurumsalPersonel = (email.endsWith('@ogu.edu.tr') || email.endsWith('@esogu.edu.tr')) 
+                              && !email.includes('ogrenci') 
+                              && !email.includes('std');
+
+  if (!isYonetici && !isKurumsalPersonel) {
+    // Yetkisi yoksa genel izlenceler (sadece görüntüleme) sayfasına yönlendir
+    redirect(`/izlenceler/${kod}`);
+  }
 
   return (
     <DersIzlencesiClient

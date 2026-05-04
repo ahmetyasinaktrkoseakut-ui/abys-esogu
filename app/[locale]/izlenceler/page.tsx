@@ -18,11 +18,19 @@ export default async function IzlencelerPage() {
       .single();
     
     const email = user.email?.toLowerCase() || '';
-    const role = profile?.rol?.toLowerCase() || '';
-    const isYonetici = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
-    const isKurumsalPersonel = (email.endsWith('@ogu.edu.tr') || email.endsWith('@esogu.edu.tr')) 
-                                && !email.includes('ogrenci') 
-                                && !email.includes('std');
+    const userRole = (profile?.rol || user.user_metadata?.role || '').toLowerCase();
+    
+    const isYonetici = userRole.includes('yonetici') || 
+                       userRole.includes('yönetici') || 
+                       userRole.includes('admin') ||
+                       user.user_metadata?.isAdmin === true;
+
+    const isKurumsalPersonel = (
+      email.endsWith('@ogu.edu.tr') || 
+      email.endsWith('@esogu.edu.tr') || 
+      email.endsWith('.ogu.tr') || 
+      email.endsWith('@ogu.tr')
+    ) && !email.includes('ogrenci') && !email.includes('std');
     
     isAuthorizedToEdit = isYonetici || isKurumsalPersonel;
   }

@@ -347,6 +347,35 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           </div>
           <p className="text-sm text-slate-500">{t('synthesis_desc')}</p>
         </div>
+
+        {/* Ortak Onay/Ret Butonları (Yöneticiler için) */}
+        {isAdmin && (
+          <div className="flex items-center gap-3 mt-4 md:mt-0">
+            {onayDurumu && (
+            <div className={`px-4 py-1.5 rounded-lg text-sm font-bold border ${
+              onayDurumu === 'Onaylandı' ? 'bg-green-50 text-green-700 border-green-200' : 
+              onayDurumu === 'Reddedildi' ? 'bg-red-50 text-red-700 border-red-200' :
+              'bg-amber-50 text-amber-700 border-amber-200'
+            }`}>
+              {onayDurumu}
+            </div>
+            )}
+            <button 
+              onClick={handleApprove}
+              disabled={isActionSubmitting || onayDurumu === 'Onaylandı'}
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+            >
+              {t('approve_criterion')}
+            </button>
+            <button 
+              onClick={() => setIsRejectModalOpen(true)}
+              disabled={isActionSubmitting || onayDurumu === 'Reddedildi'}
+              className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+            >
+              {t('reject_criterion')}
+            </button>
+          </div>
+        )}
       </div>
 
       <StepPanel activeStepId="rapor" altOlcutId={resolvedParams.id} />
@@ -532,35 +561,6 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
               </button>
             </div>
           </div>
-          
-          {/* Ortak Onay/Ret Butonları (Yöneticiler için) */}
-          {isAdmin && (
-            <div className="flex items-center gap-3">
-              {onayDurumu && (
-              <div className={`px-4 py-1.5 rounded-lg text-sm font-bold border ${
-                onayDurumu === 'Onaylandı' ? 'bg-green-50 text-green-700 border-green-200' : 
-                onayDurumu === 'Reddedildi' ? 'bg-red-50 text-red-700 border-red-200' :
-                'bg-amber-50 text-amber-700 border-amber-200'
-              }`}>
-                {onayDurumu}
-              </div>
-              )}
-              <button 
-                onClick={handleApprove}
-                disabled={isActionSubmitting || onayDurumu === 'Onaylandı'}
-                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-              >
-                {t('approve_criterion')}
-              </button>
-              <button 
-                onClick={() => setIsRejectModalOpen(true)}
-                disabled={isActionSubmitting || onayDurumu === 'Reddedildi'}
-                className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-              >
-                {t('reject_criterion')}
-              </button>
-            </div>
-          )}
         </div>
       )}
 

@@ -270,18 +270,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
             <p className="text-sm text-slate-500">{t('process_management_desc', { phaseTitle })}</p>
           </div>
           
-          {isReadOnly && pukoId && (
-            <div className="flex items-center gap-3">
-              <div className={`px-4 py-1.5 rounded-lg text-sm font-bold border ${
-                onayDurumu === 'Onaylandı' ? 'bg-green-50 text-green-700 border-green-200' : 
-                onayDurumu === 'Reddedildi' ? 'bg-red-50 text-red-700 border-red-200' :
-                'bg-amber-50 text-amber-700 border-amber-200'
-              }`}>
-                {onayDurumu}
-              </div>
-            {/* Onay/Ret butonları Stage 7'ye taşındı */}
-            </div>
-          )}
+          {/* Eski Onay/Ret butonları ve durum rozeti Stage 7'ye taşındı */}
         </div>
 
       <StepPanel activeStepId={phaseId} altOlcutId={resolvedParams.id} />

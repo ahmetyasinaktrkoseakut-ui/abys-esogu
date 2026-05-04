@@ -161,49 +161,54 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       let birlesikMetin = '';
       let birlesikKanitlar: any[] = [];
       let puan = null;
+      let localEvidenceCounter = 1;
 
       const orderMap: Record<string, number> = { planlama: 1, uygulama: 2, kontrol: 3, onlem: 4, olgunluk: 5 };
       const siraliData = [...data].sort((a, b) => (orderMap[a.puko_asamasi] || 99) - (orderMap[b.puko_asamasi] || 99));
 
       for (const row of siraliData) {
-        if (row.aciklama && row.aciklama.trim() !== '' && row.aciklama !== '<p></p>') {
-          const baslik = t('stage_header', { stage: row.puko_asamasi.toUpperCase() });
-          birlesikMetin += `<h3>${baslik}</h3>${row.aciklama}<br/><br/>`;
+        let phaseText = row.aciklama;
+        if (phaseText && phaseText.trim() !== '' && phaseText !== '<p></p>') {
+          if (row.kanit_dosyalari && Array.isArray(row.kanit_dosyalari) && row.kanit_dosyalari.length > 0) {
+            const phaseEvidenceStrings: string[] = [];
+            row.kanit_dosyalari.forEach((k: any) => {
+              let ev = birlesikKanitlar.find(e => e.url === k.url);
+              if (!ev) {
+                ev = { ...k, no: localEvidenceCounter++ };
+                birlesikKanitlar.push(ev);
+              }
+              phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
+            });
+            
+            const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
+            
+            if (phaseText.trim().endsWith('</p>')) {
+              phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
+            } else {
+              phaseText += evidenceHtml;
+            }
+          }
+          birlesikMetin += (birlesikMetin ? '<br/><br/>' : '') + phaseText;
+        } else {
+          if (row.kanit_dosyalari && Array.isArray(row.kanit_dosyalari)) {
+             row.kanit_dosyalari.forEach((k: any) => {
+               if (!birlesikKanitlar.find(e => e.url === k.url)) {
+                 birlesikKanitlar.push({ ...k, no: localEvidenceCounter++ });
+               }
+             });
+          }
         }
-        if (row.kanit_dosyalari && Array.isArray(row.kanit_dosyalari)) {
-          birlesikKanitlar = [...birlesikKanitlar, ...row.kanit_dosyalari];
-        }
+        
         if (row.puko_asamasi === 'olgunluk' && row.olgunluk_puani) {
           puan = row.olgunluk_puani;
         }
       }
 
       if (puan) {
-        birlesikMetin += `<hr/><h3>${t('maturity_score_header')} <span style="color: #ea580c;">${puan} / 5</span></h3>`;
-        
-        let rubricText = '';
-        
-        if (locale !== 'tr' && olcutDetay?.[`olgunluk_duzeyleri_${locale}`]) {
-          const localeObj = olcutDetay[`olgunluk_duzeyleri_${locale}`];
-          if (localeObj && typeof localeObj === 'object' && localeObj[puan.toString()]) {
-             rubricText = localeObj[puan.toString()];
-          }
-        }
-        
-        if (!rubricText) {
-          const defaultObj = olcutDetay?.['olgunluk_duzeyleri'];
-          if (defaultObj && typeof defaultObj === 'object' && defaultObj[puan.toString()]) {
-             rubricText = defaultObj[puan.toString()];
-          }
-        }
-        
-        if (rubricText) {
-          birlesikMetin += `<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">${rubricText}</p>`;
-        }
         setOlgunlukPuani(puan);
       }
 
-      const uniqueKanitlar = Array.from(new Map((birlesikKanitlar ?? []).map(item => [item.url, item])).values());
+      const uniqueKanitlar = birlesikKanitlar;
 
       setRaporMetni(birlesikMetin ?? '');
       setKanitlar(uniqueKanitlar ?? []);

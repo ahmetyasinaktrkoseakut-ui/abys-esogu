@@ -97,9 +97,12 @@ export default function RaporlarClient() {
 
       console.log('Fetched Ozdegerlendirme:', ozdegerlendirmeVerileri);
 
+      const sortedAnaBasliklar = [...(anaBasliklar || [])].sort((a, b) => a.kod.localeCompare(b.kod, undefined, { numeric: true, sensitivity: 'base' }));
+      const sortedAltOlcutler = [...(altOlcutler || [])].sort((a, b) => a.kod.localeCompare(b.kod, undefined, { numeric: true, sensitivity: 'base' }));
+
       setRaporData({
-        anaBasliklar: anaBasliklar || [],
-        altOlcutler: altOlcutler || [],
+        anaBasliklar: sortedAnaBasliklar,
+        altOlcutler: sortedAltOlcutler,
         pukoVerileri: pukoVerileri || [],
         ozdegerlendirmeVerileri: ozdegerlendirmeVerileri || []
       });
@@ -159,10 +162,17 @@ export default function RaporlarClient() {
           
           let combinedText = '';
           let allEvidences: any[] = [];
+          let localEvidenceCounter = 1;
 
           if (ozdegerlendirme && ozdegerlendirme.icerik) {
             combinedText = ozdegerlendirme.icerik;
-            allEvidences = ozdegerlendirme.kanitlar || [];
+            (ozdegerlendirme.kanitlar || []).forEach((k: any) => {
+              let ev = allEvidences.find(e => e.url === k.url);
+              if (!ev) {
+                ev = { ...k, no: localEvidenceCounter++ };
+                allEvidences.push(ev);
+              }
+            });
           } else {
             const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
             phases.forEach(phase => {
@@ -170,23 +180,61 @@ export default function RaporlarClient() {
               if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
                 let phaseText = data.aciklama;
                 
-                combinedText += (combinedText ? '<br/><br/>' : '') + phaseText;
-                if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
-                  allEvidences = [...allEvidences, ...data.kanit_dosyalari];
+                if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari) && data.kanit_dosyalari.length > 0) {
+                  const phaseEvidenceStrings: string[] = [];
+                  data.kanit_dosyalari.forEach((k: any) => {
+                    let ev = allEvidences.find(e => e.url === k.url);
+                    if (!ev) {
+                      ev = { ...k, no: localEvidenceCounter++ };
+                      allEvidences.push(ev);
+                    }
+                    phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
+                  });
+                  
+                  const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
+                  if (phaseText.trim().endsWith('</p>')) {
+                    phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
+                  } else {
+                    phaseText += evidenceHtml;
+                  }
                 }
+                combinedText += (combinedText ? '<br/><br/>' : '') + phaseText;
+              } else if (data && data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
+                data.kanit_dosyalari.forEach((k: any) => {
+                  if (!allEvidences.find(e => e.url === k.url)) {
+                    allEvidences.push({ ...k, no: localEvidenceCounter++ });
+                  }
+                });
               }
             });
 
             if (!combinedText) {
               const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
               if (raporPuko && raporPuko.aciklama) {
-                combinedText = raporPuko.aciklama;
-                if (raporPuko.kanit_dosyalari) allEvidences = raporPuko.kanit_dosyalari;
+                let phaseText = raporPuko.aciklama;
+                if (raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0) {
+                  const phaseEvidenceStrings: string[] = [];
+                  raporPuko.kanit_dosyalari.forEach((k: any) => {
+                    let ev = allEvidences.find(e => e.url === k.url);
+                    if (!ev) {
+                      ev = { ...k, no: localEvidenceCounter++ };
+                      allEvidences.push(ev);
+                    }
+                    phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
+                  });
+                  const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
+                  if (phaseText.trim().endsWith('</p>')) {
+                    phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
+                  } else {
+                    phaseText += evidenceHtml;
+                  }
+                }
+                combinedText = phaseText;
               }
             }
           }
 
-          const uniqueEvidences = allEvidences.filter((v, i, a) => a.findIndex(t => t.url === v.url) === i);
+          const uniqueEvidences = allEvidences;
           const olgunlukPuani = pukoList.find(p => p.puko_asamasi === 'olgunluk')?.olgunluk_puani;
 
           htmlContent += `<h3>${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</h3>`;
@@ -212,7 +260,7 @@ export default function RaporlarClient() {
               htmlContent += `<div style='border-top: 1px solid #feebc8; padding-top: 10px; margin-top: 10px;'>`;
               htmlContent += `<p style='color: #c05621; font-size: 12px; font-weight: bold; margin-bottom: 5px;'>${t('attached_evidences')}</p>`;
               const evidenceLinks = uniqueEvidences.map((k, idx) => 
-                `<a href='${k.url}' style='color: #2b6cb0; text-decoration: none; font-size: 12px; display: block; margin-bottom: 3px;'>• (${t('evidence_prefix')}: ${idx + 1}) ${k.name}</a>`
+                `<a href='${k.url}' style='color: #2b6cb0; text-decoration: none; font-size: 12px; display: block; margin-bottom: 3px;'>${k.no}. ${k.name}</a>`
               ).join('');
               htmlContent += evidenceLinks;
               htmlContent += `</div>`;
@@ -306,7 +354,6 @@ export default function RaporlarClient() {
 
           <div className="space-y-16">
             {(() => {
-              let globalEvidenceCounter = 1;
               return raporData.anaBasliklar.map((anaBaslik) => {
                 const ilgiliOlcutler = raporData.altOlcutler.filter(o => o.ana_baslik_id === anaBaslik.id);
                 
@@ -325,13 +372,14 @@ export default function RaporlarClient() {
                         
                         let combinedText = '';
                         let allEvidences: any[] = [];
+                        let localEvidenceCounter = 1;
 
                         if (ozdegerlendirme && ozdegerlendirme.icerik) {
                           combinedText = ozdegerlendirme.icerik;
                           (ozdegerlendirme.kanitlar || []).forEach((k: any) => {
                             let ev = allEvidences.find(e => e.url === k.url);
                             if (!ev) {
-                              ev = { ...k, no: globalEvidenceCounter++ };
+                              ev = { ...k, no: localEvidenceCounter++ };
                               allEvidences.push(ev);
                             }
                           });
@@ -344,13 +392,13 @@ export default function RaporlarClient() {
 
                               if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari) && data.kanit_dosyalari.length > 0) {
                                 const phaseEvidenceStrings: string[] = [];
-                                data.kanit_dosyalari.forEach(k => {
+                                data.kanit_dosyalari.forEach((k: any) => {
                                   let ev = allEvidences.find(e => e.url === k.url);
                                   if (!ev) {
-                                    ev = { ...k, no: globalEvidenceCounter++ };
+                                    ev = { ...k, no: localEvidenceCounter++ };
                                     allEvidences.push(ev);
                                   }
-                                  phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">(${t('evidence_prefix')} ${ev.no})</a>`);
+                                  phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
                                 });
                                 
                                 const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
@@ -362,6 +410,12 @@ export default function RaporlarClient() {
                                 }
                               }
                               combinedText += (combinedText ? '<br/><br/>' : '') + phaseText;
+                            } else if (data && data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
+                               data.kanit_dosyalari.forEach((k: any) => {
+                                 if (!allEvidences.find(e => e.url === k.url)) {
+                                   allEvidences.push({ ...k, no: localEvidenceCounter++ });
+                                 }
+                               });
                             }
                           });
 
@@ -374,10 +428,10 @@ export default function RaporlarClient() {
                                 raporPuko.kanit_dosyalari.forEach((k: any) => {
                                   let ev = allEvidences.find(e => e.url === k.url);
                                   if (!ev) {
-                                    ev = { ...k, no: globalEvidenceCounter++ };
+                                    ev = { ...k, no: localEvidenceCounter++ };
                                     allEvidences.push(ev);
                                   }
-                                  phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">(${t('evidence_prefix')} ${ev.no})</a>`);
+                                  phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
                                 });
                                 
                                 const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
@@ -439,7 +493,7 @@ export default function RaporlarClient() {
                                             rel="noopener noreferrer" 
                                             className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
                                           >
-                                            {t('evidence_prefix')} {k.no}: {k.name}
+                                            {k.no}. {k.name}
                                           </a>
                                         ))}
                                       </div>

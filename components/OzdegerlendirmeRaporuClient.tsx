@@ -71,7 +71,17 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .maybeSingle();
         
       if (raporData) {
-        setRaporMetni(raporData?.icerik ?? '');
+        let cleanIcerik = raporData?.icerik ?? '';
+        // Agresif temizlik: Başlıkları ve puan metinlerini her türlü tag yapısında temizle
+        cleanIcerik = cleanIcerik.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
+        cleanIcerik = cleanIcerik.replace(/(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI/gi, '');
+        cleanIcerik = cleanIcerik.replace(/<hr\s*\/?>/gi, '');
+        cleanIcerik = cleanIcerik.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
+        cleanIcerik = cleanIcerik.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
+        cleanIcerik = cleanIcerik.replace(/<p[^>]*>.*?Kalite\s+güvencesi.*?<\/p>/gi, '');
+        cleanIcerik = cleanIcerik.replace(/<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">.*?<\/p>/gi, '');
+
+        setRaporMetni(cleanIcerik);
         setKanitlar(raporData?.kanitlar ?? []);
         setRaporOlusturuldu(true);
       }
@@ -261,10 +271,10 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         setOnayDurumu('Beklemede');
       }
 
-      alert('Rapor başarıyla kaydedildi.');
+      alert(t('save_success'));
     } catch (err: any) {
       console.error(err);
-      alert(`Hata: ${err.message}`);
+      alert(`${t('error_prefix')}${err.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -282,7 +292,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       setOnayDurumu('Onaylandı');
       alert(t('approve_success'));
     } catch (err: any) {
-      alert(`Onay sırasında hata: ${err.message}`);
+      alert(`${t('error_approve')}${err.message}`);
     } finally {
       setIsActionSubmitting(false);
     }
@@ -290,7 +300,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
   const handleRejectSubmit = async () => {
     if (!rejectReason.trim()) {
-      alert('Lütfen red nedeni giriniz.');
+      alert(t('enter_reject_reason'));
       return;
     }
     setIsActionSubmitting(true);
@@ -306,7 +316,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       setRejectReason('');
       alert(t('reject_success'));
     } catch (err: any) {
-      alert(`Red işlemi sırasında hata: ${err.message}`);
+      alert(`${t('error_reject')}${err.message}`);
     } finally {
       setIsActionSubmitting(false);
     }
@@ -320,9 +330,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
   const handleYeniKanitTanımla = () => {
     if (isReadOnly) return;
-    const kanitAdi = prompt('Kanıt Adını Giriniz:');
+    const kanitAdi = prompt(t('enter_evidence_name'));
     if (!kanitAdi) return;
-    const kanitUrl = prompt('Kanıt Linkini (URL) Giriniz:', 'https://');
+    const kanitUrl = prompt(t('enter_evidence_url'), 'https://');
     if (!kanitUrl) return;
 
     const yeniKanit = { name: kanitAdi, url: kanitUrl, size: 0, manual: true };
@@ -522,14 +532,14 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
               <h3 className="font-bold text-slate-800 flex items-center gap-2">
-                Tüm Ölçütü Reddet
+                {t('reject_modal_title')}
               </h3>
               <button 
                 onClick={() => setIsRejectModalOpen(false)}
                 className="text-slate-400 hover:text-slate-600 transition-colors"
                 disabled={isActionSubmitting}
               >
-                Kapat
+                {t('close')}
               </button>
             </div>
             
@@ -543,7 +553,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                 <textarea 
                   value={rejectReason}
                   onChange={(e) => setRejectReason(e.target.value)}
-                  placeholder="Eksik kanıt, yanlış veri vb."
+                  placeholder={t('reject_placeholder')}
                   rows={4}
                   className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm resize-none"
                 />
@@ -556,7 +566,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                 disabled={isActionSubmitting}
                 className="px-5 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
               >
-                İptal
+                {t('cancel')}
               </button>
               <button 
                 onClick={handleRejectSubmit}

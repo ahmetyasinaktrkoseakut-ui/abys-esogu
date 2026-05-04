@@ -167,6 +167,15 @@ export default function RaporlarClient() {
           if (ozdegerlendirme && ozdegerlendirme.icerik) {
             combinedText = ozdegerlendirme.icerik;
             
+            // Agresif temizlik: Başlıkları ve puan metinlerini her türlü tag yapısında temizle
+            combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK|RAPOR)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
+            combinedText = combinedText.replace(/(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK|RAPOR)\s+AŞAMASI/gi, '');
+            combinedText = combinedText.replace(/<hr\s*\/?>/gi, '');
+            combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
+            combinedText = combinedText.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
+            combinedText = combinedText.replace(/<p[^>]*>.*?Kalite\s+güvencesi.*?<\/p>/gi, '');
+            combinedText = combinedText.replace(/<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">.*?<\/p>/gi, '');
+            
             (ozdegerlendirme.kanitlar || []).forEach((k: any) => {
               let ev = allEvidences.find(e => e.url === k.url);
               if (!ev) {
@@ -175,7 +184,7 @@ export default function RaporlarClient() {
               }
             });
           } else {
-            const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
+            const phases = ['planlama', 'uygulama', 'kontrol', 'onlem', 'olgunluk'];
             phases.forEach(phase => {
               const data = pukoList.find(p => p.puko_asamasi === phase);
               if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
@@ -378,6 +387,15 @@ export default function RaporlarClient() {
                         if (ozdegerlendirme && ozdegerlendirme.icerik) {
                           combinedText = ozdegerlendirme.icerik;
                           
+                          // Agresif temizlik: Başlıkları ve puan metinlerini her türlü tag yapısında temizle
+                          combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK|RAPOR)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
+                          combinedText = combinedText.replace(/(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK|RAPOR)\s+AŞAMASI/gi, '');
+                          combinedText = combinedText.replace(/<hr\s*\/?>/gi, '');
+                          combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
+                          combinedText = combinedText.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
+                          combinedText = combinedText.replace(/<p[^>]*>.*?Kalite\s+güvencesi.*?<\/p>/gi, '');
+                          combinedText = combinedText.replace(/<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">.*?<\/p>/gi, '');
+                          
                           (ozdegerlendirme.kanitlar || []).forEach((k: any) => {
                             let ev = allEvidences.find(e => e.url === k.url);
                             if (!ev) {
@@ -386,7 +404,7 @@ export default function RaporlarClient() {
                             }
                           });
                         } else {
-                          const phases = ['planlama', 'uygulama', 'kontrol', 'onlem'];
+                          const phases = ['planlama', 'uygulama', 'kontrol', 'onlem', 'olgunluk'];
                           phases.forEach(phase => {
                             const data = pukoList.find(p => p.puko_asamasi === phase);
                             if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {

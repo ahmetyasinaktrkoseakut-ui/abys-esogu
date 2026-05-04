@@ -92,7 +92,9 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
   }, [userId, isAdmin, selectedPeriod]);
 
   const processNotifications = (data: any[]) => {
-    setNotifications(data);
+    // Ölçüt bazlı tekilleştir (Bildirimler sayfası ile tutarlı olması için)
+    const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
+    setNotifications(uniqueData);
     
     // Unread count mantığı (LocalStorage ile)
     const lastSeen = localStorage.getItem('lastSeenNotifications');

@@ -6,14 +6,10 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { 
   Home, 
-  FileText, 
   BarChart2, 
-  ClipboardList, 
   Calendar, 
   LineChart, 
   FolderOpen, 
-  MessageSquare, 
-  Search, 
   Settings,
   Bell,
   Lightbulb,

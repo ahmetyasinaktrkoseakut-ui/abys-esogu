@@ -60,7 +60,7 @@ export async function updateSession(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    const role = profile?.rol
+
 
     if (isLoginPage) {
       const url = request.nextUrl.clone()

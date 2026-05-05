@@ -161,7 +161,7 @@ export default function RaporlarClient() {
           const pukoList = getPukoForOlcut(olcut.id);
           
           let combinedText = '';
-          let allEvidences: any[] = [];
+          const allEvidences: any[] = [];
           let localEvidenceCounter = 1;
 
           if (ozdegerlendirme && ozdegerlendirme.icerik) {
@@ -381,7 +381,7 @@ export default function RaporlarClient() {
                         const pukoList = getPukoForOlcut(olcut.id);
                         
                         let combinedText = '';
-                        let allEvidences: any[] = [];
+                        const allEvidences: any[] = [];
                         let localEvidenceCounter = 1;
 
                         if (ozdegerlendirme && ozdegerlendirme.icerik) {

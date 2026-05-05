@@ -1,17 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Copy, Check } from 'lucide-react';
 
 export default function SyllabusShareClient() {
   const [copied, setCopied] = useState(false);
-  const [link, setLink] = useState('');
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setLink(`${window.location.origin}/tr/izlenceler`);
-    }
-  }, []);
+  const [link] = useState(() =>
+    typeof window !== 'undefined' ? `${window.location.origin}/tr/izlenceler` : '/tr/izlenceler'
+  );
 
   const handleCopy = () => {
     if (!link) return;

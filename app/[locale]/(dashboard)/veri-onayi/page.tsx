@@ -73,6 +73,7 @@ export default function VeriOnayiPage() {
            .replace(/ş/g, 's')
            .replace(/ö/g, 'o')
            .replace(/ç/g, 'c')
+           .replace(/\bve\b/g, '')
            .replace(/[^a-z0-9]/g, '')
            .trim();
 

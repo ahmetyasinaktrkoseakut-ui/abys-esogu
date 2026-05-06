@@ -5,11 +5,11 @@ import { supabase } from '@/lib/supabase/client';
 import { Loader2, Save, Users, AlertCircle, CheckCircle2, Search, Trash2 } from 'lucide-react';
 
 const TOPICS = [
-  'KALİTE GÜVENCESİ SİSTEMİ',
-  'EĞİTİM VE ÖĞRETİM',
-  'ARAŞTIRMA VE GELİŞTİRME',
-  'TOPLUMSAL KATKI',
-  'YÖNETİM SİSTEMİ'
+  'Kalite Güvencesi',
+  'Eğitim-Öğretim',
+  'Araştırma ve Geliştirme',
+  'Toplumsal Katkı',
+  'Yönetim Sistemi'
 ];
 
 export default function KoordinatorlerPage() {

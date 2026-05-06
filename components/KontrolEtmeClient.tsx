@@ -30,6 +30,7 @@ interface Soru {
 
 interface Anket {
   id?: string;
+  alt_olcut_id?: string;
   baslik: string;
   sorular: Soru[];
   aciklama: string; // Bağımsız değerlendirme raporu
@@ -119,16 +120,28 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         setBirimDegerlendirmesi(ozdegerlendirmeData.birim_anket_degerlendirmesi || '');
       }
 
-      const { data: anketData } = await supabase
+      // Fetch Local Anketler
+      const { data: localAnketData } = await supabase
         .from('anketler')
         .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('donem_id', selectedPeriod.id)
         .order('id', { ascending: true });
 
+      // Fetch Management Anketler
+      const { data: managementAnketData } = await supabase
+        .from('anketler')
+        .select('*')
+        .eq('alt_olcut_id', 'genel')
+        .eq('donem_id', selectedPeriod.id)
+        .contains('hedef_olcutler', [resolvedParams.id]);
+
+      const anketData = [...(localAnketData || []), ...(managementAnketData || [])];
+
       if (anketData && anketData.length > 0) {
         const mappedAnketler: Anket[] = anketData.map((a: any, idx: number) => ({
           id: a.id.toString(),
+          alt_olcut_id: a.alt_olcut_id,
           baslik: a.baslik || 'Yeni Anket',
           sorular: a.sorular || [],
           aciklama: a.aciklama || '',
@@ -211,8 +224,10 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         if (newPuko) setPukoId(newPuko.id.toString());
       }
 
-      // 2. Anketleri Kaydet
+      // 2. Anketleri Kaydet (Sadece yerel anketler)
       for (const anket of anketListesi) {
+        if (anket.alt_olcut_id === 'genel') continue; // Yönetim anketlerini atla
+
         const upsertAnket: Record<string, any> = {
           alt_olcut_id: resolvedParams.id,
           donem_id: selectedPeriod?.id,
@@ -396,39 +411,48 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
       )}
 
       <div className="space-y-6 mb-8">
-        {anketListesi.map((anket, anketIdx) => (
-          <div key={anket.id || `temp_${anketIdx}`} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-            {/* Header / Accordion Toggle */}
-            <div 
-              className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${anket.isExpanded ? 'bg-slate-50 border-b border-slate-200' : 'hover:bg-slate-50'}`}
-              onClick={() => toggleAnket(anketIdx)}
-            >
-              <div className="flex items-center gap-4">
-                <div className={`p-2 rounded-lg ${anket.isExpanded ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-400'}`}>
-                  {anket.isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+        {anketListesi.map((anket, anketIdx) => {
+          const isManagementSurvey = anket.alt_olcut_id === 'genel';
+          const isSurveyReadOnly = isReadOnly || isManagementSurvey;
+
+          return (
+            <div key={anket.id || `temp_${anketIdx}`} className={`bg-white rounded-2xl shadow-sm border ${isManagementSurvey ? 'border-purple-300 shadow-purple-100' : 'border-slate-200'} overflow-hidden`}>
+              {/* Header / Accordion Toggle */}
+              <div 
+                className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${anket.isExpanded ? (isManagementSurvey ? 'bg-purple-50 border-b border-purple-200' : 'bg-slate-50 border-b border-slate-200') : (isManagementSurvey ? 'hover:bg-purple-50' : 'hover:bg-slate-50')}`}
+                onClick={() => toggleAnket(anketIdx)}
+              >
+                <div className="flex items-center gap-4">
+                  <div className={`p-2 rounded-lg ${anket.isExpanded ? (isManagementSurvey ? 'bg-purple-200 text-purple-700' : 'bg-blue-100 text-blue-600') : 'bg-slate-100 text-slate-400'}`}>
+                    {anket.isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
+                  </div>
+                  <div className="flex flex-col">
+                    <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                      {anket.baslik}
+                      {isManagementSurvey && <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] uppercase font-black tracking-widest rounded-full border border-purple-200">Yönetim Anketi</span>}
+                    </h3>
+                  </div>
+                  {isSurveyReadOnly && !isManagementSurvey && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded border border-amber-200">Salt Okunur</span>}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">{anket.baslik}</h3>
-                {isReadOnly && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded border border-amber-200">Salt Okunur</span>}
+                <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
+                  {anket.id && !anket.id.startsWith('temp_') && (
+                    <button 
+                      onClick={() => handleCopyLink(anket.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors"
+                    >
+                      <LinkIcon className="w-3.5 h-3.5" /> Link
+                    </button>
+                  )}
+                  {!isSurveyReadOnly && (
+                    <button 
+                      onClick={() => deleteAnket(anketIdx)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" /> Sil
+                    </button>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
-                {anket.id && !anket.id.startsWith('temp_') && (
-                  <button 
-                    onClick={() => handleCopyLink(anket.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors"
-                  >
-                    <LinkIcon className="w-3.5 h-3.5" /> Link
-                  </button>
-                )}
-                {!isReadOnly && (
-                  <button 
-                    onClick={() => deleteAnket(anketIdx)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" /> Sil
-                  </button>
-                )}
-              </div>
-            </div>
 
             {/* İçerik */}
             {anket.isExpanded && (
@@ -438,11 +462,11 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Anket Başlığı</label>
                   <input 
                     type="text" 
-                    disabled={isReadOnly}
+                    disabled={isSurveyReadOnly}
                     value={anket.baslik}
                     onChange={(e) => updateAnketField(anketIdx, 'baslik', e.target.value)}
                     placeholder="Örn: Memnuniyet Anketi 2024"
-                    className="w-full text-2xl font-black text-slate-800 border-b border-transparent hover:border-slate-200 focus:border-purple-500 focus:outline-none transition-colors bg-transparent pb-2"
+                    className="w-full text-2xl font-black text-slate-800 border-b border-transparent hover:border-slate-200 focus:border-purple-500 focus:outline-none transition-colors bg-transparent pb-2 disabled:bg-transparent disabled:opacity-100"
                   />
                 </div>
 
@@ -452,7 +476,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                     <h3 className="flex items-center gap-2 font-bold text-slate-700 text-lg">
                       <Edit3 className="w-5 h-5 text-purple-600" /> Soru Formu
                     </h3>
-                    {!isReadOnly && (
+                    {!isSurveyReadOnly && (
                       <div className="relative group">
                         <button className="flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors">
                           <Plus className="w-4 h-4" /> Yeni Soru
@@ -474,7 +498,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                     <div className="space-y-4">
                       {anket.sorular.map((soru, sIdx) => (
                         <div key={soru.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group hover:shadow-md transition-shadow">
-                          {!isReadOnly && (
+                          {!isSurveyReadOnly && (
                             <button onClick={() => handleRemoveSoru(anketIdx, soru.id)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -485,11 +509,11 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                             </label>
                             <input 
                               type="text" 
-                              disabled={isReadOnly}
+                              disabled={isSurveyReadOnly}
                               value={soru.soru}
                               onChange={(e) => updateSoru(anketIdx, soru.id, { soru: e.target.value })}
                               placeholder="Sorunuzu buraya yazın..."
-                              className="w-full text-base font-medium text-slate-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200 focus:border-purple-500 focus:outline-none transition-colors"
+                              className="w-full text-base font-medium text-slate-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200 focus:border-purple-500 focus:outline-none transition-colors disabled:bg-transparent disabled:opacity-100"
                             />
                           </div>
                           
@@ -512,23 +536,23 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                                     <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300"></div>
                                     <input 
                                       type="text"
-                                      disabled={isReadOnly}
+                                      disabled={isSurveyReadOnly}
                                       value={secenek.metin}
                                       onChange={(e) => {
                                         const newSecenekler = soru.secenekler?.map(sec => sec.id === secenek.id ? { ...sec, metin: e.target.value } : sec);
                                         updateSoru(anketIdx, soru.id, { secenekler: newSecenekler });
                                       }}
-                                      className="flex-1 text-sm bg-transparent border-b border-slate-200 focus:border-purple-500 focus:outline-none py-1 disabled:text-slate-600"
+                                      className="flex-1 text-sm bg-transparent border-b border-slate-200 focus:border-purple-500 focus:outline-none py-1 disabled:text-slate-800 disabled:opacity-100"
                                       placeholder={`Seçenek ${secIdx + 1}`}
                                     />
-                                    {!isReadOnly && soru.secenekler && soru.secenekler.length > 1 && (
+                                    {!isSurveyReadOnly && soru.secenekler && soru.secenekler.length > 1 && (
                                       <button onClick={() => {
                                         updateSoru(anketIdx, soru.id, { secenekler: soru.secenekler?.filter(sec => sec.id !== secenek.id) });
                                       }} className="text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
                                     )}
                                   </div>
                                 ))}
-                                {!isReadOnly && (
+                                {!isSurveyReadOnly && (
                                   <button 
                                     onClick={() => {
                                       const newSecenekler = [...(soru.secenekler || []), { id: Math.random().toString(36).substr(2, 9), metin: `Yeni Seçenek` }];
@@ -642,7 +666,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                     <RichTextEditor 
                       content={anket.aciklama} 
                       onChange={(val) => updateAnketField(anketIdx, 'aciklama', val)} 
-                      readOnly={isReadOnly} 
+                      readOnly={isSurveyReadOnly} 
                     />
                   </div>
                 </div>
@@ -650,8 +674,9 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
               </div>
             )}
           </div>
-        ))}
-      </div>
+        );
+      })}
+    </div>
 
       {!isReadOnly && (
         <div className="flex justify-end p-6 bg-white border-t border-slate-200 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] rounded-t-2xl">

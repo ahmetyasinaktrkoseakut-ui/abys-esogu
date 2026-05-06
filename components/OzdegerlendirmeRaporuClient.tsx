@@ -47,11 +47,12 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       setIsLoading(true);
 
       const { data: { user } } = await supabase.auth.getUser();
+      let localUserIsAdmin = false;
       if (user) {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = profile?.rol?.toLowerCase() || '';
-        const userIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
-        setIsAdmin(userIsAdmin);
+        localUserIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+        setIsAdmin(localUserIsAdmin);
         
         // Adminlerin de düzenleme yapabilmesi için ReadOnly kısıtlamasını esnetiyoruz
         if (selectedPeriod?.is_active === false) {
@@ -93,6 +94,10 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         // Onay durumunu ve red nedenini set et
         setOnayDurumu(raporData?.onay_durumu || 'bekliyor');
         setRedNedeni(raporData?.red_nedeni);
+
+        if (raporData?.onay_durumu === 'onaylandi' && !localUserIsAdmin) {
+          setIsReadOnly(true);
+        }
       } else {
         setOnayDurumu('bekliyor');
         setRedNedeni(null);
@@ -246,6 +251,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         donem_id: String(selectedPeriod?.id),
         icerik: raporMetni ?? '',
         kanitlar: kanitlar ?? [],
+        onay_durumu: 'bekliyor',
+        red_nedeni: null,
       };
 
       const { data: existingRecord } = await supabase

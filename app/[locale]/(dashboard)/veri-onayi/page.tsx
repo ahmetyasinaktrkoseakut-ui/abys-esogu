@@ -15,9 +15,13 @@ import {
   ChevronUp
 } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
+import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 export default function VeriOnayiPage() {
   const { selectedPeriod } = usePeriod();
+  const params = useParams();
+  const locale = params?.locale || 'tr';
   
   const [coordinatorTopic, setCoordinatorTopic] = useState<string | null>(null);
   const [reports, setReports] = useState<any[]>([]);
@@ -244,7 +248,9 @@ export default function VeriOnayiPage() {
                       {new Date(report.olusturulma_tarihi).toLocaleDateString('tr-TR')}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-slate-800">{report.alt_olcutler?.ad}</h3>
+                  <Link href={`/${locale}/olcutler/${report.alt_olcut_id}/ozdegerlendirme`} className="font-semibold text-lg text-blue-600 hover:text-blue-800 hover:underline transition-colors mt-1 block">
+                    {report.alt_olcutler?.ad || 'Bilinmeyen Ölçüt'}
+                  </Link>
                 </div>
                 
                 <div className="flex items-center gap-2">

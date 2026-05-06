@@ -15,7 +15,8 @@ import {
   Lightbulb,
   BookOpen,
   Megaphone,
-  GraduationCap
+  GraduationCap,
+  Activity
 } from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
 import { Users, FileCheck, ClipboardCheck } from 'lucide-react';
@@ -128,10 +129,16 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
                 {t('calendar')}
               </Link>
               {(isAdmin || isCoordinator) && (
-                <Link href="/kalite-el-kitabi" className={getLinkClass('/kalite-el-kitabi')}>
-                  <BookOpen className="w-5 h-5 flex-shrink-0" />
-                  {tQM('title')}
-                </Link>
+                <>
+                  <Link href="/kalite-el-kitabi" className={getLinkClass('/kalite-el-kitabi')}>
+                    <BookOpen className="w-5 h-5 flex-shrink-0" />
+                    {tQM('title')}
+                  </Link>
+                  <Link href="/anket-yonetimi" className={getLinkClass('/anket-yonetimi')}>
+                    <Activity className="w-5 h-5 flex-shrink-0" />
+                    Anket Yönetimi
+                  </Link>
+                </>
               )}
               {isAdmin && (
                 <>

@@ -57,6 +57,11 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
   const [cevapOzetleri, setCevapOzetleri] = useState<Record<string, AnketCevapOzeti[]>>({});
   const [toplamCevaplar, setToplamCevaplar] = useState<Record<string, number>>({});
 
+  // Özdeğerlendirme Raporu State (Anket Analizi ve Birim Değerlendirmesi)
+  const [ozdegerlendirmeRaporuId, setOzdegerlendirmeRaporuId] = useState<string | null>(null);
+  const [yoneticiAnalizi, setYoneticiAnalizi] = useState<string>('');
+  const [birimDegerlendirmesi, setBirimDegerlendirmesi] = useState<string>('');
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
@@ -96,6 +101,22 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
 
       if (pukoData) {
         setPukoId(pukoData.id.toString());
+      }
+
+      // Fetch Özdeğerlendirme Raporu (Analiz ve Değerlendirme için)
+      const { data: ozdegerlendirmeData } = await supabase
+        .from('ozdegerlendirme_raporlari')
+        .select('id, yonetici_anket_analizi, birim_anket_degerlendirmesi')
+        .eq('alt_olcut_id', resolvedParams.id)
+        .eq('donem_id', selectedPeriod?.id)
+        .order('olusturulma_tarihi', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (ozdegerlendirmeData) {
+        setOzdegerlendirmeRaporuId(ozdegerlendirmeData.id.toString());
+        setYoneticiAnalizi(ozdegerlendirmeData.yonetici_anket_analizi || '');
+        setBirimDegerlendirmesi(ozdegerlendirmeData.birim_anket_degerlendirmesi || '');
       }
 
       const { data: anketData } = await supabase
@@ -199,11 +220,35 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
           sorular: anket.sorular,
           aciklama: anket.aciklama
         };
-
         if (anket.id && !anket.id.startsWith('temp_')) {
           await supabase.from('anketler').update(upsertAnket).eq('id', anket.id);
         } else {
           await supabase.from('anketler').insert(upsertAnket);
+        }
+      }
+
+      // 3. Özdeğerlendirme Raporu Kaydı (Birim Değerlendirmesi)
+      if (birimDegerlendirmesi || yoneticiAnalizi) {
+        const upsertRapor: Record<string, any> = {
+          alt_olcut_id: resolvedParams.id,
+          donem_id: selectedPeriod?.id,
+          birim_anket_degerlendirmesi: birimDegerlendirmesi
+        };
+
+        if (ozdegerlendirmeRaporuId) {
+          await supabase.from('ozdegerlendirme_raporlari')
+            .update(upsertRapor)
+            .eq('id', ozdegerlendirmeRaporuId);
+        } else {
+          // Eğer rapor yoksa içeriği ve kanıtları boş olacak şekilde oluştur
+          upsertRapor.icerik = '';
+          upsertRapor.kanitlar = [];
+          upsertRapor.onay_durumu = 'bekliyor';
+          const { data: newRapor } = await supabase.from('ozdegerlendirme_raporlari')
+            .insert(upsertRapor)
+            .select('id')
+            .single();
+          if (newRapor) setOzdegerlendirmeRaporuId(newRapor.id.toString());
         }
       }
 
@@ -321,6 +366,34 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
           </button>
         )}
       </div>
+
+      {/* Yönetici Anket Analizi (Varsa Göster) */}
+      {yoneticiAnalizi && (
+        <div className="mb-8 bg-gradient-to-r from-purple-50 to-white border border-purple-200 rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-purple-600 px-6 py-4 flex items-center gap-3">
+            <BarChart2 className="w-6 h-6 text-white" />
+            <h3 className="text-lg font-bold text-white">Yönetimden Gelen Anket Analizi</h3>
+          </div>
+          <div className="p-8 prose prose-slate max-w-none text-sm md:text-base">
+            <div dangerouslySetInnerHTML={{ __html: yoneticiAnalizi }} />
+          </div>
+          <div className="p-8 pt-0 border-t border-purple-100 bg-white">
+            <h4 className="text-md font-bold text-slate-800 mb-3 mt-6 flex items-center gap-2">
+              <Edit3 className="w-5 h-5 text-purple-600" />
+              Birim Değerlendirmesi
+            </h4>
+            <p className="text-xs text-slate-500 mb-4">Yukarıdaki analize istinaden biriminizin değerlendirmesini aşağıya yazınız.</p>
+            <div className="border border-slate-200 rounded-xl">
+              <RichTextEditor 
+                content={birimDegerlendirmesi} 
+                onChange={setBirimDegerlendirmesi} 
+                readOnly={isReadOnly} 
+                minHeight="200px"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="space-y-6 mb-8">
         {anketListesi.map((anket, anketIdx) => (

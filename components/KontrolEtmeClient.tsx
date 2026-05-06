@@ -120,23 +120,13 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         setBirimDegerlendirmesi(ozdegerlendirmeData.birim_anket_degerlendirmesi || '');
       }
 
-      // Fetch Local Anketler
-      const { data: localAnketData } = await supabase
+      // Anketleri Tek Sorguda Çek (Yerel veya Hedeflenen)
+      const { data: anketData } = await supabase
         .from('anketler')
         .select('*')
-        .eq('alt_olcut_id', resolvedParams.id)
         .eq('donem_id', selectedPeriod.id)
+        .or(`alt_olcut_id.eq.${resolvedParams.id},hedef_olcutler.cs.["${resolvedParams.id}"]`)
         .order('id', { ascending: true });
-
-      // Fetch Management Anketler
-      const { data: managementAnketData } = await supabase
-        .from('anketler')
-        .select('*')
-        .eq('alt_olcut_id', 'genel')
-        .eq('donem_id', selectedPeriod.id)
-        .contains('hedef_olcutler', [resolvedParams.id]);
-
-      const anketData = [...(localAnketData || []), ...(managementAnketData || [])];
 
       if (anketData && anketData.length > 0) {
         const mappedAnketler: Anket[] = anketData.map((a: any, idx: number) => ({

@@ -2,9 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, ChevronDown, ChevronUp, BarChart2 } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useLocale } from 'next-intl';
+import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from 'recharts';
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF6666'];
 
 type SoruTipi = 'kisa_yanit' | 'coktan_secmeli' | 'puanlama';
 
@@ -25,7 +28,13 @@ interface Anket {
   baslik: string;
   sorular: Soru[];
   aciklama: string;
+  hedef_olcutler?: string[];
   isExpanded?: boolean;
+}
+
+interface AnketCevapOzeti {
+  soru_id: string;
+  cevaplar: any[];
 }
 
 export default function AnketYonetimiClient() {
@@ -40,6 +49,10 @@ export default function AnketYonetimiClient() {
   const [hedefOlcutler, setHedefOlcutler] = useState<string[]>([]);
   
   const [anketListesi, setAnketListesi] = useState<Anket[]>([]);
+  
+  // Analiz verileri
+  const [cevapOzetleri, setCevapOzetleri] = useState<Record<string, AnketCevapOzeti[]>>({});
+  const [toplamCevaplar, setToplamCevaplar] = useState<Record<string, number>>({});
 
   useEffect(() => {
     async function init() {
@@ -93,6 +106,9 @@ export default function AnketYonetimiClient() {
           setOlcutler(secili);
         }
 
+        const gecerliOlcutler = userIsAdmin ? tumOlcutler : tumOlcutler.filter(o => o.baslik === expectedDbBaslik);
+        const gecerliIdler = gecerliOlcutler.flatMap(o => o.altOlcutler.map((ao: any) => ao.id.toString()));
+
         // Mevcut anketleri çekelim (Yönetim anketleri)
         const { data: existingAnketler } = await supabase
           .from('anketler')
@@ -102,17 +118,58 @@ export default function AnketYonetimiClient() {
           .order('id', { ascending: true });
 
         if (existingAnketler && existingAnketler.length > 0) {
-          const mappedAnketler: Anket[] = existingAnketler.map((a: any, idx: number) => ({
+          // Koordinatörse sadece kendine ait olanları göster
+          const filteredAnketler = userIsAdmin ? existingAnketler : existingAnketler.filter(a => {
+            if (!a.hedef_olcutler) return false;
+            return a.hedef_olcutler.some((id: string) => gecerliIdler.includes(id));
+          });
+
+          const mappedAnketler: Anket[] = filteredAnketler.map((a: any, idx: number) => ({
             id: a.id.toString(),
             baslik: a.baslik || 'Genel Anket',
             sorular: a.sorular || [],
             aciklama: a.aciklama || '',
+            hedef_olcutler: a.hedef_olcutler || [],
             isExpanded: false
           }));
           setAnketListesi(mappedAnketler);
-          // Hedef ölçütleri ilk anketten alalım (basitlik için hepsinin hedef_olcutler'i aynı varsayılabilir veya her anketin kendi hedef_olcutler'i olabilir. Eğer hepsi farklıysa genel bir filtrede zorluk yaşanır. Şimdilik UI'da tek bir ortak "Hedef Alt Ölçütler" alanı var, ilkini kullanacağız)
-          if (existingAnketler[0].hedef_olcutler) {
-            setHedefOlcutler(existingAnketler[0].hedef_olcutler);
+          
+          if (filteredAnketler.length > 0 && filteredAnketler[0].hedef_olcutler) {
+            setHedefOlcutler(filteredAnketler[0].hedef_olcutler);
+          }
+
+          // Fetch Cevaplar for Charts
+          const anketIds = filteredAnketler.map(a => a.id);
+          if (anketIds.length > 0) {
+            const { data: cevaplarData } = await supabase
+              .from('anket_cevaplari')
+              .select('anket_id, cevaplar')
+              .in('anket_id', anketIds);
+
+            if (cevaplarData) {
+              const tCevap: Record<string, number> = {};
+              const cOzet: Record<string, AnketCevapOzeti[]> = {};
+              
+              anketIds.forEach(id => {
+                const anketinCevaplari = cevaplarData.filter(c => c.anket_id === id);
+                tCevap[id.toString()] = anketinCevaplari.length;
+                
+                const ozet: Record<string, any[]> = {};
+                anketinCevaplari.forEach(c => {
+                  const yanitlar = c.cevaplar as Record<string, any>;
+                  if (yanitlar) {
+                    Object.keys(yanitlar).forEach(sId => {
+                      if (!ozet[sId]) ozet[sId] = [];
+                      ozet[sId].push(yanitlar[sId]);
+                    });
+                  }
+                });
+                cOzet[id.toString()] = Object.keys(ozet).map(k => ({ soru_id: k, cevaplar: ozet[k] }));
+              });
+
+              setToplamCevaplar(tCevap);
+              setCevapOzetleri(cOzet);
+            }
           }
         } else {
           setAnketListesi([{
@@ -157,6 +214,7 @@ export default function AnketYonetimiClient() {
         }
       }
       alert('Anketler başarıyla hedeflenen ölçütlere gönderildi!');
+      window.location.reload();
     } catch (error: any) {
       console.error(error);
       alert('Kaydedilirken bir hata oluştu: ' + error.message);
@@ -242,6 +300,19 @@ export default function AnketYonetimiClient() {
     const link = `${window.location.origin}/anket/${anketId}`;
     navigator.clipboard.writeText(link);
     alert("Anket bağlantısı kopyalandı:\n" + link);
+  };
+
+  // Helper to find olcut codes based on ID
+  const getOlcutKods = (ids: string[]) => {
+    const matched: string[] = [];
+    olcutler.forEach(ana => {
+      ana.altOlcutler.forEach((ao: any) => {
+        if (ids.includes(ao.id.toString())) {
+          matched.push(ao.kod);
+        }
+      });
+    });
+    return matched;
   };
 
   if (isLoading) {
@@ -456,7 +527,7 @@ export default function AnketYonetimiClient() {
         ))}
       </div>
 
-      <div className="flex justify-end p-6 bg-white border-t border-slate-200 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] rounded-t-2xl">
+      <div className="flex justify-end p-6 bg-white border-t border-slate-200 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] rounded-t-2xl mb-12">
         <button 
           onClick={handleSave}
           disabled={isSaving}
@@ -466,6 +537,110 @@ export default function AnketYonetimiClient() {
           {isSaving ? 'Kaydediliyor...' : 'Anketleri Dağıt ve Kaydet'}
         </button>
       </div>
+
+      {/* 3. Yayınlanan Anketler ve Canlı Analizler Paneli */}
+      {anketListesi.filter(a => a.id && !a.id.startsWith('temp_')).length > 0 && (
+        <div className="mt-12">
+          <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-4">
+            <div className="bg-purple-100 p-2 rounded-lg"><BarChart2 className="w-6 h-6 text-purple-600" /></div>
+            <h2 className="text-2xl font-bold text-slate-800">Yayınlanan Anketler ve Canlı Analizler</h2>
+          </div>
+
+          <div className="space-y-8">
+            {anketListesi.filter(a => a.id && !a.id.startsWith('temp_')).map(anket => {
+              const anketId = anket.id as string;
+              const yanitSayisi = toplamCevaplar[anketId] || 0;
+              const hedefler = getOlcutKods(anket.hedef_olcutler || []);
+
+              return (
+                <div key={`analiz_${anketId}`} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+                  <div className="p-6 border-b border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                      <h3 className="text-xl font-bold text-slate-800">{anket.baslik}</h3>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-lg border border-purple-200">
+                          {yanitSayisi} Yanıt
+                        </span>
+                      </div>
+                    </div>
+                    {hedefler.length > 0 && (
+                      <div className="flex flex-col gap-1 md:items-end">
+                        <span className="text-xs font-bold text-slate-500 uppercase">Atanan Ölçütler (Gizli)</span>
+                        <div className="flex flex-wrap gap-1 md:justify-end max-w-sm">
+                          {hedefler.map(k => (
+                            <span key={k} className="px-2 py-0.5 bg-slate-200 text-slate-700 text-[10px] font-bold rounded border border-slate-300">
+                              {k}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-6">
+                    {yanitSayisi === 0 ? (
+                      <div className="text-center py-8 text-slate-500 font-medium text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        Henüz hiç yanıt alınmamış.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {anket.sorular.filter(s => s.tip !== 'kisa_yanit').map((soru) => {
+                          const soruOzetleri = cevapOzetleri[anketId]?.find(co => co.soru_id === soru.id)?.cevaplar || [];
+                          let chartData: any[] = [];
+                          
+                          if (soru.tip === 'coktan_secmeli') {
+                            const frequency: Record<string, number> = {};
+                            soruOzetleri.forEach(c => {
+                              if (Array.isArray(c)) c.forEach(item => frequency[item] = (frequency[item] || 0) + 1);
+                              else frequency[c] = (frequency[c] || 0) + 1;
+                            });
+                            chartData = (soru.secenekler || []).map(sec => ({
+                              name: sec.metin,
+                              deger: frequency[sec.id] || 0
+                            }));
+                          } else if (soru.tip === 'puanlama') {
+                            const frequency: Record<number, number> = {1:0, 2:0, 3:0, 4:0, 5:0};
+                            soruOzetleri.forEach(c => {
+                              const v = parseInt(c);
+                              if (!isNaN(v) && v >= 1 && v <= 5) frequency[v] += 1;
+                            });
+                            chartData = [1,2,3,4,5].map(v => ({ name: `${v} Puan`, deger: frequency[v] }));
+                          }
+
+                          return (
+                            <div key={`chart_${soru.id}`} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col h-[280px]">
+                              <h4 className="font-semibold text-slate-700 mb-4 text-xs text-center line-clamp-2" title={soru.soru}>{soru.soru}</h4>
+                              <div className="flex-1 w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                  <BarChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                    <XAxis dataKey="name" tick={{fontSize: 10, fill: '#64748B'}} axisLine={false} tickLine={false} />
+                                    <YAxis allowDecimals={false} tick={{fontSize: 10, fill: '#64748B'}} axisLine={false} tickLine={false} />
+                                    <RechartsTooltip formatter={(value: any) => [`${value} Yanıt`, 'Miktar']} cursor={{fill: '#F1F5F9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />
+                                    <Bar dataKey="deger" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={30}>
+                                      {chartData.map((_, index) => (
+                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                      ))}
+                                    </Bar>
+                                  </BarChart>
+                                </ResponsiveContainer>
+                              </div>
+                            </div>
+                          );
+                        })}
+                        {anket.sorular.filter(s => s.tip !== 'kisa_yanit').length === 0 && (
+                          <div className="col-span-full text-center py-4 text-slate-500 text-sm">Grafiği çizilebilecek soru tipi bulunamadı.</div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

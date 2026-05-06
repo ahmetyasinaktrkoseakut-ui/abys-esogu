@@ -60,14 +60,22 @@ export default function BirimAtamalariPage() {
       
       setCoordinatorTopic(coordData.baslik);
 
-      // Ana başlığın ID'sini bul
-      const { data: anaBaslikData } = await supabase
+      // Ana başlığın ID'sini bul (Esnek eşleşme: case-insensitive ve wildcards)
+      const searchTerm = coordData.baslik.trim();
+      const { data: anaBaslikData, error: anaBaslikError } = await supabase
         .from('ana_basliklar')
-        .select('id')
-        .ilike('ad', coordData.baslik)
-        .single();
+        .select('id, ad')
+        .ilike('ad', `%${searchTerm}%`)
+        .maybeSingle();
 
-      if (!anaBaslikData) throw new Error("Ana başlık veritabanında bulunamadı.");
+      if (!anaBaslikData || anaBaslikError) {
+        // Hata durumunda mevcut tüm başlıkları logla (string uyuşmazlığını bulmak için)
+        const { data: allBasliklar } = await supabase.from('ana_basliklar').select('ad');
+        console.log("Eşleşme sağlanamadı. Aranan:", searchTerm);
+        console.log("Veritabanındaki Mevcut Başlıklar:", allBasliklar?.map(b => b.ad));
+        
+        throw new Error(`Sorumlu olduğunuz '${searchTerm}' başlığı sistemde tam olarak eşleşmedi. Lütfen admin ile iletişime geçin.`);
+      }
 
       // O başlığa ait ölçütleri bul
       const { data: olcutlerData } = await supabase

@@ -61,14 +61,21 @@ export default function VeriOnayiPage() {
       
       setCoordinatorTopic(coordData.baslik);
 
-      // 2. Ana başlığın ID'sini bul
-      const { data: anaBaslikData } = await supabase
+      // 2. Ana başlığın ID'sini bul (Esnek eşleşme)
+      const searchTerm = coordData.baslik.trim();
+      const { data: anaBaslikData, error: anaBaslikError } = await supabase
         .from('ana_basliklar')
-        .select('id')
-        .ilike('ad', coordData.baslik)
-        .single();
+        .select('id, ad')
+        .ilike('ad', `%${searchTerm}%`)
+        .maybeSingle();
 
-      if (!anaBaslikData) throw new Error("Ana başlık veritabanında bulunamadı.");
+      if (!anaBaslikData || anaBaslikError) {
+        const { data: allBasliklar } = await supabase.from('ana_basliklar').select('ad');
+        console.log("Eşleşme sağlanamadı. Aranan:", searchTerm);
+        console.log("Veritabanındaki Mevcut Başlıklar:", allBasliklar?.map(b => b.ad));
+        
+        throw new Error(`Sorumlu olduğunuz '${searchTerm}' başlığı sistemde tam olarak eşleşmedi. Lütfen admin ile iletişime geçin.`);
+      }
 
       // 3. O başlığa ait ölçütleri ve alt ölçütleri bul
       const { data: olcutlerData } = await supabase

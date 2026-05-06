@@ -100,14 +100,21 @@ export default function KoordinatorlerPage() {
     }
   };
 
-  const handleRemove = async (kullanici_id: string) => {
-    if (!window.confirm('Bu atamayı silmek istediğinize emin misiniz?')) return;
+  const getFullName = (u: any) => {
+    if (!u) return 'Bilinmeyen Kullanıcı';
+    const name = u.ad_soyad || (u.ad && u.soyad ? `${u.ad} ${u.soyad}` : (u.ad || u.name || 'İsimsiz'));
+    return `${u.unvan ? u.unvan + ' ' : ''}${name}`;
+  };
+
+  const handleRemove = async (kullanici_id: string, baslik: string) => {
+    if (!window.confirm(`${baslik} koordinatörlüğünü silmek istediğinize emin misiniz?`)) return;
     
     try {
       const { error } = await supabase
         .from('baslik_koordinatorleri')
         .delete()
-        .eq('kullanici_id', kullanici_id);
+        .eq('kullanici_id', kullanici_id)
+        .eq('baslik', baslik);
         
       if (error) throw error;
       
@@ -118,10 +125,14 @@ export default function KoordinatorlerPage() {
     }
   };
 
-  const filteredUsers = users.filter(u => 
-    (u.ad_soyad || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
-    (u.email || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users
+    .filter(u => {
+      const fullName = getFullName(u).toLowerCase();
+      const email = (u.email || '').toLowerCase();
+      const search = searchTerm.toLowerCase();
+      return fullName.includes(search) || email.includes(search);
+    })
+    .sort((a, b) => getFullName(a).localeCompare(getFullName(b)));
 
   return (
     <div className="p-8 mx-auto max-w-5xl animate-in fade-in duration-500">
@@ -165,7 +176,7 @@ export default function KoordinatorlerPage() {
                   placeholder="İsim veya E-posta..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm"
+                  className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
             </div>
@@ -178,8 +189,8 @@ export default function KoordinatorlerPage() {
                 className="w-full p-2 border rounded-lg text-sm bg-slate-50"
               >
                 <option value="">-- Kullanıcı Seç --</option>
-                {filteredUsers.slice(0, 50).map(u => (
-                  <option key={u.id} value={u.id}>{u.unvan || ''} {u.ad_soyad || 'İsimsiz'} ({u.email})</option>
+                {filteredUsers.slice(0, 100).map(u => (
+                  <option key={u.id} value={u.id}>{getFullName(u)} ({u.email})</option>
                 ))}
               </select>
             </div>
@@ -201,43 +212,45 @@ export default function KoordinatorlerPage() {
             <button
               onClick={handleAssign}
               disabled={isSaving || !selectedUser || !selectedTopic}
-              className="w-full mt-4 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              className="w-full mt-4 flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50"
             >
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
               Atamayı Kaydet
             </button>
           </div>
         </div>
 
         {/* Mevcut Atamalar Listesi */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full">
+        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[400px]">
           <h3 className="font-semibold text-slate-800 mb-4 border-b pb-2">Mevcut Koordinatörler</h3>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-3">
             {isLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
             ) : coordinators.length === 0 ? (
-              <div className="text-center py-8 text-sm text-slate-500">Henüz atanmış bir koordinatör yok.</div>
+              <div className="text-center py-12 text-sm text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                Henüz atanmış bir koordinatör yok.
+              </div>
             ) : (
               coordinators.map(coord => {
-                const user = users.find(u => u.id === coord.kullanici_id);
+                const user = users.find(u => String(u.id) === String(coord.kullanici_id));
                 return (
-                  <div key={coord.kullanici_id + coord.baslik} className="flex items-center justify-between p-3 border rounded-xl bg-slate-50">
-                    <div>
-                      <div className="font-semibold text-sm text-slate-800">
-                        {user ? `${user.unvan || ''} ${user.ad_soyad || ''}` : 'Bilinmeyen Kullanıcı'}
+                  <div key={coord.kullanici_id + coord.baslik} className="flex items-center justify-between p-4 border rounded-2xl bg-slate-50 hover:bg-white hover:shadow-md transition-all group">
+                    <div className="flex-1">
+                      <div className="font-bold text-sm text-slate-800">
+                        {getFullName(user)}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">{user?.email}</div>
-                      <div className="inline-flex mt-2 px-2 py-1 bg-indigo-100 text-indigo-800 text-[10px] font-bold rounded-md">
+                      <div className="text-xs text-slate-500 mt-0.5">{user?.email || 'E-posta bulunamadı'}</div>
+                      <div className="inline-flex mt-3 px-3 py-1 bg-blue-100 text-blue-800 text-[10px] font-black rounded-lg uppercase tracking-tight">
                         {coord.baslik}
                       </div>
                     </div>
                     <button 
-                      onClick={() => handleRemove(coord.kullanici_id)}
-                      className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors"
+                      onClick={() => handleRemove(coord.kullanici_id, coord.baslik)}
+                      className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                       title="Atamayı Sil"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                 );

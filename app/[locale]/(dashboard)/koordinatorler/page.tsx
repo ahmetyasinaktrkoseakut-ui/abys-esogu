@@ -31,11 +31,11 @@ export default function KoordinatorlerPage() {
   const fetchData = async () => {
     try {
       setIsLoading(true);
+      setMessage(null);
       
       const { data: profiles, error: pError } = await supabase
         .from('profiller')
-        .select('id, ad_soyad, unvan, email')
-        .order('ad_soyad');
+        .select('*');
         
       if (pError) throw pError;
       setUsers(profiles || []);
@@ -49,7 +49,10 @@ export default function KoordinatorlerPage() {
 
     } catch (error: any) {
       console.error('Error fetching data:', error);
-      setMessage({ type: 'error', text: 'Veriler yüklenirken bir hata oluştu.' });
+      setMessage({ 
+        type: 'error', 
+        text: `Veriler yüklenirken bir hata oluştu: ${error.message || 'Bilinmeyen hata'}` 
+      });
     } finally {
       setIsLoading(false);
     }

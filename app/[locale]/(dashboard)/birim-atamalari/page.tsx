@@ -20,6 +20,7 @@ export default function BirimAtamalariPage() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   useEffect(() => {
@@ -47,40 +48,45 @@ export default function BirimAtamalariPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Kullanıcı oturumu bulunamadı.");
 
-      // Koordinatörün başlığını bul
-      const { data: coordData, error: coordError } = await supabase
-        .from('baslik_koordinatorleri')
-        .select('baslik')
-        .eq('kullanici_id', user.id)
-        .single();
+      // Admin kontrolü
+      const { data: userProfile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+      const role = userProfile?.rol?.toLowerCase() || '';
+      const isUserAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+      setIsAdmin(isUserAdmin);
 
-      if (coordError || !coordData) {
-        throw new Error("Bu sayfaya erişim yetkiniz yok veya atanmış bir başlığınız bulunmuyor.");
+      let expectedDbBaslik: string | null = null;
+
+      if (!isUserAdmin) {
+        // Koordinatörün başlığını bul
+        const { data: coordData, error: coordError } = await supabase
+          .from('baslik_koordinatorleri')
+          .select('baslik')
+          .eq('kullanici_id', user.id)
+          .single();
+
+        if (coordError || !coordData) {
+          throw new Error("Bu sayfaya erişim yetkiniz yok veya atanmış bir başlığınız bulunmuyor.");
+        }
+        
+        setCoordinatorTopic(coordData.baslik);
+
+        const baslikMap: Record<string, string> = {
+          'Kalite Güvencesi': 'KALİTE GÜVENCESİ SİSTEMİ',
+          'Eğitim-Öğretim': 'EĞİTİM VE ÖĞRETİM',
+          'Araştırma ve Geliştirme': 'ARAŞTIRMA VE GELİŞTİRME',
+          'Toplumsal Katkı': 'TOPLUMSAL KATKI',
+          'Yönetim Sistemi': 'YÖNETİM SİSTEMİ'
+        };
+
+        expectedDbBaslik = baslikMap[coordData.baslik];
+      } else {
+        setCoordinatorTopic('Tüm Başlıklar (Süper Yetki)');
       }
-      
-      setCoordinatorTopic(coordData.baslik);
 
       // Ana başlığın ID'sini bul (Sabit eşleştirme)
-      const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, baslik_adi, kod');
-      
-      const baslikMap: Record<string, string> = {
-        'Kalite Güvencesi': 'KALİTE GÜVENCESİ SİSTEMİ',
-        'Eğitim-Öğretim': 'EĞİTİM VE ÖĞRETİM',
-        'Araştırma ve Geliştirme': 'ARAŞTIRMA VE GELİŞTİRME',
-        'Toplumsal Katkı': 'TOPLUMSAL KATKI',
-        'Yönetim Sistemi': 'YÖNETİM SİSTEMİ'
-      };
-
-      const expectedDbBaslik = baslikMap[coordData.baslik];
-      const anaBaslikData = allBasliklar?.find(b => b.baslik_adi === expectedDbBaslik);
-
-      if (!anaBaslikData) {
-        console.log("Eşleşme sağlanamadı. Aranan:", coordData.baslik);
-        console.log("Mevcut Başlıklar:", allBasliklar?.map(b => b.baslik_adi));
-        throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla (örn: ${allBasliklar?.[0]?.baslik_adi}) eşleşmedi.`);
-      }
 
       // O başlığa ait ölçütleri bul (JS ile filtrele)
+      const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, baslik_adi, kod');
       const { data: allOlcutlerData } = await supabase
         .from('olcutler')
         .select('*');
@@ -106,26 +112,38 @@ export default function BirimAtamalariPage() {
         };
       });
 
-      const seciliAnaBaslik = tumOlcutler.find(olcut => olcut.baslik === expectedDbBaslik);
-      
-      if (seciliAnaBaslik) {
-        setOlcutler(seciliAnaBaslik.olcutler.length > 0 ? seciliAnaBaslik.olcutler : [{ id: seciliAnaBaslik.id, kod: seciliAnaBaslik.kod || '', ad: seciliAnaBaslik.baslik }]);
-        const filteredAltOlcutler = seciliAnaBaslik.altOlcutler;
-        setAltOlcutler(filteredAltOlcutler);
-        // Bu dönem için tüm atamaları getir (Sadece bu alt ölçütler için)
-        const altOlcutIds = filteredAltOlcutler.map(ao => ao.id);
+      if (isUserAdmin) {
+        setOlcutler(allOlcutlerData || []);
+        setAltOlcutler(allAltOlcutlerData || []);
         
         const { data: atamalarData } = await supabase
           .from('kullanici_olcut_atamalari')
           .select('*')
-          .eq('donem_id', selectedPeriod.id)
-          .in('alt_olcut_id', altOlcutIds.length > 0 ? altOlcutIds : [0]);
-
+          .eq('donem_id', selectedPeriod.id);
+          
         setAllAtamalar(atamalarData || []);
       } else {
-        setOlcutler([]);
-        setAltOlcutler([]);
-        setAllAtamalar([]);
+        const seciliAnaBaslik = tumOlcutler.find(olcut => olcut.baslik === expectedDbBaslik);
+        
+        if (seciliAnaBaslik) {
+          setOlcutler(seciliAnaBaslik.olcutler.length > 0 ? seciliAnaBaslik.olcutler : [{ id: seciliAnaBaslik.id, kod: seciliAnaBaslik.kod || '', ad: seciliAnaBaslik.baslik }]);
+          const filteredAltOlcutler = seciliAnaBaslik.altOlcutler;
+          setAltOlcutler(filteredAltOlcutler);
+          // Bu dönem için tüm atamaları getir (Sadece bu alt ölçütler için)
+          const altOlcutIds = filteredAltOlcutler.map(ao => ao.id);
+          
+          const { data: atamalarData } = await supabase
+            .from('kullanici_olcut_atamalari')
+            .select('*')
+            .eq('donem_id', selectedPeriod.id)
+            .in('alt_olcut_id', altOlcutIds.length > 0 ? altOlcutIds : [0]);
+
+          setAllAtamalar(atamalarData || []);
+        } else {
+          setOlcutler([]);
+          setAltOlcutler([]);
+          setAllAtamalar([]);
+        }
       }
 
       // Birim sorumlularını getir
@@ -174,6 +192,16 @@ export default function BirimAtamalariPage() {
           .in('alt_olcut_id', altOlcutIds);
           
         if (deleteError) throw deleteError;
+      }
+
+      // Süper Yetki: Admin seçtiği ölçütleri BAŞKASINDAN alıp bu hocaya verebilir
+      if (isAdmin && selectedOlcutIds.length > 0) {
+        await supabase
+          .from('kullanici_olcut_atamalari')
+          .delete()
+          .eq('donem_id', selectedPeriod.id)
+          .in('alt_olcut_id', selectedOlcutIds)
+          .neq('user_id', selectedHoca);
       }
 
       // 2. Yeni atamaları ekle (Sadece seçili olanları)
@@ -358,14 +386,14 @@ export default function BirimAtamalariPage() {
                             <label 
                               key={ao.id} 
                               className={`flex items-start gap-3 p-4 cursor-pointer hover:bg-slate-50 transition-colors ${
-                                isAssignedToOther ? 'opacity-60 cursor-not-allowed' : ''
+                                isAssignedToOther && !isAdmin ? 'opacity-60 cursor-not-allowed' : ''
                               }`}
                             >
                               <div className="pt-0.5">
                                 <input
                                   type="checkbox"
                                   checked={isSelected}
-                                  disabled={isAssignedToOther}
+                                  disabled={isAssignedToOther && !isAdmin}
                                   onChange={() => handleToggleOlcut(ao.id)}
                                   className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
                                 />

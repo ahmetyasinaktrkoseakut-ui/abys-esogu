@@ -61,7 +61,7 @@ export default function BirimAtamalariPage() {
       setCoordinatorTopic(coordData.baslik);
 
       // Ana başlığın ID'sini bul (JS tarafında ultra-esnek eşleşme)
-      const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, baslik_adi');
+      const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, baslik_adi, kod');
       
       const normalize = (str: string) => 
         str?.toLowerCase()
@@ -88,19 +88,17 @@ export default function BirimAtamalariPage() {
         throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla (örn: ${allBasliklar?.[0]?.baslik_adi}) eşleşmedi.`);
       }
 
-      // O başlığa ait ölçütleri bul
+      // O başlığa ait ölçütleri bul (kod ile filtrele)
       const { data: olcutlerData } = await supabase
         .from('olcutler')
         .select('*')
-        .eq('ana_baslik_id', anaBaslikData.id);
+        .like('kod', `${anaBaslikData.kod}.%`);
 
-      const olcutIds = (olcutlerData || []).map(o => o.id);
-
-      // O ölçütlere ait alt ölçütleri bul
+      // O başlığa ait alt ölçütleri bul (kod ile filtrele)
       const { data: altOlcutlerData } = await supabase
         .from('alt_olcutler')
         .select('*')
-        .in('olcut_id', olcutIds.length > 0 ? olcutIds : [0])
+        .like('kod', `${anaBaslikData.kod}.%`)
         .order('id', { ascending: true });
 
       setOlcutler(olcutlerData || []);
@@ -203,8 +201,14 @@ export default function BirimAtamalariPage() {
     }
   };
 
+  const getFullName = (u: any) => {
+    if (!u) return 'Bilinmeyen Kullanıcı';
+    const name = u.ad_soyad || (u.ad && u.soyad ? `${u.ad} ${u.soyad}` : (u.ad || u.name || 'İsimsiz'));
+    return `${u.unvan ? u.unvan + ' ' : ''}${name}`;
+  };
+
   const filteredHocalar = hocalar.filter(h => 
-    (h.ad_soyad || '').toLowerCase().includes(searchTerm.toLowerCase()) || 
+    getFullName(h).toLowerCase().includes(searchTerm.toLowerCase()) || 
     (h.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -271,7 +275,7 @@ export default function BirimAtamalariPage() {
                         : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <div className="font-medium text-sm text-slate-800">{hoca.unvan || ''} {hoca.ad_soyad || 'İsimsiz'}</div>
+                    <div className="font-medium text-sm text-slate-800">{getFullName(hoca)}</div>
                     <div className="text-xs text-slate-500 mt-0.5 truncate">{hoca.email}</div>
                     {assignedCount > 0 && (
                       <div className="mt-2 text-[10px] font-semibold text-blue-600 bg-blue-100 px-2 py-0.5 rounded inline-block">
@@ -289,7 +293,7 @@ export default function BirimAtamalariPage() {
             <div className="flex items-center justify-between mb-4 border-b pb-2">
               <h3 className="font-semibold text-slate-800">
                 {selectedHoca 
-                  ? `${hocalar.find(h => h.id === selectedHoca)?.ad_soyad} için Atamalar`
+                  ? `${getFullName(hocalar.find(h => h.id === selectedHoca))} için Atamalar`
                   : 'Ölçüt Ataması İçin Kullanıcı Seçin'}
               </h3>
               
@@ -354,7 +358,7 @@ export default function BirimAtamalariPage() {
                                 </div>
                                 {isAssignedToOther && (
                                   <div className="text-xs text-red-500 mt-1 font-medium bg-red-50 inline-block px-2 py-0.5 rounded">
-                                    Atandı: {otherUser ? otherUser.ad_soyad : 'Başka Birim'}
+                                    Atandı: {otherUser ? getFullName(otherUser) : 'Başka Birim'}
                                   </div>
                                 )}
                               </div>

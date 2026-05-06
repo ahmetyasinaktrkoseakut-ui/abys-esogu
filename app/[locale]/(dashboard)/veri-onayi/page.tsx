@@ -62,7 +62,7 @@ export default function VeriOnayiPage() {
       setCoordinatorTopic(coordData.baslik);
 
       // 2. Ana başlığın ID'sini bul (JS tarafında ultra-esnek eşleşme)
-      const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, ad');
+      const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, baslik_adi');
       
       const normalize = (str: string) => 
         str?.toLowerCase()
@@ -79,14 +79,14 @@ export default function VeriOnayiPage() {
 
       const searchNormalized = normalize(coordData.baslik);
       const anaBaslikData = allBasliklar?.find(b => {
-        const dbNormalized = normalize(b.ad);
+        const dbNormalized = normalize(b.baslik_adi);
         return dbNormalized.includes(searchNormalized) || searchNormalized.includes(dbNormalized);
       });
 
       if (!anaBaslikData) {
         console.log("Eşleşme sağlanamadı. Aranan:", coordData.baslik);
-        console.log("Mevcut Başlıklar:", allBasliklar?.map(b => b.ad));
-        throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla eşleşmedi.`);
+        console.log("Mevcut Başlıklar:", allBasliklar?.map(b => b.baslik_adi));
+        throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla (örn: ${allBasliklar?.[0]?.baslik_adi}) eşleşmedi.`);
       }
 
       // 3. O başlığa ait ölçütleri ve alt ölçütleri bul

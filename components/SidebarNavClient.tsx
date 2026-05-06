@@ -133,12 +133,12 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
                   {tQM('title')}
                 </Link>
               )}
-              <Link href="/raporlar" className={getLinkClass('/raporlar')}>
-                <LineChart className="w-5 h-5 flex-shrink-0" />
-                {t('reports')}
-              </Link>
               {isAdmin && (
                 <>
+                  <Link href="/raporlar" className={getLinkClass('/raporlar')}>
+                    <LineChart className="w-5 h-5 flex-shrink-0" />
+                    {t('reports')}
+                  </Link>
                   <Link href="/onerilenler" className={getLinkClass('/onerilenler')}>
                     <Lightbulb className="w-5 h-5 flex-shrink-0" />
                     {t('suggestions')}

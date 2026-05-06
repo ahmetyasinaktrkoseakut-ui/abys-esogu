@@ -126,10 +126,12 @@ export default function VeriOnayiPage() {
       // JS ile birleştir (Şema önbelleği hatasını aşmak için)
       const raporlarWithOlcut = (raporlarData || []).map(rapor => {
         // Tam da istenen mantık:
-        const bulunanOlcut = tumOlcutler.flatMap(ana => ana.altOlcutler).find(alt => String(alt.id) === String(rapor.alt_olcut_id) || String(alt.kod) === String(rapor.alt_olcut_id));
+        const bulunanOlcut = tumOlcutler.flatMap((ana: any) => ana.altOlcutler || ana.alt_olcutler || []).find(alt => String(alt.id) === String(rapor.alt_olcut_id) || String(alt.kod) === String(rapor.alt_olcut_id));
+        const olcutAdi = bulunanOlcut ? (bulunanOlcut.ad || bulunanOlcut.baslik || bulunanOlcut.isim || bulunanOlcut.title) : null;
+        
         return {
           ...rapor,
-          alt_olcutler: bulunanOlcut ? { kod: bulunanOlcut.kod, ad: bulunanOlcut.ad } : null
+          alt_olcutler: bulunanOlcut ? { kod: bulunanOlcut.kod, ad: olcutAdi || 'İsim Bulunamadı' } : null
         };
       });
 
@@ -260,7 +262,7 @@ export default function VeriOnayiPage() {
                     </span>
                   </div>
                   <Link href={`/${locale}/olcutler/${report.alt_olcut_id}/ozdegerlendirme`} className="font-semibold text-lg text-blue-600 hover:text-blue-800 hover:underline transition-colors mt-1 block">
-                    {report.alt_olcutler?.ad || 'Bilinmeyen Ölçüt'}
+                    {report.alt_olcutler?.ad || report.alt_olcutler?.baslik || report.alt_olcutler?.isim || report.alt_olcutler?.title || 'İsim Bulunamadı'}
                   </Link>
                 </div>
                 

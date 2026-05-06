@@ -91,11 +91,42 @@ export default function BirimAtamalariPage() {
         .select('*')
         .order('id', { ascending: true });
 
-      const filteredOlcutler = (allOlcutlerData || []).filter(o => o.kod?.startsWith(anaBaslikData.kod));
-      const filteredAltOlcutler = (allAltOlcutlerData || []).filter(ao => ao.kod?.startsWith(anaBaslikData.kod));
+      // Veritabanı ve JSON simülasyonunu tam da kullanıcının istediği gibi oluşturuyoruz
+      const tumOlcutler = (allBasliklar || []).map(ana => {
+        const anaOlcutler = (allOlcutlerData || []).filter(o => o.ana_baslik_id === ana.id || (o.kod && ana.kod && o.kod.startsWith(ana.kod)));
+        const anaAltOlcutler = (allAltOlcutlerData || []).filter(ao => {
+          return anaOlcutler.some(o => o.id === ao.olcut_id) || (ao.kod && ana.kod && ao.kod.startsWith(ana.kod));
+        });
+        return {
+          baslik: ana.baslik_adi,
+          kod: ana.kod,
+          id: ana.id,
+          olcutler: anaOlcutler,
+          altOlcutler: anaAltOlcutler
+        };
+      });
 
-      setOlcutler(filteredOlcutler);
-      setAltOlcutler(filteredAltOlcutler);
+      const seciliAnaBaslik = tumOlcutler.find(olcut => olcut.baslik === expectedDbBaslik);
+      
+      if (seciliAnaBaslik) {
+        setOlcutler(seciliAnaBaslik.olcutler.length > 0 ? seciliAnaBaslik.olcutler : [{ id: seciliAnaBaslik.id, kod: seciliAnaBaslik.kod || '', ad: seciliAnaBaslik.baslik }]);
+        const filteredAltOlcutler = seciliAnaBaslik.altOlcutler;
+        setAltOlcutler(filteredAltOlcutler);
+        // Bu dönem için tüm atamaları getir (Sadece bu alt ölçütler için)
+        const altOlcutIds = filteredAltOlcutler.map(ao => ao.id);
+        
+        const { data: atamalarData } = await supabase
+          .from('kullanici_olcut_atamalari')
+          .select('*')
+          .eq('donem_id', selectedPeriod.id)
+          .in('alt_olcut_id', altOlcutIds.length > 0 ? altOlcutIds : [0]);
+
+        setAllAtamalar(atamalarData || []);
+      } else {
+        setOlcutler([]);
+        setAltOlcutler([]);
+        setAllAtamalar([]);
+      }
 
       // Birim sorumlularını getir
       const { data: profillerData } = await supabase
@@ -105,16 +136,7 @@ export default function BirimAtamalariPage() {
       
       setHocalar(profillerData || []);
 
-      // Bu dönem için tüm atamaları getir (Sadece bu alt ölçütler için)
-      const altOlcutIds = filteredAltOlcutler.map(ao => ao.id);
-      
-      const { data: atamalarData } = await supabase
-        .from('kullanici_olcut_atamalari')
-        .select('*')
-        .eq('donem_id', selectedPeriod.id)
-        .in('alt_olcut_id', altOlcutIds.length > 0 ? altOlcutIds : [0]);
 
-      setAllAtamalar(atamalarData || []);
       
     } catch (error: any) {
       console.error("Veri çekme hatası:", error);
@@ -196,7 +218,8 @@ export default function BirimAtamalariPage() {
 
   const getFullName = (u: any) => {
     if (!u) return 'Bilinmeyen Kullanıcı';
-    const name = u.raw_user_meta_data?.full_name || u.full_name || u.isim || u.ad_soyad || (u.ad && u.soyad ? `${u.ad} ${u.soyad}` : (u.ad || u.name || 'İsimsiz'));
+    const name = u.raw_user_meta_data?.full_name || u.full_name || u.isim || u.ad_soyad || (u.ad && u.soyad ? `${u.ad} ${u.soyad}` : null) || u.ad || u.name;
+    if (!name) return u.email || 'İsimsiz';
     return `${u.unvan ? u.unvan + ' ' : ''}${name}`;
   };
 
@@ -309,17 +332,19 @@ export default function BirimAtamalariPage() {
               <div className="flex-1 overflow-y-auto pr-2 space-y-6">
                 {olcutler.map(olcut => {
                   const olcutunAltOlcutleri = altOlcutler.filter(ao => ao.olcut_id === olcut.id);
-                  if (olcutunAltOlcutleri.length === 0) return null;
+                  const displayAltOlcutler = olcutunAltOlcutleri.length > 0 ? olcutunAltOlcutleri : altOlcutler;
+                  
+                  if (displayAltOlcutler.length === 0) return null;
                   
                   return (
-                    <div key={olcut.id} className="border border-slate-200 rounded-xl overflow-hidden">
+                    <div key={olcut.id} className="border border-slate-200 rounded-xl overflow-hidden mb-6">
                       <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                         <h4 className="font-medium text-slate-800 text-sm">
-                          {olcut.kod} - {olcut.ad}
+                          {olcut.kod} {olcut.ad}
                         </h4>
                       </div>
                       <div className="divide-y divide-slate-100">
-                        {olcutunAltOlcutleri.map(ao => {
+                        {displayAltOlcutler.map(ao => {
                           const isSelected = selectedOlcutIds.includes(ao.id);
                           
                           // Bu alt ölçüt başka birine atanmış mı kontrol et

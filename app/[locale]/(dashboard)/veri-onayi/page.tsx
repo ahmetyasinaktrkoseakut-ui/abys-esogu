@@ -90,7 +90,25 @@ export default function VeriOnayiPage() {
         .from('alt_olcutler')
         .select('*');
 
-      const filteredAltOlcutler = (allAltOlcutlerData || []).filter(ao => ao.kod?.startsWith(anaBaslikData.kod));
+      // JSON simülasyonunu tam da kullanıcının istediği gibi oluşturuyoruz
+      const { data: allOlcutlerData } = await supabase.from('olcutler').select('*');
+      
+      const tumOlcutler = (allBasliklar || []).map(ana => {
+        const anaOlcutler = (allOlcutlerData || []).filter(o => o.ana_baslik_id === ana.id || (o.kod && ana.kod && o.kod.startsWith(ana.kod)));
+        const anaAltOlcutler = (allAltOlcutlerData || []).filter(ao => {
+          return anaOlcutler.some(o => o.id === ao.olcut_id) || (ao.kod && ana.kod && ao.kod.startsWith(ana.kod));
+        });
+        return {
+          baslik: ana.baslik_adi,
+          kod: ana.kod,
+          id: ana.id,
+          olcutler: anaOlcutler,
+          altOlcutler: anaAltOlcutler
+        };
+      });
+
+      const seciliAnaBaslik = tumOlcutler.find(olcut => olcut.baslik === expectedDbBaslik);
+      const filteredAltOlcutler = seciliAnaBaslik ? seciliAnaBaslik.altOlcutler : (allAltOlcutlerData || []);
       const altOlcutIds = filteredAltOlcutler.map(ao => ao.id);
 
       // 4. Bekleyen raporları getir
@@ -107,11 +125,11 @@ export default function VeriOnayiPage() {
 
       // JS ile birleştir (Şema önbelleği hatasını aşmak için)
       const raporlarWithOlcut = (raporlarData || []).map(rapor => {
-        // Tüm ölçütler içinde ara (rapor.alt_olcut_id ile eşleştir)
-        const ao = allAltOlcutlerData?.find(a => String(a.id) === String(rapor.alt_olcut_id) || String(a.kod) === String(rapor.alt_olcut_id));
+        // Tam da istenen mantık:
+        const bulunanOlcut = tumOlcutler.flatMap(ana => ana.altOlcutler).find(alt => String(alt.id) === String(rapor.alt_olcut_id) || String(alt.kod) === String(rapor.alt_olcut_id));
         return {
           ...rapor,
-          alt_olcutler: ao ? { kod: ao.kod, ad: ao.ad } : null
+          alt_olcutler: bulunanOlcut ? { kod: bulunanOlcut.kod, ad: bulunanOlcut.ad } : null
         };
       });
 

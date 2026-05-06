@@ -24,12 +24,19 @@ export default async function Sidebar() {
 
   // Ölçüt ataması var mı kontrol et
   let hasAssignment = false;
+  let isCoordinator = false;
   if (user) {
     const { count } = await supabase
       .from('kullanici_olcut_atamalari')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id);
     hasAssignment = (count || 0) > 0;
+
+    const { count: coordCount } = await supabase
+      .from('baslik_koordinatorleri')
+      .select('*', { count: 'exact', head: true })
+      .eq('kullanici_id', user.id);
+    isCoordinator = (coordCount || 0) > 0;
   }
 
   return (
@@ -44,7 +51,7 @@ export default async function Sidebar() {
         </div>
       </div>
 
-      <SidebarNavClient isAdmin={isAdmin} userId={user?.id || ''} hasAssignment={hasAssignment} />
+      <SidebarNavClient isAdmin={isAdmin} userId={user?.id || ''} hasAssignment={hasAssignment} isCoordinator={isCoordinator} />
     </aside>
   );
 }

@@ -29,6 +29,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
   // Onay / Ret Sistematiği
   const [onayDurumu, setOnayDurumu] = useState<string>('');
+  const [redNedeni, setRedNedeni] = useState<string | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
   const [isActionSubmitting, setIsActionSubmitting] = useState(false);
@@ -84,17 +85,20 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         setRaporMetni(cleanIcerik);
         setKanitlar(raporData?.kanitlar ?? []);
         setRaporOlusturuldu(true);
+        
+        // Yeni onay sistemini kullan
+        setOnayDurumu(raporData?.onay_durumu || 'bekliyor');
+        setRedNedeni(raporData?.red_nedeni);
+        
+        // Onay durumunu ve red nedenini set et
+        setOnayDurumu(raporData?.onay_durumu || 'bekliyor');
+        setRedNedeni(raporData?.red_nedeni);
+      } else {
+        setOnayDurumu('bekliyor');
+        setRedNedeni(null);
       }
 
-      // Tüm aşamaların ortak durumunu öğrenmek için bir tane puko kaydı çek
-      const { data: pukoDurumData } = await supabase
-        .from('puko_degerlendirmeleri')
-        .select('durum')
-        .eq('alt_olcut_id', resolvedParams.id)
-        .eq('donem_id', selectedPeriod?.id)
-        .limit(1)
-        .maybeSingle();
-      if (pukoDurumData) setOnayDurumu(pukoDurumData.durum || '');
+
     } catch (error) {
       console.error("Fetch Data Error:", error);
     } finally {
@@ -261,14 +265,23 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         if (err) throw err;
       }
 
-      // Hoca raporu kaydettiğinde, tüm aşamaların durumunu "Beklemede" yap
-      if (!isAdmin) {
-        await supabase
-          .from('puko_degerlendirmeleri')
-          .update({ durum: 'Beklemede', red_nedeni: null })
-          .eq('alt_olcut_id', resolvedParams.id)
-          .eq('donem_id', selectedPeriod?.id);
-        setOnayDurumu('Beklemede');
+      // Rapor kaydedildiğinde durumu 'bekliyor'a çek (eğer onaylanmış veya reddedilmişse tekrar değerlendirmeye girsin)
+      if (!isAdmin && (onayDurumu === 'reddedildi' || onayDurumu === 'onaylandi')) {
+        const { data: currentRecord } = await supabase
+          .from('ozdegerlendirme_raporlari')
+          .select('id')
+          .eq('alt_olcut_id', String(resolvedParams.id))
+          .eq('donem_id', String(selectedPeriod?.id))
+          .single();
+
+        if (currentRecord) {
+          await supabase
+            .from('ozdegerlendirme_raporlari')
+            .update({ onay_durumu: 'bekliyor', red_nedeni: null })
+            .eq('id', currentRecord.id);
+          setOnayDurumu('bekliyor');
+          setRedNedeni(null);
+        }
       }
 
       alert(t('save_success'));
@@ -283,13 +296,22 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const handleApprove = async () => {
     setIsActionSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('puko_degerlendirmeleri')
-        .update({ durum: 'Onaylandı', red_nedeni: null })
+      // ozdegerlendirme_raporlari tablosunu güncelle
+      const { data: currentRecord } = await supabase
+        .from('ozdegerlendirme_raporlari')
+        .select('id')
         .eq('alt_olcut_id', resolvedParams.id)
-        .eq('donem_id', selectedPeriod?.id);
-      if (error) throw error;
-      setOnayDurumu('Onaylandı');
+        .eq('donem_id', selectedPeriod?.id)
+        .single();
+
+      if (currentRecord) {
+        const { error } = await supabase
+          .from('ozdegerlendirme_raporlari')
+          .update({ onay_durumu: 'onaylandi', red_nedeni: null })
+          .eq('id', currentRecord.id);
+        if (error) throw error;
+        setOnayDurumu('onaylandi');
+      }
       alert(t('approve_success'));
     } catch (err: any) {
       alert(`${t('error_approve')}${err.message}`);
@@ -305,13 +327,22 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     }
     setIsActionSubmitting(true);
     try {
-      const { error } = await supabase
-        .from('puko_degerlendirmeleri')
-        .update({ durum: 'Reddedildi', red_nedeni: rejectReason })
+      const { data: currentRecord } = await supabase
+        .from('ozdegerlendirme_raporlari')
+        .select('id')
         .eq('alt_olcut_id', resolvedParams.id)
-        .eq('donem_id', selectedPeriod?.id);
-      if (error) throw error;
-      setOnayDurumu('Reddedildi');
+        .eq('donem_id', selectedPeriod?.id)
+        .single();
+
+      if (currentRecord) {
+        const { error } = await supabase
+          .from('ozdegerlendirme_raporlari')
+          .update({ onay_durumu: 'reddedildi', red_nedeni: rejectReason })
+          .eq('id', currentRecord.id);
+        if (error) throw error;
+        setOnayDurumu('reddedildi');
+        setRedNedeni(rejectReason);
+      }
       setIsRejectModalOpen(false);
       setRejectReason('');
       alert(t('reject_success'));
@@ -365,34 +396,48 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           <p className="text-sm text-slate-500">{t('synthesis_desc')}</p>
         </div>
 
-        {/* Ortak Onay/Ret Butonları (Yöneticiler için) */}
-        {isAdmin && (
-          <div className="flex items-center gap-3 mt-4 md:mt-0">
-            {onayDurumu && (
-            <div className={`px-4 py-1.5 rounded-lg text-sm font-bold border ${
-              onayDurumu === 'Onaylandı' ? 'bg-green-50 text-green-700 border-green-200' : 
-              onayDurumu === 'Reddedildi' ? 'bg-red-50 text-red-700 border-red-200' :
-              'bg-amber-50 text-amber-700 border-amber-200'
-            }`}>
-              {onayDurumu}
+        {/* Onay/Red Durumu Göstergesi */}
+        <div className="flex items-center gap-3 mt-4 md:mt-0">
+          {onayDurumu && (
+            <div className={`flex flex-col items-end gap-1`}>
+              <div className={`px-4 py-1.5 rounded-lg text-sm font-bold border uppercase tracking-wider ${
+                onayDurumu === 'onaylandi' ? 'bg-green-50 text-green-700 border-green-200' : 
+                onayDurumu === 'reddedildi' ? 'bg-red-50 text-red-700 border-red-200' :
+                'bg-amber-50 text-amber-700 border-amber-200'
+              }`}>
+                DURUM: {
+                  onayDurumu === 'onaylandi' ? 'Onaylandı' : 
+                  onayDurumu === 'reddedildi' ? 'Reddedildi' : 
+                  'Bekliyor'
+                }
+              </div>
+              {onayDurumu === 'reddedildi' && redNedeni && (
+                <div className="text-[11px] text-red-600 font-medium max-w-xs text-right">
+                  Neden: {redNedeni}
+                </div>
+              )}
             </div>
-            )}
-            <button 
-              onClick={handleApprove}
-              disabled={isActionSubmitting || onayDurumu === 'Onaylandı'}
-              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-            >
-              {t('approve_criterion')}
-            </button>
-            <button 
-              onClick={() => setIsRejectModalOpen(true)}
-              disabled={isActionSubmitting || onayDurumu === 'Reddedildi'}
-              className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
-            >
-              {t('reject_criterion')}
-            </button>
-          </div>
-        )}
+          )}
+          
+          {isAdmin && (
+            <>
+              <button 
+                onClick={handleApprove}
+                disabled={isActionSubmitting || onayDurumu === 'onaylandi'}
+                className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+              >
+                {t('approve_criterion')}
+              </button>
+              <button 
+                onClick={() => setIsRejectModalOpen(true)}
+                disabled={isActionSubmitting || onayDurumu === 'reddedildi'}
+                className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors shadow-sm"
+              >
+                {t('reject_criterion')}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       <StepPanel activeStepId="rapor" altOlcutId={resolvedParams.id} />

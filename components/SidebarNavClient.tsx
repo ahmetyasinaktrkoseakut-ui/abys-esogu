@@ -18,8 +18,9 @@ import {
   GraduationCap
 } from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
+import { Users, FileCheck, ClipboardCheck } from 'lucide-react';
 
-export default function SidebarNavClient({ isAdmin, userId, hasAssignment }: { isAdmin: boolean, userId: string, hasAssignment: boolean }) {
+export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoordinator }: { isAdmin: boolean, userId: string, hasAssignment: boolean, isCoordinator?: boolean }) {
   const pathname = usePathname();
   const t = useTranslations('Navigation');
   const tAnn = useTranslations('Announcements');
@@ -85,6 +86,18 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment }: { i
                 <BarChart2 className="w-5 h-5 flex-shrink-0" />
                 {t('tracking')}
               </Link>
+            )}
+            {isCoordinator && (
+              <>
+                <Link href="/birim-atamalari" className={getLinkClass('/birim-atamalari')}>
+                  <Users className="w-5 h-5 flex-shrink-0" />
+                  Birim Atamaları
+                </Link>
+                <Link href="/veri-onayi" className={getLinkClass('/veri-onayi')}>
+                  <FileCheck className="w-5 h-5 flex-shrink-0" />
+                  Veri Onayı
+                </Link>
+              </>
             )}
           </>
         )}
@@ -160,6 +173,10 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment }: { i
             <Link href="/atamalar" className={getLinkClass('/atamalar')}>
               <Settings className="w-5 h-5 flex-shrink-0" />
               {t('assignments')}
+            </Link>
+            <Link href="/koordinatorler" className={getLinkClass('/koordinatorler')}>
+              <ClipboardCheck className="w-5 h-5 flex-shrink-0" />
+              Koordinatörler
             </Link>
           </>
         )}

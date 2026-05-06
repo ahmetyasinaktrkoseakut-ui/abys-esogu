@@ -117,8 +117,9 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
       if (ozdegerlendirmeData) {
         setOzdegerlendirmeRaporuId(ozdegerlendirmeData.id.toString());
         setYoneticiAnalizi(ozdegerlendirmeData.yonetici_anket_analizi || '');
-        setBirimDegerlendirmesi(ozdegerlendirmeData.birim_anket_degerlendirmesi || '');
       }
+
+      setBirimDegerlendirmesi(pukoData?.aciklama || ozdegerlendirmeData?.birim_anket_degerlendirmesi || '');
 
       // Anketleri Tek Sorguda Çek (Yerel veya Hedeflenen)
       const { data: anketData } = await supabase
@@ -200,6 +201,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         alt_olcut_id: resolvedParams.id,
         puko_asamasi: 'kontrol',
         donem_id: selectedPeriod?.id,
+        aciklama: birimDegerlendirmesi,
         durum: 'Beklemede',
         red_nedeni: null
       };

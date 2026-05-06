@@ -48,11 +48,89 @@ export default function AnketYonetimiClient() {
   const [olcutler, setOlcutler] = useState<any[]>([]);
   const [hedefOlcutler, setHedefOlcutler] = useState<string[]>([]);
   
-  const [anketListesi, setAnketListesi] = useState<Anket[]>([]);
+  // Sadece form (taslak) anketler için
+  const [anketListesi, setAnketListesi] = useState<Anket[]>([{
+    id: `temp_${Math.random().toString(36).substr(2, 9)}`,
+    baslik: '',
+    sorular: [],
+    aciklama: '',
+    isExpanded: true
+  }]);
+  
+  // Yayınlanmış anketler (Yalnızca gösterim için)
+  const [yayinlananAnketler, setYayinlananAnketler] = useState<Anket[]>([]);
   
   // Analiz verileri
   const [cevapOzetleri, setCevapOzetleri] = useState<Record<string, AnketCevapOzeti[]>>({});
   const [toplamCevaplar, setToplamCevaplar] = useState<Record<string, number>>({});
+
+  const fetchPublishedAnketler = async (userIsAdmin: boolean, expectedDbBaslik: string | null, tumOlcutlerData: any[]) => {
+    if (!selectedPeriod) return;
+    
+    const gecerliOlcutler = userIsAdmin ? tumOlcutlerData : tumOlcutlerData.filter(o => o.baslik === expectedDbBaslik);
+    const gecerliIdler = gecerliOlcutler.flatMap(o => o.altOlcutler.map((ao: any) => ao.id.toString()));
+
+    const { data: existingAnketler } = await supabase
+      .from('anketler')
+      .select('*')
+      .eq('alt_olcut_id', 'genel')
+      .eq('donem_id', selectedPeriod.id)
+      .order('id', { ascending: true });
+
+    if (existingAnketler && existingAnketler.length > 0) {
+      const filteredAnketler = userIsAdmin ? existingAnketler : existingAnketler.filter(a => {
+        if (!a.hedef_olcutler) return false;
+        return a.hedef_olcutler.some((id: string) => gecerliIdler.includes(id));
+      });
+
+      const mappedAnketler: Anket[] = filteredAnketler.map((a: any) => ({
+        id: a.id.toString(),
+        baslik: a.baslik || 'İsimsiz Anket',
+        sorular: a.sorular || [],
+        aciklama: a.aciklama || '',
+        hedef_olcutler: a.hedef_olcutler || [],
+        isExpanded: false
+      }));
+      
+      setYayinlananAnketler(mappedAnketler);
+
+      // Fetch Cevaplar for Charts
+      const anketIds = filteredAnketler.map(a => a.id);
+      if (anketIds.length > 0) {
+        const { data: cevaplarData } = await supabase
+          .from('anket_cevaplari')
+          .select('anket_id, cevaplar')
+          .in('anket_id', anketIds);
+
+        if (cevaplarData) {
+          const tCevap: Record<string, number> = {};
+          const cOzet: Record<string, AnketCevapOzeti[]> = {};
+          
+          anketIds.forEach(id => {
+            const anketinCevaplari = cevaplarData.filter(c => c.anket_id === id);
+            tCevap[id.toString()] = anketinCevaplari.length;
+            
+            const ozet: Record<string, any[]> = {};
+            anketinCevaplari.forEach(c => {
+              const yanitlar = c.cevaplar as Record<string, any>;
+              if (yanitlar) {
+                Object.keys(yanitlar).forEach(sId => {
+                  if (!ozet[sId]) ozet[sId] = [];
+                  ozet[sId].push(yanitlar[sId]);
+                });
+              }
+            });
+            cOzet[id.toString()] = Object.keys(ozet).map(k => ({ soru_id: k, cevaplar: ozet[k] }));
+          });
+
+          setToplamCevaplar(tCevap);
+          setCevapOzetleri(cOzet);
+        }
+      }
+    } else {
+      setYayinlananAnketler([]);
+    }
+  };
 
   useEffect(() => {
     async function init() {
@@ -106,80 +184,7 @@ export default function AnketYonetimiClient() {
           setOlcutler(secili);
         }
 
-        const gecerliOlcutler = userIsAdmin ? tumOlcutler : tumOlcutler.filter(o => o.baslik === expectedDbBaslik);
-        const gecerliIdler = gecerliOlcutler.flatMap(o => o.altOlcutler.map((ao: any) => ao.id.toString()));
-
-        // Mevcut anketleri çekelim (Yönetim anketleri)
-        const { data: existingAnketler } = await supabase
-          .from('anketler')
-          .select('*')
-          .eq('alt_olcut_id', 'genel')
-          .eq('donem_id', selectedPeriod?.id)
-          .order('id', { ascending: true });
-
-        if (existingAnketler && existingAnketler.length > 0) {
-          // Koordinatörse sadece kendine ait olanları göster
-          const filteredAnketler = userIsAdmin ? existingAnketler : existingAnketler.filter(a => {
-            if (!a.hedef_olcutler) return false;
-            return a.hedef_olcutler.some((id: string) => gecerliIdler.includes(id));
-          });
-
-          const mappedAnketler: Anket[] = filteredAnketler.map((a: any, idx: number) => ({
-            id: a.id.toString(),
-            baslik: a.baslik || 'Genel Anket',
-            sorular: a.sorular || [],
-            aciklama: a.aciklama || '',
-            hedef_olcutler: a.hedef_olcutler || [],
-            isExpanded: false
-          }));
-          setAnketListesi(mappedAnketler);
-          
-          if (filteredAnketler.length > 0 && filteredAnketler[0].hedef_olcutler) {
-            setHedefOlcutler(filteredAnketler[0].hedef_olcutler);
-          }
-
-          // Fetch Cevaplar for Charts
-          const anketIds = filteredAnketler.map(a => a.id);
-          if (anketIds.length > 0) {
-            const { data: cevaplarData } = await supabase
-              .from('anket_cevaplari')
-              .select('anket_id, cevaplar')
-              .in('anket_id', anketIds);
-
-            if (cevaplarData) {
-              const tCevap: Record<string, number> = {};
-              const cOzet: Record<string, AnketCevapOzeti[]> = {};
-              
-              anketIds.forEach(id => {
-                const anketinCevaplari = cevaplarData.filter(c => c.anket_id === id);
-                tCevap[id.toString()] = anketinCevaplari.length;
-                
-                const ozet: Record<string, any[]> = {};
-                anketinCevaplari.forEach(c => {
-                  const yanitlar = c.cevaplar as Record<string, any>;
-                  if (yanitlar) {
-                    Object.keys(yanitlar).forEach(sId => {
-                      if (!ozet[sId]) ozet[sId] = [];
-                      ozet[sId].push(yanitlar[sId]);
-                    });
-                  }
-                });
-                cOzet[id.toString()] = Object.keys(ozet).map(k => ({ soru_id: k, cevaplar: ozet[k] }));
-              });
-
-              setToplamCevaplar(tCevap);
-              setCevapOzetleri(cOzet);
-            }
-          }
-        } else {
-          setAnketListesi([{
-            id: undefined,
-            baslik: 'Yeni Genel Anket',
-            sorular: [],
-            aciklama: '',
-            isExpanded: true
-          }]);
-        }
+        await fetchPublishedAnketler(userIsAdmin, expectedDbBaslik, tumOlcutler);
 
       } catch (err) {
         console.error(err);
@@ -199,22 +204,35 @@ export default function AnketYonetimiClient() {
     setIsSaving(true);
     try {
       for (const anket of anketListesi) {
-        const upsertAnket: Record<string, any> = {
-          alt_olcut_id: 'genel', // Special ID to indicate it's a general survey mapped via hedef_olcutler
+        // Yeni bir anket olarak veritabanına atılır (ID gönderilmez)
+        const insertAnket: Record<string, any> = {
+          alt_olcut_id: 'genel',
           donem_id: selectedPeriod?.id,
           baslik: anket.baslik,
           sorular: anket.sorular,
           aciklama: anket.aciklama,
-          hedef_olcutler: hedefOlcutler // JSONB array of alt_olcut_id strings
+          hedef_olcutler: hedefOlcutler
         };
-        if (anket.id && !anket.id.startsWith('temp_')) {
-          await supabase.from('anketler').update(upsertAnket).eq('id', anket.id);
-        } else {
-          await supabase.from('anketler').insert(upsertAnket);
-        }
+        await supabase.from('anketler').insert(insertAnket);
       }
-      alert('Anketler başarıyla hedeflenen ölçütlere gönderildi!');
+      
+      // State sıfırlama (Temizlik kuralı)
+      setHedefOlcutler([]);
+      setAnketListesi([{
+        id: `temp_${Math.random().toString(36).substr(2, 9)}`,
+        baslik: '',
+        sorular: [],
+        aciklama: '',
+        isExpanded: true
+      }]);
+
+      alert('Anket Başarıyla Oluşturuldu ve Dağıtıldı');
+
+      // Yeni anketlerin listeye düşmesi için yayınlananları tekrar çekiyoruz
+      // expectedDbBaslik mantığını profil check'den geçirmeden yapabilmek için sayfayı reload yapmak en kolayıdır,
+      // veya yeniden fetch yapabiliriz. 
       window.location.reload();
+
     } catch (error: any) {
       console.error(error);
       alert('Kaydedilirken bir hata oluştu: ' + error.message);
@@ -255,17 +273,23 @@ export default function AnketYonetimiClient() {
     setAnketListesi(prev => prev.map((a, i) => i === idx ? { ...a, [field]: value } : a));
   };
 
-  const deleteAnket = async (idx: number) => {
-    const anket = anketListesi[idx];
-    if (confirm(`"${anket.baslik}" anketini silmek istediğinize emin misiniz?`)) {
-      if (anket.id && !anket.id.startsWith('temp_')) {
-        try {
-          await supabase.from('anketler').delete().eq('id', anket.id);
-        } catch (err) {
-          console.error("Silme hatası:", err);
-        }
+  const deleteAnketFormItem = (idx: number) => {
+    if (anketListesi.length === 1) {
+      alert("En az bir anket formu açık olmalıdır.");
+      return;
+    }
+    setAnketListesi(prev => prev.filter((_, i) => i !== idx));
+  };
+
+  // Yayınlanmış anket silme
+  const deleteYayinlananAnket = async (anketId: string, baslik: string) => {
+    if (confirm(`"${baslik}" anketini kalıcı olarak silmek istediğinize emin misiniz?`)) {
+      try {
+        await supabase.from('anketler').delete().eq('id', anketId);
+        setYayinlananAnketler(prev => prev.filter(a => a.id !== anketId));
+      } catch (err) {
+        console.error("Silme hatası:", err);
       }
-      setAnketListesi(prev => prev.filter((_, i) => i !== idx));
     }
   };
 
@@ -378,13 +402,13 @@ export default function AnketYonetimiClient() {
           className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md shadow-purple-500/30 active:scale-[0.98]"
         >
           <Plus className="w-5 h-5" />
-          Yeni Anket Ekle
+          Yeni Form Ekle
         </button>
       </div>
 
       <div className="space-y-6 mb-8">
         {anketListesi.map((anket, anketIdx) => (
-          <div key={anket.id || `temp_${anketIdx}`} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div key={anket.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {/* Header / Accordion Toggle */}
             <div 
               className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${anket.isExpanded ? 'bg-slate-50 border-b border-slate-200' : 'hover:bg-slate-50'}`}
@@ -394,22 +418,14 @@ export default function AnketYonetimiClient() {
                 <div className={`p-2 rounded-lg ${anket.isExpanded ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-400'}`}>
                   {anket.isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">{anket.baslik}</h3>
+                <h3 className="text-xl font-bold text-slate-800">{anket.baslik || 'İsimsiz Anket Formu'}</h3>
               </div>
               <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
-                {anket.id && !anket.id.startsWith('temp_') && (
-                  <button 
-                    onClick={() => handleCopyLink(anket.id)}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors"
-                  >
-                    <LinkIcon className="w-3.5 h-3.5" /> Link
-                  </button>
-                )}
                 <button 
-                  onClick={() => deleteAnket(anketIdx)}
+                  onClick={() => deleteAnketFormItem(anketIdx)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Sil
+                  <Trash2 className="w-3.5 h-3.5" /> Formu Sil
                 </button>
               </div>
             </div>
@@ -539,7 +555,7 @@ export default function AnketYonetimiClient() {
       </div>
 
       {/* 3. Yayınlanan Anketler ve Canlı Analizler Paneli */}
-      {anketListesi.filter(a => a.id && !a.id.startsWith('temp_')).length > 0 && (
+      {yayinlananAnketler.length > 0 && (
         <div className="mt-12">
           <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-4">
             <div className="bg-purple-100 p-2 rounded-lg"><BarChart2 className="w-6 h-6 text-purple-600" /></div>
@@ -547,7 +563,7 @@ export default function AnketYonetimiClient() {
           </div>
 
           <div className="space-y-8">
-            {anketListesi.filter(a => a.id && !a.id.startsWith('temp_')).map(anket => {
+            {yayinlananAnketler.map(anket => {
               const anketId = anket.id as string;
               const yanitSayisi = toplamCevaplar[anketId] || 0;
               const hedefler = getOlcutKods(anket.hedef_olcutler || []);
@@ -561,6 +577,18 @@ export default function AnketYonetimiClient() {
                         <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-lg border border-purple-200">
                           {yanitSayisi} Yanıt
                         </span>
+                        <button 
+                          onClick={() => handleCopyLink(anketId)}
+                          className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors"
+                        >
+                          <LinkIcon className="w-3.5 h-3.5" /> Linki Kopyala
+                        </button>
+                        <button 
+                          onClick={() => deleteYayinlananAnket(anketId, anket.baslik)}
+                          className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Anketi Kaldır
+                        </button>
                       </div>
                     </div>
                     {hedefler.length > 0 && (

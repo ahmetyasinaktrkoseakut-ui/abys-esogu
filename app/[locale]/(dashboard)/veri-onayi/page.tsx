@@ -89,32 +89,36 @@ export default function VeriOnayiPage() {
         throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla (örn: ${allBasliklar?.[0]?.baslik_adi}) eşleşmedi.`);
       }
 
-      // 3. O başlığa ait alt ölçütleri bul
-      const { data: altOlcutlerData } = await supabase
+      // 3. O başlığa ait alt ölçütleri bul (JS ile filtrele)
+      const { data: allAltOlcutlerData } = await supabase
         .from('alt_olcutler')
-        .select('id, kod, ad, olcut_id')
-        .like('kod', `${anaBaslikData.kod}.%`);
+        .select('*');
 
-      const altOlcutIds = (altOlcutlerData || []).map(ao => ao.id);
+      const filteredAltOlcutler = (allAltOlcutlerData || []).filter(ao => ao.kod?.startsWith(anaBaslikData.kod));
+      const altOlcutIds = filteredAltOlcutler.map(ao => ao.id);
 
       // 4. Bekleyen raporları getir
       // Not: 'onay_durumu' null ise de bekliyor kabul edebiliriz
       const { data: raporlarData, error: raporlarError } = await supabase
         .from('ozdegerlendirme_raporlari')
-        .select(`
-          *,
-          alt_olcutler (
-            kod,
-            ad
-          )
-        `)
+        .select('*')
         .eq('donem_id', selectedPeriod.id)
         .in('alt_olcut_id', altOlcutIds.length > 0 ? altOlcutIds : [0])
         .or('onay_durumu.eq.bekliyor,onay_durumu.is.null')
         .order('olusturulma_tarihi', { ascending: false });
 
       if (raporlarError) throw raporlarError;
-      setReports(raporlarData || []);
+
+      // JS ile birleştir (Şema önbelleği hatasını aşmak için)
+      const raporlarWithOlcut = (raporlarData || []).map(rapor => {
+        const ao = filteredAltOlcutler.find(a => a.id === rapor.alt_olcut_id);
+        return {
+          ...rapor,
+          alt_olcutler: ao ? { kod: ao.kod, ad: ao.ad } : null
+        };
+      });
+
+      setReports(raporlarWithOlcut);
       
     } catch (error: any) {
       console.error("Veri çekme hatası:", error);

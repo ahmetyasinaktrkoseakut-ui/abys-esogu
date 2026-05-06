@@ -88,21 +88,22 @@ export default function BirimAtamalariPage() {
         throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla (örn: ${allBasliklar?.[0]?.baslik_adi}) eşleşmedi.`);
       }
 
-      // O başlığa ait ölçütleri bul (kod ile filtrele)
-      const { data: olcutlerData } = await supabase
+      // O başlığa ait ölçütleri bul (JS ile filtrele)
+      const { data: allOlcutlerData } = await supabase
         .from('olcutler')
-        .select('*')
-        .like('kod', `${anaBaslikData.kod}.%`);
+        .select('*');
 
-      // O başlığa ait alt ölçütleri bul (kod ile filtrele)
-      const { data: altOlcutlerData } = await supabase
+      // O başlığa ait alt ölçütleri bul (JS ile filtrele)
+      const { data: allAltOlcutlerData } = await supabase
         .from('alt_olcutler')
         .select('*')
-        .like('kod', `${anaBaslikData.kod}.%`)
         .order('id', { ascending: true });
 
-      setOlcutler(olcutlerData || []);
-      setAltOlcutler(altOlcutlerData || []);
+      const filteredOlcutler = (allOlcutlerData || []).filter(o => o.kod?.startsWith(anaBaslikData.kod));
+      const filteredAltOlcutler = (allAltOlcutlerData || []).filter(ao => ao.kod?.startsWith(anaBaslikData.kod));
+
+      setOlcutler(filteredOlcutler);
+      setAltOlcutler(filteredAltOlcutler);
 
       // Birim sorumlularını getir
       const { data: profillerData } = await supabase
@@ -113,7 +114,7 @@ export default function BirimAtamalariPage() {
       setHocalar(profillerData || []);
 
       // Bu dönem için tüm atamaları getir (Sadece bu alt ölçütler için)
-      const altOlcutIds = (altOlcutlerData || []).map(ao => ao.id);
+      const altOlcutIds = filteredAltOlcutler.map(ao => ao.id);
       
       const { data: atamalarData } = await supabase
         .from('kullanici_olcut_atamalari')

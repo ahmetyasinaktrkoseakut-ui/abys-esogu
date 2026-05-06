@@ -70,7 +70,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
     }`;
   };
 
-  const showFullMenu = isAdmin || hasAssignment;
+  const showFullMenu = isAdmin || hasAssignment || isCoordinator;
 
   return (
     <>

@@ -340,7 +340,7 @@ export default function BirimAtamalariPage() {
                     <div key={olcut.id} className="border border-slate-200 rounded-xl overflow-hidden mb-6">
                       <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                         <h4 className="font-medium text-slate-800 text-sm">
-                          {olcut.kod} {olcut.ad || olcut.baslik || olcut.isim || olcut.title || 'İsim Bulunamadı'}
+                          {olcut.kod} {olcut.olcut_adi || olcut.ad || olcut.baslik || olcut.isim || olcut.title || 'İsim Bulunamadı'}
                         </h4>
                       </div>
                       <div className="divide-y divide-slate-100">
@@ -372,7 +372,7 @@ export default function BirimAtamalariPage() {
                               </div>
                               <div className="flex-1">
                                 <div className="text-sm font-medium text-slate-700">
-                                  {ao.kod} - {ao.ad || ao.baslik || ao.isim || ao.title || 'İsim Bulunamadı'}
+                                  {ao.kod} - {ao.olcut_adi || ao.ad || ao.baslik || ao.isim || ao.title || 'İsim Bulunamadı'}
                                 </div>
                                 {isAssignedToOther && (
                                   <div className="text-xs text-red-500 mt-1 font-medium bg-red-50 inline-block px-2 py-0.5 rounded">

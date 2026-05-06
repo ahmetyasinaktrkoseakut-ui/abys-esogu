@@ -127,7 +127,7 @@ export default function VeriOnayiPage() {
       const raporlarWithOlcut = (raporlarData || []).map(rapor => {
         // Tam da istenen mantık:
         const bulunanOlcut = tumOlcutler.flatMap((ana: any) => ana.altOlcutler || ana.alt_olcutler || []).find(alt => String(alt.id) === String(rapor.alt_olcut_id) || String(alt.kod) === String(rapor.alt_olcut_id));
-        const olcutAdi = bulunanOlcut ? (bulunanOlcut.ad || bulunanOlcut.baslik || bulunanOlcut.isim || bulunanOlcut.title) : null;
+        const olcutAdi = bulunanOlcut ? (bulunanOlcut.olcut_adi || bulunanOlcut.ad || bulunanOlcut.baslik || bulunanOlcut.isim || bulunanOlcut.title) : null;
         
         return {
           ...rapor,

@@ -65,27 +65,19 @@ export default function VeriOnayiPage() {
       
       setCoordinatorTopic(coordData.baslik);
 
-      // 2. Ana başlığın ID'sini bul (JS tarafında ultra-esnek eşleşme)
+      // 2. Ana başlığın ID'sini bul (Sabit eşleştirme)
       const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, baslik_adi, kod');
       
-      const normalize = (str: string) => 
-        str?.toLowerCase()
-           .replace(/İ/g, 'i')
-           .replace(/I/g, 'ı')
-           .replace(/ğ/g, 'g')
-           .replace(/ü/g, 'u')
-           .replace(/ş/g, 's')
-           .replace(/ö/g, 'o')
-           .replace(/ç/g, 'c')
-           .replace(/\bve\b/g, '')
-           .replace(/[^a-z0-9]/g, '')
-           .trim();
+      const baslikMap: Record<string, string> = {
+        'Kalite Güvencesi': 'KALİTE GÜVENCESİ SİSTEMİ',
+        'Eğitim-Öğretim': 'EĞİTİM VE ÖĞRETİM',
+        'Araştırma ve Geliştirme': 'ARAŞTIRMA VE GELİŞTİRME',
+        'Toplumsal Katkı': 'TOPLUMSAL KATKI',
+        'Yönetim Sistemi': 'YÖNETİM SİSTEMİ'
+      };
 
-      const searchNormalized = normalize(coordData.baslik);
-      const anaBaslikData = allBasliklar?.find(b => {
-        const dbNormalized = normalize(b.baslik_adi);
-        return dbNormalized.includes(searchNormalized) || searchNormalized.includes(dbNormalized);
-      });
+      const expectedDbBaslik = baslikMap[coordData.baslik];
+      const anaBaslikData = allBasliklar?.find(b => b.baslik_adi === expectedDbBaslik);
 
       if (!anaBaslikData) {
         console.log("Eşleşme sağlanamadı. Aranan:", coordData.baslik);
@@ -115,7 +107,8 @@ export default function VeriOnayiPage() {
 
       // JS ile birleştir (Şema önbelleği hatasını aşmak için)
       const raporlarWithOlcut = (raporlarData || []).map(rapor => {
-        const ao = filteredAltOlcutler.find(a => a.id === rapor.alt_olcut_id);
+        // Tüm ölçütler içinde ara (rapor.alt_olcut_id ile eşleştir)
+        const ao = allAltOlcutlerData?.find(a => String(a.id) === String(rapor.alt_olcut_id) || String(a.kod) === String(rapor.alt_olcut_id));
         return {
           ...rapor,
           alt_olcutler: ao ? { kod: ao.kod, ad: ao.ad } : null

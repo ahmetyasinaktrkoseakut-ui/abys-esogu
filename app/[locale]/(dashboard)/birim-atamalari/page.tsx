@@ -60,27 +60,19 @@ export default function BirimAtamalariPage() {
       
       setCoordinatorTopic(coordData.baslik);
 
-      // Ana başlığın ID'sini bul (JS tarafında ultra-esnek eşleşme)
+      // Ana başlığın ID'sini bul (Sabit eşleştirme)
       const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, baslik_adi, kod');
       
-      const normalize = (str: string) => 
-        str?.toLowerCase()
-           .replace(/İ/g, 'i')
-           .replace(/I/g, 'ı')
-           .replace(/ğ/g, 'g')
-           .replace(/ü/g, 'u')
-           .replace(/ş/g, 's')
-           .replace(/ö/g, 'o')
-           .replace(/ç/g, 'c')
-           .replace(/\bve\b/g, '')
-           .replace(/[^a-z0-9]/g, '')
-           .trim();
+      const baslikMap: Record<string, string> = {
+        'Kalite Güvencesi': 'KALİTE GÜVENCESİ SİSTEMİ',
+        'Eğitim-Öğretim': 'EĞİTİM VE ÖĞRETİM',
+        'Araştırma ve Geliştirme': 'ARAŞTIRMA VE GELİŞTİRME',
+        'Toplumsal Katkı': 'TOPLUMSAL KATKI',
+        'Yönetim Sistemi': 'YÖNETİM SİSTEMİ'
+      };
 
-      const searchNormalized = normalize(coordData.baslik);
-      const anaBaslikData = allBasliklar?.find(b => {
-        const dbNormalized = normalize(b.baslik_adi);
-        return dbNormalized.includes(searchNormalized) || searchNormalized.includes(dbNormalized);
-      });
+      const expectedDbBaslik = baslikMap[coordData.baslik];
+      const anaBaslikData = allBasliklar?.find(b => b.baslik_adi === expectedDbBaslik);
 
       if (!anaBaslikData) {
         console.log("Eşleşme sağlanamadı. Aranan:", coordData.baslik);
@@ -204,7 +196,7 @@ export default function BirimAtamalariPage() {
 
   const getFullName = (u: any) => {
     if (!u) return 'Bilinmeyen Kullanıcı';
-    const name = u.ad_soyad || (u.ad && u.soyad ? `${u.ad} ${u.soyad}` : (u.ad || u.name || 'İsimsiz'));
+    const name = u.raw_user_meta_data?.full_name || u.full_name || u.isim || u.ad_soyad || (u.ad && u.soyad ? `${u.ad} ${u.soyad}` : (u.ad || u.name || 'İsimsiz'));
     return `${u.unvan ? u.unvan + ' ' : ''}${name}`;
   };
 

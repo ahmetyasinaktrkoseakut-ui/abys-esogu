@@ -382,21 +382,6 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
           <div className="p-8 prose prose-slate max-w-none text-sm md:text-base">
             <div dangerouslySetInnerHTML={{ __html: yoneticiAnalizi }} />
           </div>
-          <div className="p-8 pt-0 border-t border-purple-100 bg-white">
-            <h4 className="text-md font-bold text-slate-800 mb-3 mt-6 flex items-center gap-2">
-              <Edit3 className="w-5 h-5 text-purple-600" />
-              Birim Değerlendirmesi
-            </h4>
-            <p className="text-xs text-slate-500 mb-4">Yukarıdaki analize istinaden biriminizin değerlendirmesini aşağıya yazınız.</p>
-            <div className="border border-slate-200 rounded-xl">
-              <RichTextEditor 
-                content={birimDegerlendirmesi} 
-                onChange={setBirimDegerlendirmesi} 
-                readOnly={isReadOnly} 
-                minHeight="200px"
-              />
-            </div>
-          </div>
         </div>
       )}
 
@@ -645,28 +630,29 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                   </div>
                 )}
 
-                {/* 4. Bağımsız Değerlendirme Raporu */}
-                <div className="p-8 bg-[#F8FAFC]">
-                  <h3 className="flex items-center gap-2 font-bold text-slate-700 mb-3 text-lg">
-                    <Settings className="w-5 h-5 text-blue-600" />
-                    Değerlendirme Sonucu
-                  </h3>
-                  <p className="text-slate-500 mb-4 text-xs">Sadece bu anketin sonuçlarına dayanarak elde ettiğiniz bulguları buraya yazın.</p>
-                  <div className="bg-white border border-slate-200 rounded-lg">
-                    <RichTextEditor 
-                      content={anket.aciklama} 
-                      onChange={(val) => updateAnketField(anketIdx, 'aciklama', val)} 
-                      readOnly={isSurveyReadOnly} 
-                    />
-                  </div>
-                </div>
-
               </div>
             )}
           </div>
         );
       })}
     </div>
+
+      {/* Kontrol Aşaması Genel Değerlendirmesi */}
+      <div className="mb-8 p-8 bg-white border border-slate-200 rounded-2xl shadow-sm">
+        <h3 className="flex items-center gap-2 font-bold text-slate-800 mb-3 text-xl">
+          <Edit3 className="w-6 h-6 text-blue-600" />
+          Kontrol Aşaması Genel Değerlendirmesi
+        </h3>
+        <p className="text-slate-500 mb-6 text-sm">Yukarıdaki anket sonuçlarına ve izleme verilerine dayanarak elde ettiğiniz bulguları buraya yazın.</p>
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
+          <RichTextEditor 
+            content={birimDegerlendirmesi} 
+            onChange={setBirimDegerlendirmesi} 
+            readOnly={isReadOnly} 
+            minHeight="250px"
+          />
+        </div>
+      </div>
 
       {!isReadOnly && (
         <div className="flex justify-end p-6 bg-white border-t border-slate-200 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] rounded-t-2xl">

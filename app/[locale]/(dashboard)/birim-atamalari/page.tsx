@@ -60,21 +60,31 @@ export default function BirimAtamalariPage() {
       
       setCoordinatorTopic(coordData.baslik);
 
-      // Ana başlığın ID'sini bul (Esnek eşleşme: case-insensitive ve wildcards)
-      const searchTerm = coordData.baslik.trim();
-      const { data: anaBaslikData, error: anaBaslikError } = await supabase
-        .from('ana_basliklar')
-        .select('id, ad')
-        .ilike('ad', `%${searchTerm}%`)
-        .maybeSingle();
+      // Ana başlığın ID'sini bul (JS tarafında ultra-esnek eşleşme)
+      const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, ad');
+      
+      const normalize = (str: string) => 
+        str?.toLowerCase()
+           .replace(/İ/g, 'i')
+           .replace(/I/g, 'ı')
+           .replace(/ğ/g, 'g')
+           .replace(/ü/g, 'u')
+           .replace(/ş/g, 's')
+           .replace(/ö/g, 'o')
+           .replace(/ç/g, 'c')
+           .replace(/[^a-z0-9]/g, '')
+           .trim();
 
-      if (!anaBaslikData || anaBaslikError) {
-        // Hata durumunda mevcut tüm başlıkları logla (string uyuşmazlığını bulmak için)
-        const { data: allBasliklar } = await supabase.from('ana_basliklar').select('ad');
-        console.log("Eşleşme sağlanamadı. Aranan:", searchTerm);
-        console.log("Veritabanındaki Mevcut Başlıklar:", allBasliklar?.map(b => b.ad));
-        
-        throw new Error(`Sorumlu olduğunuz '${searchTerm}' başlığı sistemde tam olarak eşleşmedi. Lütfen admin ile iletişime geçin.`);
+      const searchNormalized = normalize(coordData.baslik);
+      const anaBaslikData = allBasliklar?.find(b => {
+        const dbNormalized = normalize(b.ad);
+        return dbNormalized.includes(searchNormalized) || searchNormalized.includes(dbNormalized);
+      });
+
+      if (!anaBaslikData) {
+        console.log("Eşleşme sağlanamadı. Aranan:", coordData.baslik);
+        console.log("Mevcut Başlıklar:", allBasliklar?.map(b => b.ad));
+        throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla (örn: ${allBasliklar?.[0]?.ad}) eşleşmedi.`);
       }
 
       // O başlığa ait ölçütleri bul

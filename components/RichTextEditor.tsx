@@ -41,6 +41,12 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
     }));
 
     useEffect(() => {
+      if (editor) {
+        editor.setEditable(!readOnly);
+      }
+    }, [readOnly, editor]);
+
+    useEffect(() => {
       if (editor && content !== editor.getHTML()) {
         editor.commands.setContent(content);
       }

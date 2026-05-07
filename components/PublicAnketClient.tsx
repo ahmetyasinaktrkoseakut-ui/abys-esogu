@@ -36,7 +36,14 @@ export default function PublicAnketClient({ params }: PublicAnketClientProps) {
         if (data && data.sorular) {
           const initCevaplar: Record<string, any> = {};
           data.sorular.forEach((s: any) => {
-            initCevaplar[s.id] = s.tip === 'kisa_yanit' ? '' : null;
+            if (s.tip === 'coklu_secim') initCevaplar[s.id] = [];
+            else if (s.tip === 'likert') initCevaplar[s.id] = {};
+            else if (s.tip === 'coklu_metin') {
+              const bMap: Record<string, string> = {};
+              s.birimler?.forEach((b: string) => bMap[b] = '');
+              initCevaplar[s.id] = bMap;
+            }
+            else initCevaplar[s.id] = '';
           });
           setCevaplar(initCevaplar);
         }
@@ -125,64 +132,167 @@ export default function PublicAnketClient({ params }: PublicAnketClientProps) {
         {/* Form İçeriği */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {anket.sorular?.map((soru: any, index: number) => (
-            <div key={soru.id} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200 focus-within:shadow-md focus-within:border-purple-300 transition-all">
-              <h3 className="text-lg font-medium text-slate-800 mb-4">
-                <span className="text-purple-600 mr-2 font-bold">{index + 1}.</span> 
-                {soru.soru} <span className="text-red-500">*</span>
-              </h3>
-              
-              <div className="pl-6">
-                {soru.tip === 'kisa_yanit' && (
-                  <input 
-                    type="text"
-                    required
-                    value={cevaplar[soru.id] || ''}
-                    onChange={(e) => handleCevapChange(soru.id, e.target.value)}
-                    placeholder="Yanıtınız"
-                    className="w-full text-base bg-transparent border-b border-slate-300 focus:border-purple-600 focus:outline-none py-2 transition-colors placeholder:text-slate-400"
-                  />
-                )}
+            <div key={soru.id} className={`bg-white p-8 rounded-2xl shadow-sm border transition-all ${soru.tip === 'bilgi_kutusu' ? 'border-amber-200 bg-amber-50/20' : 'border-slate-200 focus-within:shadow-md focus-within:border-purple-300'}`}>
+              {soru.tip === 'bilgi_kutusu' ? (
+                <div className="prose prose-slate max-w-none">
+                  <h3 className="text-xl font-bold text-slate-900 border-b pb-2 mb-4">{soru.soru}</h3>
+                  <div dangerouslySetInnerHTML={{ __html: soru.aciklama || '' }} />
+                </div>
+              ) : (
+                <>
+                  <h3 className="text-lg font-medium text-slate-800 mb-4">
+                    <span className="text-purple-600 mr-2 font-bold">{index + 1}.</span> 
+                    {soru.soru} {soru.zorunlu && <span className="text-red-500">*</span>}
+                  </h3>
+                  
+                  <div className="pl-0 md:pl-6">
+                    {/* Kısa Yanıt */}
+                    {soru.tip === 'kisa_yanit' && (
+                      <input 
+                        type="text"
+                        required={soru.zorunlu}
+                        value={cevaplar[soru.id] || ''}
+                        onChange={(e) => handleCevapChange(soru.id, e.target.value)}
+                        placeholder="Yanıtınız"
+                        className="w-full text-base bg-transparent border-b border-slate-300 focus:border-purple-600 focus:outline-none py-2 transition-colors placeholder:text-slate-400"
+                      />
+                    )}
 
-                {soru.tip === 'coktan_secmeli' && (
-                  <div className="space-y-3">
-                    {soru.secenekler?.map((secenek: any) => (
-                      <label key={secenek.id} className="flex items-center gap-3 cursor-pointer group">
-                        <input 
-                          type="radio" 
-                          name={`soru_${soru.id}`}
-                          required
-                          value={secenek.id}
-                          checked={cevaplar[soru.id] === secenek.id}
-                          onChange={() => handleCevapChange(soru.id, secenek.id)}
-                          className="w-5 h-5 text-purple-600 bg-slate-100 border-slate-300 focus:ring-purple-500 focus:ring-2"
-                        />
-                        <span className="text-slate-700 group-hover:text-slate-900 transition-colors">{secenek.metin}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
+                    {/* Uzun Yanıt */}
+                    {soru.tip === 'uzun_yanit' && (
+                      <textarea 
+                        required={soru.zorunlu}
+                        rows={4}
+                        value={cevaplar[soru.id] || ''}
+                        onChange={(e) => handleCevapChange(soru.id, e.target.value)}
+                        placeholder="Yanıtınız..."
+                        className="w-full text-base bg-slate-50 border border-slate-200 rounded-xl p-4 focus:border-purple-600 focus:outline-none transition-colors"
+                      />
+                    )}
 
-                {soru.tip === 'puanlama' && (
-                  <div className="flex flex-wrap gap-4 items-center mt-2">
-                    {[1, 2, 3, 4, 5].map(p => (
-                      <label key={p} className="flex flex-col items-center gap-2 cursor-pointer group">
-                        <input 
-                          type="radio"
-                          name={`soru_${soru.id}`}
-                          required
-                          value={p}
-                          checked={cevaplar[soru.id] === p.toString()}
-                          onChange={() => handleCevapChange(soru.id, p.toString())}
-                          className="w-5 h-5 text-purple-600 focus:ring-purple-500"
-                        />
-                        <span className="w-10 h-10 rounded-full border-2 border-slate-200 flex items-center justify-center text-slate-500 font-bold group-hover:border-purple-400 transition-colors">
-                          {p}
-                        </span>
-                      </label>
-                    ))}
+                    {/* Çoktan Seçmeli (Radio) */}
+                    {soru.tip === 'coktan_secmeli' && (
+                      <div className="space-y-3">
+                        {soru.secenekler?.map((secenek: any) => (
+                          <label key={secenek.id} className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
+                            <input 
+                              type="radio" 
+                              name={`soru_${soru.id}`}
+                              required={soru.zorunlu}
+                              value={secenek.id}
+                              checked={cevaplar[soru.id] === secenek.id}
+                              onChange={() => handleCevapChange(soru.id, secenek.id)}
+                              className="w-5 h-5 text-purple-600 bg-slate-100 border-slate-300 focus:ring-purple-500 focus:ring-2"
+                            />
+                            <span className="text-slate-700 group-hover:text-slate-900 transition-colors">{secenek.metin}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Çoklu Seçim (Checkbox) */}
+                    {soru.tip === 'coklu_secim' && (
+                      <div className="space-y-3">
+                        {soru.secenekler?.map((secenek: any) => (
+                          <label key={secenek.id} className="flex items-center gap-3 cursor-pointer group p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-100 transition-all">
+                            <input 
+                              type="checkbox" 
+                              checked={(cevaplar[soru.id] || []).includes(secenek.id)}
+                              onChange={(e) => {
+                                const current = cevaplar[soru.id] || [];
+                                const next = e.target.checked ? [...current, secenek.id] : current.filter((id: string) => id !== secenek.id);
+                                handleCevapChange(soru.id, next);
+                              }}
+                              className="w-5 h-5 text-purple-600 rounded border-slate-300 focus:ring-purple-500"
+                            />
+                            <span className="text-slate-700 group-hover:text-slate-900 transition-colors">{secenek.metin}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Açılır Menü */}
+                    {soru.tip === 'acilir_menu' && (
+                      <select 
+                        required={soru.zorunlu}
+                        value={cevaplar[soru.id] || ''}
+                        onChange={(e) => handleCevapChange(soru.id, e.target.value)}
+                        className="w-full bg-slate-50 border border-slate-200 p-4 rounded-xl text-slate-700 focus:border-purple-600 focus:outline-none transition-colors"
+                      >
+                        <option value="">Lütfen birini seçiniz...</option>
+                        {soru.secenekler?.map((s: any) => <option key={s.id} value={s.id}>{s.metin}</option>)}
+                      </select>
+                    )}
+
+                    {/* Likert Ölçek */}
+                    {soru.tip === 'likert' && (
+                      <div className="overflow-x-auto -mx-4 md:mx-0">
+                        <table className="w-full border-collapse min-w-[600px]">
+                          <thead>
+                            <tr className="bg-slate-50">
+                              <th className="p-4 text-left text-xs font-black text-slate-500 uppercase tracking-widest border-b border-slate-200">Sorular</th>
+                              {Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => (
+                                <th key={i} className="p-4 text-center text-xs font-black text-slate-500 uppercase border-b border-slate-200">
+                                  {i + 1}
+                                </th>
+                              ))}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {/* Likert'te her satır ayrı bir soru olabilir ama şu anki şemada 'secenekler' satırlar için kullanılabilir */}
+                            {(soru.secenekler && soru.secenekler.length > 0 ? soru.secenekler : [{id: 'row1', metin: 'Değerlendirme'}]).map((satir: any) => (
+                              <tr key={satir.id} className="hover:bg-purple-50/30 transition-colors border-b border-slate-100 last:border-0">
+                                <td className="p-4 text-sm font-medium text-slate-700">{satir.metin}</td>
+                                {Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => {
+                                  const val = (i + 1).toString();
+                                  const currentVal = (cevaplar[soru.id] || {})[satir.id];
+                                  return (
+                                    <td key={i} className="p-4 text-center">
+                                      <input 
+                                        type="radio"
+                                        required={soru.zorunlu}
+                                        name={`likert_${soru.id}_${satir.id}`}
+                                        checked={currentVal === val}
+                                        onChange={() => {
+                                          const next = { ...(cevaplar[soru.id] || {}), [satir.id]: val };
+                                          handleCevapChange(soru.id, next);
+                                        }}
+                                        className="w-5 h-5 text-purple-600 focus:ring-purple-500"
+                                      />
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {/* Çoklu Metin */}
+                    {soru.tip === 'coklu_metin' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {soru.birimler?.map((birim: string) => (
+                          <div key={birim} className="space-y-2">
+                            <label className="text-xs font-black text-slate-500 uppercase tracking-wider">{birim}</label>
+                            <textarea 
+                              required={soru.zorunlu}
+                              rows={3}
+                              value={(cevaplar[soru.id] || {})[birim] || ''}
+                              onChange={(e) => {
+                                const next = { ...(cevaplar[soru.id] || {}), [birim]: e.target.value };
+                                handleCevapChange(soru.id, next);
+                              }}
+                              className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl focus:border-purple-600 focus:outline-none transition-colors"
+                              placeholder="Detaylı yanıtınız..."
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
           ))}
 

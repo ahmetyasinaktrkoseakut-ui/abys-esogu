@@ -6,10 +6,38 @@ import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, Chevron
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useLocale } from 'next-intl';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from 'recharts';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+  useSortable
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import RichTextEditor from '@/components/RichTextEditor';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import PublicAnketClient from '@/components/PublicAnketClient';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#FF6666'];
 
-type SoruTipi = 'kisa_yanit' | 'coktan_secmeli' | 'puanlama';
+type SoruTipi = 
+  | 'kisa_yanit' 
+  | 'uzun_yanit' 
+  | 'coktan_secmeli' 
+  | 'coklu_secim' 
+  | 'acilir_menu' 
+  | 'likert' 
+  | 'coklu_metin' 
+  | 'bilgi_kutusu';
 
 interface Secenek {
   id: string;
@@ -19,8 +47,12 @@ interface Secenek {
 interface Soru {
   id: string;
   tip: SoruTipi;
-  soru: string;
+  soru: string; // Soru metni veya Bilgi Kutusu başlığı
+  aciklama?: string; // Detaylı açıklama veya RichText içerik
   secenekler?: Secenek[];
+  likert_olcek?: number; // 3, 5, 7
+  birimler?: string[]; // Çoklu metin alanları için birim adları
+  zorunlu?: boolean;
 }
 
 interface Anket {
@@ -35,6 +67,45 @@ interface Anket {
 interface AnketCevapOzeti {
   soru_id: string;
   cevaplar: any[];
+}
+
+function SortableSoru({ id, children }: { id: string; children: React.ReactNode }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="relative group">
+      <div 
+        {...attributes} 
+        {...listeners} 
+        className="absolute left-[-30px] top-1/2 -translate-y-1/2 p-2 cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity"
+        title="Sürükle"
+      >
+        <svg width="12" height="18" viewBox="0 0 12 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="2" cy="2" r="2" fill="currentColor"/>
+          <circle cx="2" cy="9" r="2" fill="currentColor"/>
+          <circle cx="2" cy="16" r="2" fill="currentColor"/>
+          <circle cx="10" cy="2" r="2" fill="currentColor"/>
+          <circle cx="10" cy="9" r="2" fill="currentColor"/>
+          <circle cx="10" cy="16" r="2" fill="currentColor"/>
+        </svg>
+      </div>
+      {children}
+    </div>
+  );
 }
 
 export default function AnketYonetimiClient() {
@@ -63,6 +134,28 @@ export default function AnketYonetimiClient() {
   // Analiz verileri
   const [cevapOzetleri, setCevapOzetleri] = useState<Record<string, AnketCevapOzeti[]>>({});
   const [toplamCevaplar, setToplamCevaplar] = useState<Record<string, number>>({});
+  const [previewAnket, setPreviewAnket] = useState<Anket | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (anketIdx: number, event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      setAnketListesi(prev => prev.map((a, i) => {
+        if (i === anketIdx) {
+          const oldIndex = a.sorular.findIndex(s => s.id === active.id);
+          const newIndex = a.sorular.findIndex(s => s.id === over?.id);
+          return { ...a, sorular: arrayMove(a.sorular, oldIndex, newIndex) };
+        }
+        return a;
+      }));
+    }
+  };
 
   const fetchPublishedAnketler = async (userIsAdmin: boolean, expectedDbBaslik: string | null, tumOlcutlerData: any[]) => {
     if (!selectedPeriod) return;
@@ -298,8 +391,14 @@ export default function AnketYonetimiClient() {
     const newSoru: Soru = {
       id: Math.random().toString(36).substr(2, 9),
       tip,
-      soru: '',
-      ...(tip === 'coktan_secmeli' ? { secenekler: [{ id: Math.random().toString(36).substr(2, 9), metin: 'Seçenek 1' }] } : {})
+      soru: tip === 'bilgi_kutusu' ? 'Bilgi Notu Başlığı' : '',
+      aciklama: '',
+      zorunlu: true,
+      ...(tip === 'coktan_secmeli' || tip === 'coklu_secim' || tip === 'acilir_menu' 
+        ? { secenekler: [{ id: Math.random().toString(36).substr(2, 9), metin: 'Seçenek 1' }] } 
+        : {}),
+      ...(tip === 'likert' ? { likert_olcek: 5 } : {}),
+      ...(tip === 'coklu_metin' ? { birimler: ['Birim 1', 'Birim 2'] } : {})
     };
     updateAnketField(anketIdx, 'sorular', [...anket.sorular, newSoru]);
   };
@@ -446,97 +545,215 @@ export default function AnketYonetimiClient() {
                 </div>
 
                 {/* 2. Soru Oluşturucu */}
-                <div className="p-8 bg-[#FAFAFA]">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="flex items-center gap-2 font-bold text-slate-700 text-lg">
-                      <Edit3 className="w-5 h-5 text-purple-600" /> Soru Formu
-                    </h3>
-                    <div className="relative group">
-                      <button className="flex items-center gap-2 bg-purple-100 hover:bg-purple-200 text-purple-700 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors">
-                        <Plus className="w-4 h-4" /> Yeni Soru
-                      </button>
-                      <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10 flex flex-col p-2">
-                        <button onClick={() => handleAddSoru(anketIdx, 'coktan_secmeli')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">Çoktan Seçmeli</button>
-                        <button onClick={() => handleAddSoru(anketIdx, 'kisa_yanit')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">Kısa Yanıt</button>
-                        <button onClick={() => handleAddSoru(anketIdx, 'puanlama')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">1-5 Puanlama</button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {anket.sorular.length === 0 ? (
-                    <div className="text-center py-8 bg-white rounded-xl border border-dashed border-slate-300">
-                      <p className="text-slate-400 font-medium text-sm">Bu ankette henüz soru yok.</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {anket.sorular.map((soru, sIdx) => (
-                        <div key={soru.id} className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm relative group hover:shadow-md transition-shadow">
-                          <button onClick={() => handleRemoveSoru(anketIdx, soru.id)} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Trash2 className="w-4 h-4" />
+                  <div className="p-8 bg-[#FAFAFA]">
+                    <div className="flex items-center justify-between mb-6">
+                      <h3 className="flex items-center gap-2 font-bold text-slate-700 text-lg">
+                        <Edit3 className="w-5 h-5 text-purple-600" /> Soru Formu
+                      </h3>
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => setPreviewAnket(anket)}
+                          className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+                        >
+                          Önizleme
+                        </button>
+                        <div className="relative group">
+                          <button className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors">
+                            <Plus className="w-4 h-4" /> Yeni Öğe Ekle
                           </button>
-                          <div className="mb-4 pr-8">
-                            <label className="text-[10px] font-bold text-purple-600 uppercase tracking-wider mb-1 block">
-                              {sIdx + 1}. {soru.tip === 'coktan_secmeli' ? 'Çoktan Seçmeli' : soru.tip === 'kisa_yanit' ? 'Kısa Yanıt' : '1-5 Puanlama'}
-                            </label>
-                            <input 
-                              type="text" 
-                              value={soru.soru}
-                              onChange={(e) => updateSoru(anketIdx, soru.id, { soru: e.target.value })}
-                              placeholder="Sorunuzu buraya yazın..."
-                              className="w-full text-base font-medium text-slate-800 bg-slate-50 p-2.5 rounded-lg border border-slate-200 focus:border-purple-500 focus:outline-none transition-colors"
-                            />
-                          </div>
-                          
-                          <div className="pl-2">
-                            {soru.tip === 'kisa_yanit' && (
-                              <div className="border-b border-slate-300 border-dashed pb-2 w-1/2 text-slate-400 text-sm">Kısa yanıt metni...</div>
-                            )}
-                            {soru.tip === 'puanlama' && (
-                              <div className="flex gap-3 items-center">
-                                {[1, 2, 3, 4, 5].map(p => (
-                                  <div key={p} className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-400 font-bold text-xs">{p}</div>
-                                ))}
-                              </div>
-                            )}
-                            {soru.tip === 'coktan_secmeli' && (
-                              <div className="space-y-2">
-                                {soru.secenekler?.map((secenek, secIdx) => (
-                                  <div key={secenek.id} className="flex items-center gap-2">
-                                    <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-300"></div>
-                                    <input 
-                                      type="text"
-                                      value={secenek.metin}
-                                      onChange={(e) => {
-                                        const newSecenekler = soru.secenekler?.map(sec => sec.id === secenek.id ? { ...sec, metin: e.target.value } : sec);
-                                        updateSoru(anketIdx, soru.id, { secenekler: newSecenekler });
-                                      }}
-                                      className="flex-1 text-sm bg-transparent border-b border-slate-200 focus:border-purple-500 focus:outline-none py-1"
-                                      placeholder={`Seçenek ${secIdx + 1}`}
-                                    />
-                                    {soru.secenekler && soru.secenekler.length > 1 && (
-                                      <button onClick={() => {
-                                        updateSoru(anketIdx, soru.id, { secenekler: soru.secenekler?.filter(sec => sec.id !== secenek.id) });
-                                      }} className="text-slate-400 hover:text-red-500"><Trash2 className="w-3.5 h-3.5" /></button>
-                                    )}
-                                  </div>
-                                ))}
-                                <button 
-                                  onClick={() => {
-                                    const newSecenekler = [...(soru.secenekler || []), { id: Math.random().toString(36).substr(2, 9), metin: `Yeni Seçenek` }];
-                                    updateSoru(anketIdx, soru.id, { secenekler: newSecenekler });
-                                  }}
-                                  className="text-xs font-semibold text-purple-600 hover:text-purple-700 mt-2 flex items-center gap-1"
-                                >
-                                  <Plus className="w-3 h-3" /> Seçenek Ekle
-                                </button>
-                              </div>
-                            )}
+                          <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 flex flex-col p-2">
+                            <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase">Standart Sorular</div>
+                            <button onClick={() => handleAddSoru(anketIdx, 'coktan_secmeli')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔘 Çoktan Seçmeli (Tekil)</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'coklu_secim')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">☑️ Çoklu Seçim (Çoklu)</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'acilir_menu')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔽 Açılır Menü (Dropdown)</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'kisa_yanit')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📝 Kısa Yanıt</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'uzun_yanit')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📄 Uzun Yanıt</button>
+                            
+                            <div className="px-3 py-1 mt-2 text-[10px] font-bold text-slate-400 uppercase border-t pt-2">Gelişmiş Yapılar</div>
+                            <button onClick={() => handleAddSoru(anketIdx, 'likert')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📊 Likert Ölçek (Tablo)</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'coklu_metin')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔢 Çoklu Birim Metin Girişi</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'bilgi_kutusu')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">ℹ️ Bilgi / Açıklama Kutusu</button>
                           </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  )}
-                </div>
+
+                    <DndContext 
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={(e) => handleDragEnd(anketIdx, e)}
+                    >
+                      <SortableContext 
+                        items={anket.sorular.map(s => s.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className="space-y-6">
+                          {anket.sorular.map((soru, sIdx) => (
+                            <SortableSoru key={soru.id} id={soru.id}>
+                              <div className={`bg-white p-6 rounded-2xl border-2 shadow-sm relative group/soru transition-all ${soru.tip === 'bilgi_kutusu' ? 'border-amber-100 bg-amber-50/30' : 'border-slate-100'}`}>
+                                <div className="flex items-start justify-between mb-4">
+                                  <div className="flex items-center gap-3">
+                                    <span className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-sm">
+                                      {sIdx + 1}
+                                    </span>
+                                    <div className="flex flex-col">
+                                      <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">
+                                        {soru.tip.replace('_', ' ')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    {soru.tip !== 'bilgi_kutusu' && (
+                                      <label className="flex items-center gap-1.5 cursor-pointer mr-4">
+                                        <input 
+                                          type="checkbox" 
+                                          checked={soru.zorunlu}
+                                          onChange={(e) => updateSoru(anketIdx, soru.id, { zorunlu: e.target.checked })}
+                                          className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500"
+                                        />
+                                        <span className="text-xs font-bold text-slate-500 uppercase">Zorunlu</span>
+                                      </label>
+                                    )}
+                                    <button onClick={() => handleRemoveSoru(anketIdx, soru.id)} className="text-slate-300 hover:text-red-500 transition-colors p-1">
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                  {/* Soru Başlığı / Bilgi Kutusu Başlığı */}
+                                  <textarea 
+                                    rows={1}
+                                    value={soru.soru}
+                                    onChange={(e) => {
+                                      e.target.style.height = 'auto';
+                                      e.target.style.height = e.target.scrollHeight + 'px';
+                                      updateSoru(anketIdx, soru.id, { soru: e.target.value });
+                                    }}
+                                    placeholder={soru.tip === 'bilgi_kutusu' ? "Bölüm Başlığı..." : "Sorunuzu buraya yazın..."}
+                                    className="w-full text-lg font-bold text-slate-800 bg-transparent border-b-2 border-slate-100 focus:border-purple-500 focus:outline-none transition-colors resize-none overflow-hidden pb-1"
+                                    onFocus={(e) => {
+                                      e.target.style.height = 'auto';
+                                      e.target.style.height = e.target.scrollHeight + 'px';
+                                    }}
+                                  />
+
+                                  {/* Bilgi Kutusu İçeriği (RichText) */}
+                                  {soru.tip === 'bilgi_kutusu' && (
+                                    <div className="bg-white border rounded-xl overflow-hidden shadow-inner">
+                                      <RichTextEditor 
+                                        content={soru.aciklama || ''}
+                                        onChange={(val) => updateSoru(anketIdx, soru.id, { aciklama: val })}
+                                        minHeight="120px"
+                                      />
+                                    </div>
+                                  )}
+
+                                  {/* Likert Seçenekleri */}
+                                  {soru.tip === 'likert' && (
+                                    <div className="flex items-center gap-4 bg-purple-50 p-3 rounded-xl border border-purple-100">
+                                      <span className="text-xs font-bold text-purple-700 uppercase">Ölçek Tipi:</span>
+                                      <div className="flex gap-2">
+                                        {[3, 5, 7].map(v => (
+                                          <button 
+                                            key={v}
+                                            onClick={() => updateSoru(anketIdx, soru.id, { likert_olcek: v })}
+                                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${soru.likert_olcek === v ? 'bg-purple-600 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:border-purple-300'}`}
+                                          >
+                                            {v}'li Likert
+                                          </button>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Çoklu Metin Birimleri */}
+                                  {soru.tip === 'coklu_metin' && (
+                                    <div className="space-y-3">
+                                      <label className="text-[10px] font-bold text-slate-400 uppercase">Birimler / Kategoriler</label>
+                                      <div className="flex flex-wrap gap-2">
+                                        {soru.birimler?.map((birim, bIdx) => (
+                                          <div key={bIdx} className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200">
+                                            <input 
+                                              type="text"
+                                              value={birim}
+                                              onChange={(e) => {
+                                                const newBirimler = [...(soru.birimler || [])];
+                                                newBirimler[bIdx] = e.target.value;
+                                                updateSoru(anketIdx, soru.id, { birimler: newBirimler });
+                                              }}
+                                              className="bg-transparent text-xs font-bold text-slate-700 focus:outline-none w-24"
+                                            />
+                                            <button onClick={() => {
+                                              updateSoru(anketIdx, soru.id, { birimler: soru.birimler?.filter((_, i) => i !== bIdx) });
+                                            }} className="text-slate-400 hover:text-red-500"><Trash2 className="w-3 h-3" /></button>
+                                          </div>
+                                        ))}
+                                        <button 
+                                          onClick={() => updateSoru(anketIdx, soru.id, { birimler: [...(soru.birimler || []), `Birim ${soru.birimler?.length || 0 + 1}`] })}
+                                          className="px-3 py-1.5 bg-white border border-dashed border-slate-300 text-slate-400 rounded-lg text-xs font-bold hover:border-purple-300 hover:text-purple-600 transition-all"
+                                        >
+                                          + Birim Ekle
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Standart Seçenekler (Radio, Checkbox, Dropdown) */}
+                                  {(soru.tip === 'coktan_secmeli' || soru.tip === 'coklu_secim' || soru.tip === 'acilir_menu') && (
+                                    <div className="space-y-3 pl-2">
+                                      {soru.secenekler?.map((secenek, secIdx) => (
+                                        <div key={secenek.id} className="flex items-center gap-3 group/opt">
+                                          <div className={`w-4 h-4 border-2 border-slate-200 ${soru.tip === 'coklu_secim' ? 'rounded' : 'rounded-full'}`}></div>
+                                          <textarea 
+                                            rows={1}
+                                            value={secenek.metin}
+                                            onChange={(e) => {
+                                              e.target.style.height = 'auto';
+                                              e.target.style.height = e.target.scrollHeight + 'px';
+                                              const newSecenekler = soru.secenekler?.map(sec => sec.id === secenek.id ? { ...sec, metin: e.target.value } : sec);
+                                              updateSoru(anketIdx, soru.id, { secenekler: newSecenekler });
+                                            }}
+                                            onFocus={(e) => {
+                                              e.target.style.height = 'auto';
+                                              e.target.style.height = e.target.scrollHeight + 'px';
+                                            }}
+                                            className="flex-1 text-sm bg-transparent border-b border-slate-100 focus:border-purple-400 focus:outline-none py-1 transition-colors resize-none overflow-hidden"
+                                            placeholder={`Seçenek ${secIdx + 1}`}
+                                          />
+                                          {soru.secenekler && soru.secenekler.length > 1 && (
+                                            <button onClick={() => {
+                                              updateSoru(anketIdx, soru.id, { secenekler: soru.secenekler?.filter(sec => sec.id !== secenek.id) });
+                                            }} className="text-slate-200 group-hover/opt:text-red-500 transition-colors"><Trash2 className="w-3.5 h-3.5" /></button>
+                                          )}
+                                        </div>
+                                      ))}
+                                      <button 
+                                        onClick={() => {
+                                          const newSecenekler = [...(soru.secenekler || []), { id: Math.random().toString(36).substr(2, 9), metin: `` }];
+                                          updateSoru(anketIdx, soru.id, { secenekler: newSecenekler });
+                                        }}
+                                        className="text-[10px] font-black text-purple-600 hover:text-purple-700 mt-2 flex items-center gap-1.5 uppercase tracking-tighter"
+                                      >
+                                        <Plus className="w-3 h-3" /> Seçenek Ekle
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {/* Kısa/Uzun Yanıt Placeholder */}
+                                  {(soru.tip === 'kisa_yanit' || soru.tip === 'uzun_yanit') && (
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200 text-slate-400 text-xs italic">
+                                      {soru.tip === 'kisa_yanit' ? 'Tek satırlık metin girişi...' : 'Çok satırlı geniş metin girişi...'}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            </SortableSoru>
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </div>
               </div>
             )}
           </div>
@@ -616,23 +833,24 @@ export default function AnketYonetimiClient() {
                           const soruOzetleri = cevapOzetleri[anketId]?.find(co => co.soru_id === soru.id)?.cevaplar || [];
                           let chartData: any[] = [];
                           
-                          if (soru.tip === 'coktan_secmeli') {
+                          if (soru.tip === 'coktan_secmeli' || soru.tip === 'coklu_secim' || soru.tip === 'acilir_menu') {
                             const frequency: Record<string, number> = {};
                             soruOzetleri.forEach(c => {
-                              if (Array.isArray(c)) c.forEach(item => frequency[item] = (frequency[item] || 0) + 1);
-                              else frequency[c] = (frequency[c] || 0) + 1;
+                              if (Array.isArray(c)) {
+                                c.forEach(item => {
+                                  if (item) frequency[item] = (frequency[item] || 0) + 1;
+                                });
+                              } else if (c) {
+                                frequency[c] = (frequency[c] || 0) + 1;
+                              }
                             });
                             chartData = (soru.secenekler || []).map(sec => ({
                               name: sec.metin,
                               deger: frequency[sec.id] || 0
                             }));
-                          } else if (soru.tip === 'puanlama') {
-                            const frequency: Record<number, number> = {1:0, 2:0, 3:0, 4:0, 5:0};
-                            soruOzetleri.forEach(c => {
-                              const v = parseInt(c);
-                              if (!isNaN(v) && v >= 1 && v <= 5) frequency[v] += 1;
-                            });
-                            chartData = [1,2,3,4,5].map(v => ({ name: `${v} Puan`, deger: frequency[v] }));
+                          } else if (soru.tip === 'likert') {
+                            // Likert tablo olduğu için her satırın ortalamasını gösterebiliriz veya basit bir özet
+                            chartData = []; // Likert için detaylı tablo görünümü gerekebilir, şimdilik boş
                           }
 
                           return (
@@ -669,6 +887,113 @@ export default function AnketYonetimiClient() {
         </div>
       )}
 
+      {/* Preview Modal */}
+      <Dialog open={!!previewAnket} onOpenChange={() => setPreviewAnket(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto p-0 border-none bg-transparent shadow-none">
+          <div className="bg-[#F0F2F5] rounded-2xl p-4 sm:p-8 relative">
+            <div className="sticky top-0 z-50 mb-4 flex justify-between items-center bg-white/80 backdrop-blur-md p-4 rounded-xl shadow-sm border border-slate-200">
+              <span className="text-sm font-bold text-slate-500 uppercase tracking-widest">Önizleme Modu</span>
+              <button 
+                onClick={() => setPreviewAnket(null)}
+                className="bg-slate-800 text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-slate-900 transition-colors"
+              >
+                Önizlemeyi Kapat
+              </button>
+            </div>
+            {previewAnket && (
+              <div className="pointer-events-none opacity-90 select-none">
+                <div className="max-w-3xl mx-auto">
+                  <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-6 border-t-8 border-t-purple-600 p-8">
+                    <h1 className="text-3xl font-bold text-slate-900 mb-3">{previewAnket.baslik || 'İsimsiz Anket'}</h1>
+                    <p className="text-slate-600">Bu bir önizleme modudur. Yanıtlar kaydedilmez.</p>
+                  </div>
+                  <div className="space-y-6">
+                    {previewAnket.sorular.map((soru, index) => (
+                      <div key={soru.id} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                        {soru.tip === 'bilgi_kutusu' ? (
+                          <div className="prose prose-slate max-w-none">
+                            <h3 className="text-xl font-bold text-slate-900 border-b pb-2 mb-4">{soru.soru}</h3>
+                            <div dangerouslySetInnerHTML={{ __html: soru.aciklama || '' }} />
+                          </div>
+                        ) : (
+                          <>
+                            <h3 className="text-lg font-medium text-slate-800 mb-4">
+                              <span className="text-purple-600 mr-2 font-bold">{index + 1}.</span> 
+                              {soru.soru} {soru.zorunlu && <span className="text-red-500">*</span>}
+                            </h3>
+                            <div className="pl-6 space-y-4">
+                              {(soru.tip === 'kisa_yanit' || soru.tip === 'uzun_yanit') && (
+                                <textarea 
+                                  rows={soru.tip === 'uzun_yanit' ? 4 : 1}
+                                  placeholder="Yanıtınız..."
+                                  readOnly
+                                  className="w-full text-base bg-transparent border-b border-slate-300 focus:outline-none py-2 transition-colors resize-none"
+                                />
+                              )}
+                              {(soru.tip === 'coktan_secmeli' || soru.tip === 'coklu_secim') && (
+                                <div className="space-y-3">
+                                  {soru.secenekler?.map((secenek) => (
+                                    <label key={secenek.id} className="flex items-center gap-3">
+                                      <div className={`w-5 h-5 border-2 border-slate-300 ${soru.tip === 'coklu_secim' ? 'rounded' : 'rounded-full'}`}></div>
+                                      <span className="text-slate-700">{secenek.metin}</span>
+                                    </label>
+                                  ))}
+                                </div>
+                              )}
+                              {soru.tip === 'acilir_menu' && (
+                                <div className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl text-slate-700 flex justify-between items-center">
+                                  <span>Lütfen seçiniz...</span>
+                                  <ChevronDown className="w-4 h-4 text-slate-400" />
+                                </div>
+                              )}
+                              {soru.tip === 'likert' && (
+                                <div className="overflow-x-auto">
+                                  <table className="w-full border-collapse">
+                                    <thead>
+                                      <tr>
+                                        <th className="p-2"></th>
+                                        {Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => (
+                                          <th key={i} className="p-2 text-[10px] font-black text-slate-400 uppercase">{i + 1}</th>
+                                        ))}
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {[1, 2].map(row => (
+                                        <tr key={row} className="border-t border-slate-50">
+                                          <td className="p-3 text-sm text-slate-600 font-medium whitespace-nowrap">Örnek Satır {row}</td>
+                                          {Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => (
+                                            <td key={i} className="p-2 text-center">
+                                              <div className="w-5 h-5 rounded-full border-2 border-slate-200 mx-auto"></div>
+                                            </td>
+                                          ))}
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              )}
+                              {soru.tip === 'coklu_metin' && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  {soru.birimler?.map((birim, i) => (
+                                    <div key={i} className="space-y-2">
+                                      <label className="text-xs font-bold text-slate-500 uppercase">{birim}</label>
+                                      <textarea rows={3} readOnly className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl resize-none" />
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

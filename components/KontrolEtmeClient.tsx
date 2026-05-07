@@ -808,17 +808,24 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
 
                           // Grafik Data Hazırlığı
                           const dataMap: Record<string, number> = {};
-                          if (soru.tip === 'coktan_secmeli' && soru.secenekler) {
-                            soru.secenekler.forEach(s => dataMap[s.id] = 0);
-                            if (ozet) ozet.cevaplar.forEach(c => { if (dataMap[c] !== undefined) dataMap[c]++; });
-                          } else if (soru.tip === 'puanlama') {
-                            [1, 2, 3, 4, 5].forEach(p => dataMap[p.toString()] = 0);
-                            if (ozet) ozet.cevaplar.forEach(c => { if (dataMap[c.toString()] !== undefined) dataMap[c.toString()]++; });
+                          if (soru.tip === 'coktan_secmeli' || soru.tip === 'coklu_secim' || soru.tip === 'acilir_menu') {
+                            (soru.secenekler || []).forEach(s => dataMap[s.id] = 0);
+                            if (ozet) {
+                              ozet.cevaplar.forEach(c => {
+                                if (Array.isArray(c)) {
+                                  c.forEach(item => { if (dataMap[item] !== undefined) dataMap[item]++; });
+                                } else if (c && dataMap[c] !== undefined) {
+                                  dataMap[c]++;
+                                }
+                              });
+                            }
+                          } else if (soru.tip === 'likert') {
+                            // Likert tablo verisi için şimdilik boş chart veya ortalama mantığı eklenebilir
                           }
 
                           const chartData = Object.keys(dataMap).map(k => {
                             let name = k;
-                            if (soru.tip === 'coktan_secmeli') {
+                            if (soru.tip === 'coktan_secmeli' || soru.tip === 'coklu_secim' || soru.tip === 'acilir_menu') {
                               name = soru.secenekler?.find(s => s.id === k)?.metin || k;
                             }
                             return { name, deger: dataMap[k] };

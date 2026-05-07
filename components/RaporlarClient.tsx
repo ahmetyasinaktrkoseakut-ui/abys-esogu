@@ -106,8 +106,85 @@ export default function RaporlarClient() {
         pukoVerileri: pukoVerileri || [],
         ozdegerlendirmeVerileri: ozdegerlendirmeVerileri || []
       });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleKaliteRaporuOlustur = async () => {
+    setIsGenerating(true);
+    try {
+      const { data: altOlcutler } = await supabase
+        .from('alt_olcutler')
+        .select('*')
+        .not('kalite_el_kitabi', 'is', null)
+        .order('kod', { ascending: true });
+
+      if (!altOlcutler || altOlcutler.length === 0) {
+        alert("Henüz Kalite El Kitabı verisi girilmiş ölçüt bulunamadı.");
+        return;
+      }
+
+      let htmlContent = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset='utf-8'><title>Kurumsal Kalite El Kitabı</title>
+        <style>
+          body { font-family: 'Calibri', 'Arial', sans-serif; padding: 20px; }
+          h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 10px; color: #1e40af; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 40px; page-break-inside: avoid; }
+          th { background-color: #2563eb; color: white; padding: 12px; text-align: left; font-size: 16px; border: 1px solid #1e40af; }
+          td.label { background-color: #2563eb; color: white; width: 30%; padding: 10px; font-weight: bold; border: 1px solid #1e40af; font-size: 12px; }
+          td.data { background-color: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; font-size: 12px; }
+          .footer { text-align: center; font-size: 11px; color: #64748b; margin-top: 50px; }
+        </style>
+        </head>
+        <body>
+          <h1>KURUMSAL KALİTE EL KİTABI</h1>
+          <p style='text-align:center; color: #64748b; margin-bottom: 30px;'>Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</p>
+      `;
+
+      altOlcutler.forEach((olcut, index) => {
+        const data = olcut.kalite_el_kitabi;
+        if (!data) return;
+
+        htmlContent += `
+          <table>
+            <thead>
+              <tr>
+                <th colspan="2">Tablo ${index + 1}. ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', 'tr')}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td class="label">Sorumlu Birim</td><td class="data">${data.sorumlu_birim || '-'}</td></tr>
+              <tr><td class="label">İlk Planlama Tarihi</td><td class="data">${data.ilk_planlama_tarihi || '-'}</td></tr>
+              <tr><td class="label">İç Paydaşlar</td><td class="data">${data.ic_paydaslar || '-'}</td></tr>
+              <tr><td class="label">Dış Paydaşlar</td><td class="data">${data.dis_paydaslar || '-'}</td></tr>
+              <tr><td class="label">Uluslararası Paydaşlar</td><td class="data">${data.uluslararasi_paydaslar || '-'}</td></tr>
+              <tr><td class="label">Uygulama Alanları</td><td class="data">${data.uygulama_alanlari || '-'}</td></tr>
+              <tr><td class="label">İzleme Mekanizmaları</td><td class="data">${data.izleme_mekanizmalari || '-'}</td></tr>
+              <tr><td class="label">Performans Göstergeleri</td><td class="data">${data.performans_gostergeleri || '-'}</td></tr>
+              <tr><td class="label">Değerlendirme ve İyileştirme Tarihi</td><td class="data">${data.degerlendirme_iyilestirme_tarihi || '-'}</td></tr>
+              <tr><td class="label">Alt Ölçütün Bilgi Yönetim Sistemindeki Yeri</td><td class="data">${data.bgs_yeri || '-'}</td></tr>
+            </tbody>
+          </table>
+        `;
+      });
+
+      htmlContent += `
+          <div class='footer'>Akreditasyon Bilgi Yönetim Sistemi tarafından otomatik oluşturulmuştur.</div>
+        </body>
+        </html>
+      `;
+
+      const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'Kurumsal_Kalite_El_Kitabi.doc';
+      link.click();
+      URL.revokeObjectURL(url);
     } catch (e: any) {
-      alert(`${t('error_generating')}: ${e.message}`);
+      alert(`Rapor oluşturma hatası: ${e.message}`);
     } finally {
       setIsGenerating(false);
     }
@@ -313,6 +390,13 @@ export default function RaporlarClient() {
           <p className="text-slate-500 mt-2">{t('description')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
+          <button 
+            onClick={handleKaliteRaporuOlustur}
+            disabled={isGenerating}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md disabled:opacity-50"
+          >
+            <BookOpen className="w-5 h-5" /> Kalite El Kitabı Raporu Al
+          </button>
           {raporData && (
             <button 
               onClick={exportToWord}

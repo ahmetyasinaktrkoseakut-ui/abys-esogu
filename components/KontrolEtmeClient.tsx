@@ -491,10 +491,10 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
           const isSurveyReadOnly = isReadOnly || isManagementSurvey;
 
           return (
-            <div key={anket.id || `temp_${anketIdx}`} className={`bg-white rounded-2xl shadow-sm border ${isManagementSurvey ? 'border-purple-300 shadow-purple-100' : 'border-slate-200'} overflow-hidden`}>
+            <div key={anket.id || `temp_${anketIdx}`} className={`bg-white rounded-2xl shadow-sm border ${isManagementSurvey ? 'border-purple-300 shadow-purple-100' : 'border-slate-200'}`}>
               {/* Header / Accordion Toggle */}
               <div 
-                className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${anket.isExpanded ? (isManagementSurvey ? 'bg-purple-50 border-b border-purple-200' : 'bg-slate-50 border-b border-slate-200') : (isManagementSurvey ? 'hover:bg-purple-50' : 'hover:bg-slate-50')}`}
+                className={`p-6 flex items-center justify-between cursor-pointer transition-colors rounded-t-2xl ${anket.isExpanded ? (isManagementSurvey ? 'bg-purple-50 border-b border-purple-200' : 'bg-slate-50 border-b border-slate-200') : (isManagementSurvey ? 'hover:bg-purple-50' : 'hover:bg-slate-50')}`}
                 onClick={() => toggleAnket(anketIdx)}
               >
                 <div className="flex items-center gap-4">

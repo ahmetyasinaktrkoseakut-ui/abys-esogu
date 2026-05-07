@@ -507,10 +507,10 @@ export default function AnketYonetimiClient() {
 
       <div className="space-y-6 mb-8">
         {anketListesi.map((anket, anketIdx) => (
-          <div key={anket.id} className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div key={anket.id} className="bg-white rounded-2xl shadow-sm border border-slate-200">
             {/* Header / Accordion Toggle */}
             <div 
-              className={`p-6 flex items-center justify-between cursor-pointer transition-colors ${anket.isExpanded ? 'bg-slate-50 border-b border-slate-200' : 'hover:bg-slate-50'}`}
+              className={`p-6 flex items-center justify-between cursor-pointer transition-colors rounded-t-2xl ${anket.isExpanded ? 'bg-slate-50 border-b border-slate-200' : 'hover:bg-slate-50'}`}
               onClick={() => toggleAnket(anketIdx)}
             >
               <div className="flex items-center gap-4">

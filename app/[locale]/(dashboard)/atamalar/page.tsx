@@ -119,6 +119,12 @@ export default function AtamalarPage() {
     );
   };
 
+  const handleDateChange = (id: number, field: 'erisim_baslangic' | 'erisim_bitis', value: string) => {
+    setOlcutler(prev => prev.map(o => 
+      o.id === id ? { ...o, [field]: value || null } : o
+    ));
+  };
+
   const handleSelectAll = (select: boolean) => {
     if (select) {
       // Sadece başka birine atanmamış olanları seç
@@ -160,6 +166,20 @@ export default function AtamalarPage() {
           .insert(insertData);
           
         if (insertError) throw insertError;
+      }
+
+      // 3. Alt ölçütlerin erişim tarihlerini güncelle
+      // Perform updates for each modified criterion (simpler than a complex upsert for few items)
+      for (const olcut of olcutler) {
+        const { error: dateError } = await supabase
+          .from('alt_olcutler')
+          .update({
+            erisim_baslangic: olcut.erisim_baslangic,
+            erisim_bitis: olcut.erisim_bitis
+          })
+          .eq('id', olcut.id);
+        
+        if (dateError) throw dateError;
       }
 
       setMessage({ type: 'success', text: t('messages.save_success') });
@@ -363,37 +383,61 @@ export default function AtamalarPage() {
                                 const isAssignedToOther = allAtamalar.some(a => a.alt_olcut_id === olcut.id && a.user_id !== selectedHoca);
                                 const isSelected = selectedOlcutIds.includes(olcut.id);
                                 return (
-                                  <label 
+                                  <div 
                                     key={olcut.id} 
-                                    className={`flex items-start gap-3 p-3 rounded-lg border transition-all ${
-                                      isAssignedToOther ? 'bg-slate-50 border-slate-200 cursor-not-allowed opacity-60' :
+                                    className={`flex flex-col gap-3 p-4 rounded-xl border transition-all ${
+                                      isAssignedToOther ? 'bg-slate-50 border-slate-200 opacity-80' :
                                       isSelected 
-                                        ? 'bg-indigo-50/50 border-indigo-200 cursor-pointer' 
-                                        : 'bg-white border-slate-100 hover:border-indigo-200 cursor-pointer'
+                                        ? 'bg-indigo-50/50 border-indigo-200' 
+                                        : 'bg-white border-slate-100 hover:border-indigo-200'
                                     }`}
                                   >
-                                    <div className="pt-0.5">
-                                      <input
-                                        type="checkbox"
-                                        checked={isSelected}
-                                        disabled={isAssignedToOther}
-                                        onChange={() => {
-                                          if (!isAssignedToOther) handleToggleOlcut(olcut.id);
-                                        }}
-                                        className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 disabled:opacity-50"
-                                      />
-                                    </div>
-                                    <div className="flex-1 flex justify-between items-start gap-2">
-                                      <div className={`text-xs font-semibold ${isSelected && !isAssignedToOther ? 'text-indigo-900' : 'text-slate-700'}`}>
-                                        {[olcut.kod, getLocalizedField(olcut, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${olcut.id}`}
+                                    <div className="flex items-start gap-3">
+                                      <div className="pt-0.5">
+                                        <input
+                                          type="checkbox"
+                                          checked={isSelected}
+                                          disabled={isAssignedToOther}
+                                          onChange={() => {
+                                            if (!isAssignedToOther) handleToggleOlcut(olcut.id);
+                                          }}
+                                          className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 disabled:opacity-50"
+                                        />
                                       </div>
-                                      {isAssignedToOther && (
-                                        <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 text-slate-500 rounded flex-shrink-0">
-                                          {t('main.assigned_badge')}
-                                        </span>
-                                      )}
+                                      <div className="flex-1 flex justify-between items-start gap-2">
+                                        <div className={`text-xs font-semibold ${isSelected && !isAssignedToOther ? 'text-indigo-900' : 'text-slate-700'}`}>
+                                          {[olcut.kod, getLocalizedField(olcut, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${olcut.id}`}
+                                        </div>
+                                        {isAssignedToOther && (
+                                          <span className="text-[10px] font-bold px-2 py-0.5 bg-slate-200 text-slate-500 rounded flex-shrink-0">
+                                            {t('main.assigned_badge')}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
-                                  </label>
+                                    
+                                    {/* Tarih Seçiciler */}
+                                    <div className="flex items-center gap-4 pl-7 border-t border-slate-100 pt-3">
+                                      <div className="flex-1">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Erişim Başlangıç</label>
+                                        <input 
+                                          type="datetime-local"
+                                          value={olcut.erisim_baslangic ? new Date(new Date(olcut.erisim_baslangic).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
+                                          onChange={(e) => handleDateChange(olcut.id, 'erisim_baslangic', e.target.value)}
+                                          className="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                        />
+                                      </div>
+                                      <div className="flex-1">
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Erişim Bitiş</label>
+                                        <input 
+                                          type="datetime-local"
+                                          value={olcut.erisim_bitis ? new Date(new Date(olcut.erisim_bitis).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
+                                          onChange={(e) => handleDateChange(olcut.id, 'erisim_bitis', e.target.value)}
+                                          className="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                        />
+                                      </div>
+                                    </div>
+                                  </div>
                                 );
                               })}
                             </div>

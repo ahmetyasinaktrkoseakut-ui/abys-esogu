@@ -75,34 +75,47 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         
       if (raporData) {
         let cleanIcerik = raporData?.icerik ?? '';
-        // Agresif temizlik: Başlıkları ve puan metinlerini her türlü tag yapısında temizle
+        // Agresif temizlik
         cleanIcerik = cleanIcerik.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
         cleanIcerik = cleanIcerik.replace(/(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI/gi, '');
         cleanIcerik = cleanIcerik.replace(/<hr\s*\/?>/gi, '');
         cleanIcerik = cleanIcerik.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
         cleanIcerik = cleanIcerik.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
-        cleanIcerik = cleanIcerik.replace(/<p[^>]*>.*?Kalite\s+güvencesi.*?<\/p>/gi, '');
-        cleanIcerik = cleanIcerik.replace(/<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">.*?<\/p>/gi, '');
 
         setRaporMetni(cleanIcerik);
         setKanitlar(raporData?.kanitlar ?? []);
         setRaporOlusturuldu(true);
-        
-        // Yeni onay sistemini kullan
         setOnayDurumu(raporData?.onay_durumu || 'bekliyor');
         setRedNedeni(raporData?.red_nedeni);
-        
-        // Onay durumunu ve red nedenini set et
-        setOnayDurumu(raporData?.onay_durumu || 'bekliyor');
-        setRedNedeni(raporData?.red_nedeni);
-
-        if (raporData?.onay_durumu === 'onaylandi' && !localUserIsAdmin) {
-          setIsReadOnly(true);
-        }
       } else {
         setOnayDurumu('bekliyor');
         setRedNedeni(null);
       }
+
+      // --- ACL & AUTHORITY LOGIC ---
+      const now = new Date();
+      let accessLocked = false;
+      
+      // Eğer tarih kısıtı varsa ve kullanıcı admin/koordinatör değilse kontrol et
+      if (olcut && !localUserIsAdmin) {
+        if (olcut.erisim_baslangic && now < new Date(olcut.erisim_baslangic)) accessLocked = true;
+        if (olcut.erisim_bitis && now > new Date(olcut.erisim_bitis)) accessLocked = true;
+      }
+
+      // Salt okunur olma durumlarını belirle
+      let finalReadOnly = false;
+
+      if (!localUserIsAdmin) {
+        // Normal kullanıcılar için kısıtlar:
+        if (selectedPeriod?.is_active === false) finalReadOnly = true;
+        if (raporData?.onay_durumu === 'onaylandi') finalReadOnly = true;
+        if (accessLocked) finalReadOnly = true;
+      } else {
+        // Admin/Koordinatör her zaman düzenleyebilir (Overwrite yetkisi)
+        finalReadOnly = false;
+      }
+
+      setIsReadOnly(finalReadOnly);
 
 
     } catch (error) {
@@ -409,6 +422,18 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           </div>
           <p className="text-sm text-slate-500">{t('synthesis_desc')}</p>
         </div>
+
+        {/* ACL Uyarı Bannerı */}
+        {isReadOnly && !isAdmin && olcutDetay && (olcutDetay.erisim_baslangic || olcutDetay.erisim_bitis) && (
+          <div className="flex-1 max-w-2xl mx-4 p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center gap-3 text-amber-800 animate-pulse">
+            <Info className="w-5 h-5 text-amber-600 flex-shrink-0" />
+            <p className="text-xs font-bold leading-relaxed">
+              DİKKAT: Bu ölçüt için veri giriş süresi kısıtlanmıştır. 
+              {olcutDetay.erisim_baslangic && ` Başlangıç: ${new Date(olcutDetay.erisim_baslangic).toLocaleString()}`}
+              {olcutDetay.erisim_bitis && ` Bitiş: ${new Date(olcutDetay.erisim_bitis).toLocaleString()}`}
+            </p>
+          </div>
+        )}
 
         {/* Onay/Red Durumu Göstergesi */}
         <div className="flex items-center gap-3 mt-4 md:mt-0">

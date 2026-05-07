@@ -86,12 +86,26 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
   };
 
   const handleSave = async () => {
+    if (!resolvedParams?.id) return;
     setIsSaving(true);
     try {
       const { error } = await supabase
         .from('alt_olcutler')
-        .update({ kalite_el_kitabi: formData })
-        .eq('id', resolvedParams?.id);
+        .update({ 
+          kalite_el_kitabi: {
+            sorumlu_birim: formData.sorumlu_birim,
+            ilk_planlama_tarihi: formData.ilk_planlama_tarihi,
+            ic_paydaslar: formData.ic_paydaslar,
+            dis_paydaslar: formData.dis_paydaslar,
+            uluslararasi_paydaslar: formData.uluslararasi_paydaslar,
+            uygulama_alanlari: formData.uygulama_alanlari,
+            izleme_mekanizmalari: formData.izleme_mekanizmalari,
+            performans_gostergeleri: formData.performans_gostergeleri,
+            degerlendirme_iyilestirme_tarihi: formData.degerlendirme_iyilestirme_tarihi,
+            bgs_yeri: formData.bgs_yeri
+          }
+        })
+        .eq('id', resolvedParams.id);
 
       if (error) throw error;
       alert("Kalite El Kitabı başarıyla kaydedildi.");
@@ -107,8 +121,8 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
     return <div className="h-full flex items-center justify-center p-20"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;
   }
 
-  const labelStyle = "bg-blue-600 text-white p-4 font-bold text-sm border-b border-blue-500 flex items-center";
-  const inputStyle = "w-full p-4 text-sm bg-blue-50/30 border-b border-blue-100 focus:bg-white focus:outline-none transition-colors disabled:opacity-80";
+  const labelStyle = "bg-indigo-600 text-white p-5 font-bold text-sm border-b border-indigo-500/50 flex items-center";
+  const inputStyle = "w-full h-full p-5 text-sm bg-transparent border-none outline-none focus:bg-indigo-50/10 transition-colors disabled:opacity-80 resize-none block";
 
   return (
     <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
@@ -131,18 +145,18 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
       {resolvedParams?.id && <StepPanel activeStepId="kalite_el_kitabi" altOlcutId={resolvedParams.id} />}
 
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden mb-10">
-        <table className="w-full border-collapse">
+        <table className="w-full border-collapse table-fixed">
           <thead>
             <tr>
-              <th colSpan={2} className="bg-blue-600 text-white p-5 text-xl font-black text-left tracking-tight">
+              <th colSpan={2} className="bg-indigo-600 text-white p-6 text-2xl font-black text-left tracking-tight border-b border-indigo-500">
                 Tablo 1. {[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ')}
               </th>
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y divide-slate-100">
             <tr>
-              <td className={labelStyle} style={{width: '30%'}}>Sorumlu Birim</td>
-              <td className="p-0">
+              <td className={labelStyle} style={{width: '280px'}}>Sorumlu Birim</td>
+              <td className="p-0 align-stretch">
                 <input 
                   type="text" 
                   value={formData.sorumlu_birim} 
@@ -155,7 +169,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
             </tr>
             <tr>
               <td className={labelStyle}>İlk Planlama Tarihi</td>
-              <td className="p-0">
+              <td className="p-0 align-stretch">
                 <input 
                   type="date" 
                   value={formData.ilk_planlama_tarihi} 
@@ -167,79 +181,85 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
             </tr>
             <tr>
               <td className={labelStyle}>İç Paydaşlar</td>
-              <td className="p-0">
+              <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.ic_paydaslar} 
                   onChange={(e) => handleInputChange('ic_paydaslar', e.target.value)}
                   disabled={isReadOnly}
-                  className={`${inputStyle} min-h-[100px] resize-none`}
+                  rows={4}
+                  className={inputStyle}
                   placeholder="İç paydaşları listeleyiniz..."
                 />
               </td>
             </tr>
             <tr>
               <td className={labelStyle}>Dış Paydaşlar</td>
-              <td className="p-0">
+              <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.dis_paydaslar} 
                   onChange={(e) => handleInputChange('dis_paydaslar', e.target.value)}
                   disabled={isReadOnly}
-                  className={`${inputStyle} min-h-[100px] resize-none`}
+                  rows={4}
+                  className={inputStyle}
                   placeholder="Dış paydaşları listeleyiniz..."
                 />
               </td>
             </tr>
             <tr>
               <td className={labelStyle}>Uluslararası Paydaşlar</td>
-              <td className="p-0">
+              <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.uluslararasi_paydaslar} 
                   onChange={(e) => handleInputChange('uluslararasi_paydaslar', e.target.value)}
                   disabled={isReadOnly}
-                  className={`${inputStyle} min-h-[100px] resize-none`}
+                  rows={4}
+                  className={inputStyle}
                   placeholder="Uluslararası paydaşları listeleyiniz..."
                 />
               </td>
             </tr>
             <tr>
               <td className={labelStyle}>Uygulama Alanları</td>
-              <td className="p-0">
+              <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.uygulama_alanlari} 
                   onChange={(e) => handleInputChange('uygulama_alanlari', e.target.value)}
                   disabled={isReadOnly}
-                  className={`${inputStyle} min-h-[100px] resize-none`}
+                  rows={4}
+                  className={inputStyle}
                   placeholder="Uygulama alanlarını belirtiniz..."
                 />
               </td>
             </tr>
             <tr>
               <td className={labelStyle}>İzleme Mekanizmaları</td>
-              <td className="p-0">
+              <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.izleme_mekanizmalari} 
                   onChange={(e) => handleInputChange('izleme_mekanizmalari', e.target.value)}
                   disabled={isReadOnly}
-                  className={`${inputStyle} min-h-[100px] resize-none`}
+                  rows={4}
+                  className={inputStyle}
                   placeholder="İzleme süreçlerini açıklayınız..."
                 />
               </td>
             </tr>
             <tr>
               <td className={labelStyle}>Performans Göstergeleri</td>
-              <td className="p-0">
+              <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.performans_gostergeleri} 
                   onChange={(e) => handleInputChange('performans_gostergeleri', e.target.value)}
                   disabled={isReadOnly}
-                  className={`${inputStyle} min-h-[100px] resize-none`}
+                  rows={4}
+                  className={inputStyle}
                   placeholder="Ölçülebilir göstergeleri giriniz..."
                 />
               </td>
             </tr>
             <tr>
               <td className={labelStyle}>Değerlendirme ve İyileştirme Tarihi</td>
-              <td className="p-0">
+              <td className="p-0 align-stretch">
                 <input 
                   type="date" 
                   value={formData.degerlendirme_iyilestirme_tarihi} 
@@ -250,13 +270,14 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
               </td>
             </tr>
             <tr>
-              <td className={labelStyle + " border-b-0"}>Alt Ölçütün Bilgi Yönetim Sistemindeki Yeri</td>
-              <td className="p-0">
+              <td className={labelStyle + " border-b-0"}>Alt Ölçütün BYS'deki Yeri</td>
+              <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.bgs_yeri} 
                   onChange={(e) => handleInputChange('bgs_yeri', e.target.value)}
                   disabled={isReadOnly}
-                  className={`${inputStyle} border-b-0 min-h-[100px] resize-none`}
+                  rows={4}
+                  className={inputStyle + " border-b-0"}
                   placeholder="BYS üzerindeki konumunu belirtiniz..."
                 />
               </td>
@@ -270,7 +291,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
           <button 
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-3 bg-emerald-600 hover:bg-emerald-700 text-white px-10 py-4 rounded-2xl font-black transition-all shadow-xl hover:scale-105 active:scale-95 disabled:opacity-70"
+            className="flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-5 rounded-3xl font-black transition-all shadow-xl hover:scale-105 active:scale-95 disabled:opacity-70"
           >
             {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
             {isSaving ? "KAYDEDİLİYOR..." : "KALİTE EL KİTABINI KAYDET"}

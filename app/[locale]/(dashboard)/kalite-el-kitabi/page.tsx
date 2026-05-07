@@ -1,5 +1,5 @@
-import KaliteElKitabiClient from '@/components/KaliteElKitabiClient';
+import KaliteElKitabiRaporClient from '@/components/KaliteElKitabiRaporClient';
 
-export default function KaliteElKitabiPage({ params }: { params?: Promise<{ id: string }> }) {
-  return <KaliteElKitabiClient params={params} />;
+export default function KaliteElKitabiPage() {
+  return <KaliteElKitabiRaporClient />;
 }

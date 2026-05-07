@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, ChevronDown, ChevronUp, BarChart2 } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from 'recharts';
 import {
   DndContext,
@@ -108,9 +108,17 @@ function SortableSoru({ id, children }: { id: string; children: React.ReactNode 
   );
 }
 
-export default function AnketYonet  const t = useTranslations('Surveys');
+export default function AnketYonetimiClient() {
+  const t = useTranslations('Surveys');
   const tCommon = useTranslations('Common');
   const locale = useLocale();
+  const { selectedPeriod } = usePeriod();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isCoordinator, setIsCoordinator] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const [olcutler, setOlcutler] = useState<any[]>([]);
   const [hedefOlcutler, setHedefOlcutler] = useState<string[]>([]);
@@ -793,10 +801,7 @@ export default function AnketYonet  const t = useTranslations('Surveys');
                         >
                           <LinkIcon className="w-3.5 h-3.5" /> {t('copy_link')}
                         </button>
-bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors"
-                        >
-                          <LinkIcon className="w-3.5 h-3.5" /> Linki Kopyala
-                        </button>
+
                         <button 
                           onClick={() => deleteYayinlananAnket(anketId, anket.baslik)}
                           className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"

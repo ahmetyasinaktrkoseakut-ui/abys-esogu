@@ -138,11 +138,11 @@ export default function KoordinatorlerPage() {
     <div className="p-8 mx-auto max-w-5xl animate-in fade-in duration-500">
       <div className="mb-8 border-b border-slate-200 pb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
-            <Users className="w-7 h-7 text-blue-600" />
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+            <Users className="w-8 h-8 text-indigo-600" />
             Başlık Koordinatörleri
           </h2>
-          <p className="text-slate-500 mt-2 text-sm max-w-2xl">
+          <p className="text-slate-500 mt-2 font-medium max-w-2xl text-sm leading-relaxed">
             Bu ekrandan 5 ana başlık için koordinatör ataması yapabilirsiniz. Koordinatörler, kendi başlıkları altındaki ölçütleri birimlere dağıtabilir ve gelen veri girişlerini onaylayıp reddedebilir.
           </p>
         </div>
@@ -163,12 +163,12 @@ export default function KoordinatorlerPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
         {/* Atama Formu */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-          <h3 className="font-semibold text-slate-800 mb-4 border-b pb-2">Yeni Atama Yap</h3>
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200/60 transition-all hover:shadow-md">
+          <h3 className="text-lg font-extrabold text-slate-900 mb-6 border-b border-slate-100 pb-4">Yeni Atama Yap</h3>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Kullanıcı Arama</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Kullanıcı Arama</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input 
@@ -176,7 +176,7 @@ export default function KoordinatorlerPage() {
                   placeholder="İsim veya E-posta..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-4 py-2 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                  className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
                 />
               </div>
             </div>
@@ -212,7 +212,7 @@ export default function KoordinatorlerPage() {
             <button
               onClick={handleAssign}
               disabled={isSaving || !selectedUser || !selectedTopic}
-              className="w-full mt-4 flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl text-sm font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50"
+              className="w-full mt-6 flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
               Atamayı Kaydet
@@ -221,8 +221,8 @@ export default function KoordinatorlerPage() {
         </div>
 
         {/* Mevcut Atamalar Listesi */}
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col h-full min-h-[400px]">
-          <h3 className="font-semibold text-slate-800 mb-4 border-b pb-2">Mevcut Koordinatörler</h3>
+        <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200/60 flex flex-col h-full min-h-[400px] transition-all hover:shadow-md">
+          <h3 className="text-lg font-extrabold text-slate-900 mb-6 border-b border-slate-100 pb-4">Mevcut Koordinatörler</h3>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-3">
             {isLoading ? (
@@ -235,19 +235,19 @@ export default function KoordinatorlerPage() {
               coordinators.map(coord => {
                 const user = users.find(u => String(u.id) === String(coord.kullanici_id));
                 return (
-                  <div key={coord.kullanici_id + coord.baslik} className="flex items-center justify-between p-4 border rounded-2xl bg-slate-50 hover:bg-white hover:shadow-md transition-all group">
+                  <div key={coord.kullanici_id + coord.baslik} className="flex items-center justify-between p-5 border border-slate-100 rounded-2xl bg-white hover:bg-indigo-50/30 hover:border-indigo-100 hover:shadow-md transition-all group">
                     <div className="flex-1">
-                      <div className="font-bold text-sm text-slate-800">
+                      <div className="font-extrabold text-sm text-slate-900 group-hover:text-indigo-700 transition-colors">
                         {getFullName(user)}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">{user?.email || 'E-posta bulunamadı'}</div>
-                      <div className="inline-flex mt-3 px-3 py-1 bg-blue-100 text-blue-800 text-[10px] font-black rounded-lg uppercase tracking-tight">
+                      <div className="text-xs text-slate-500 font-medium mt-0.5">{user?.email || 'E-posta bulunamadı'}</div>
+                      <div className="inline-flex mt-4 px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">
                         {coord.baslik}
                       </div>
                     </div>
                     <button 
                       onClick={() => handleRemove(coord.kullanici_id, coord.baslik)}
-                      className="p-3 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                      className="p-3 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                       title="Atamayı Sil"
                     >
                       <Trash2 className="w-5 h-5" />

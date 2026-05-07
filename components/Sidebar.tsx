@@ -40,14 +40,14 @@ export default async function Sidebar() {
   }
 
   return (
-    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-full border-r border-slate-800/50">
-      <div className="p-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-indigo-500 text-white shadow-lg shadow-indigo-500/20">
-          <BookOpen className="w-6 h-6" />
+    <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col h-full border-r border-slate-800/50 shadow-2xl">
+      <div className="p-8 flex items-center gap-4">
+        <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-gradient-to-br from-indigo-500 to-indigo-700 text-white shadow-lg shadow-indigo-500/20 transform -rotate-3">
+          <BookOpen className="w-7 h-7" />
         </div>
         <div>
-          <h1 className="text-sm font-bold text-white leading-tight tracking-tight">Akreditasyon Bilgi</h1>
-          <h2 className="text-sm font-bold text-slate-400 leading-tight">Yönetim Sistemi</h2>
+          <h1 className="text-sm font-black text-white leading-tight tracking-tight uppercase">Akreditasyon</h1>
+          <h2 className="text-[11px] font-bold text-slate-400 leading-tight uppercase tracking-[0.2em]">Sistemi</h2>
         </div>
       </div>
 

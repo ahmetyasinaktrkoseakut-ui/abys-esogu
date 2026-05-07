@@ -83,24 +83,24 @@ export default function BirimlerPage() {
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-500">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
-            <Building2 className="w-6 h-6 text-blue-600" />
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+            <Building2 className="w-8 h-8 text-indigo-600" />
             Sistem Birimleri
           </h2>
-          <p className="text-slate-500 mt-1 max-w-2xl">
+          <p className="text-slate-500 mt-2 font-medium max-w-2xl">
             Sisteme kayıtlı tüm fakülte, yüksekokul veya koordinatörlük birimlerini buradan görüntüleyebilir ve yeni birim ekleyebilirsiniz.
           </p>
         </div>
         <button 
           onClick={() => setIsModalOpen(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium shadow-sm shadow-blue-500/30 transition-all flex items-center gap-2"
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2 active:scale-95"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-5 h-5" />
           <span>Yeni Birim Ekle</span>
         </button>
       </div>
 
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-slate-200/60 rounded-3xl shadow-sm overflow-hidden">
         {isLoading ? (
           <div className="p-20 flex justify-center items-center text-blue-600">
             <Loader2 className="w-8 h-8 animate-spin" />
@@ -129,13 +129,13 @@ export default function BirimlerPage() {
                 ) : (
                   birimler.map((birim) => (
                     <tr key={birim.id} className="hover:bg-blue-50/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <span className="font-mono text-xs font-bold text-slate-400 bg-slate-100 px-2 py-1 rounded">
+                      <td className="px-6 py-5">
+                        <span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded">
                           #{birim.id}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <span className="text-sm font-semibold text-slate-700">
+                      <td className="px-6 py-5">
+                        <span className="text-sm font-extrabold text-slate-800">
                           {birim.birim_adi || birim.ad || birim.name || '-'}
                         </span>
                       </td>

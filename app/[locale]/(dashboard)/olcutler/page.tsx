@@ -73,9 +73,9 @@ export default function OlcutlerPage() {
 
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="mb-6 border-b border-slate-200 pb-4">
-        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">{t('title') || 'Ölçütler'}</h2>
-        <p className="text-slate-500 mt-1 text-sm">{t('description') || 'Kurumsal akreditasyon için değerlendirilecek ölçütleri yönetin.'}</p>
+      <div className="mb-8 border-b border-slate-200/60 pb-6">
+        <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">{t('title') || 'Ölçütler'}</h2>
+        <p className="text-slate-500 mt-2 font-medium">{t('description') || 'Kurumsal akreditasyon için değerlendirilecek ölçütleri yönetin.'}</p>
       </div>
 
       {isLoading ? (
@@ -99,48 +99,48 @@ export default function OlcutlerPage() {
             const isOpen = openGroups[harf] || false;
 
             return (
-              <div key={harf} className="animate-in fade-in duration-500 bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
+              <div key={harf} className="animate-in fade-in duration-500 bg-white rounded-2xl border border-slate-200/60 overflow-hidden shadow-sm group">
                 <button 
                   onClick={() => toggleGroup(harf)}
-                  className="w-full px-6 py-5 flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors text-left"
+                  className="w-full px-6 py-5 flex items-center justify-between bg-white hover:bg-slate-50/50 transition-all text-left"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-indigo-100 text-indigo-700 rounded-xl flex items-center justify-center text-lg font-bold">
-                      {harf}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl flex items-center justify-center text-xl font-black transition-colors duration-300 group-hover:bg-indigo-600 group-hover:text-white">
+                       {harf}
                     </div>
                     <div>
-                      <h3 className="text-lg font-bold text-slate-800">{displayTitle}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5">{t('sub_criteria_count', { count: Array.isArray(items) ? items.length : 0 })}</p>
+                      <h3 className="text-lg font-extrabold text-slate-900 group-hover:text-indigo-600 transition-colors">{displayTitle}</h3>
+                      <p className="text-xs text-slate-500 font-semibold mt-0.5">{t('sub_criteria_count', { count: Array.isArray(items) ? items.length : 0 })}</p>
                     </div>
                   </div>
-                  <ChevronRight className={`w-5 h-5 text-slate-400 transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`} />
+                  <ChevronRight className={`w-5 h-5 text-slate-300 transition-all duration-300 group-hover:text-indigo-600 ${isOpen ? 'rotate-90' : 'group-hover:translate-x-1.5'}`} />
                 </button>
                 
                 {isOpen && (
-                  <div className="p-6 border-t border-slate-100 bg-slate-50/30">
+                  <div className="p-8 border-t border-slate-100 bg-slate-50/30">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {(items as any[]).map((olcut: any) => (
                         <Link 
                           key={olcut.id} 
                           href={`/olcutler/${olcut.id}/uygulama`}
-                          className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-indigo-200 transition-all group flex flex-col justify-between h-full"
+                          className="bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm transition-all duration-300 hover:shadow-md hover:border-indigo-200 hover:bg-gradient-to-r hover:from-white hover:to-indigo-50/40 hover:-translate-y-0.5 group/card flex flex-col justify-between h-full relative overflow-hidden"
                         >
                           <div>
-                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover/card:bg-indigo-600 group-hover/card:text-white border border-indigo-100 transition-all duration-300">
                               <FileText className="w-5 h-5" />
                             </div>
-                            <h4 className="font-semibold text-slate-800 line-clamp-2">
+                            <h4 className="font-extrabold text-slate-900 line-clamp-2 transition-colors group-hover/card:text-indigo-700">
                               {[olcut.kod, getLocalizedField(olcut, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${olcut.id}`}
                             </h4>
                             {olcut.aciklama && (
-                              <p className="text-sm text-slate-500 mt-2 line-clamp-3 leading-relaxed">
+                              <p className="text-sm text-slate-500 mt-2 line-clamp-3 leading-relaxed font-medium">
                                 {olcut.aciklama}
                               </p>
                             )}
                           </div>
-                          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-sm font-medium text-indigo-600">
-                            <span>{t('viewDetails') || 'Detayları Gör'}</span>
-                            <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                          <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between text-xs font-bold text-slate-400 group-hover/card:text-indigo-600 transition-colors">
+                            <span className="uppercase tracking-widest">{t('viewDetails') || 'Detayları Gör'}</span>
+                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover/card:text-indigo-600 group-hover/card:translate-x-1.5 transition-all" />
                           </div>
                         </Link>
                       ))}

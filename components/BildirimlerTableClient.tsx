@@ -146,26 +146,26 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
 
   return (
     <>
-      <div className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+      <div className="bg-white border border-slate-200/60 rounded-3xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200">
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <tr className="bg-slate-50 border-b border-slate-200/60">
+                <th className="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
-                    <Hash className="w-4 h-4" /> {t('table.criterion')}
+                    <Hash className="w-4 h-4 text-indigo-500" /> {t('table.criterion')}
                   </div>
                 </th>
                 {/* Phase Column Removed */}
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-wider">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-4 h-4" /> {t('table.date')}
+                    <Calendar className="w-4 h-4 text-indigo-500" /> {t('table.date')}
                   </div>
                 </th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">
+                <th className="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-wider text-center">
                   {t('table.status')}
                 </th>
-                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                <th className="px-6 py-5 text-xs font-bold text-slate-600 uppercase tracking-wider">
                   {t('table.actions')}
                 </th>
               </tr>
@@ -173,37 +173,39 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
             <tbody className="divide-y divide-slate-100">
               {currentData.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-20 text-center">
+                  <td colSpan={5} className="py-24 text-center">
                     <div className="flex flex-col items-center justify-center text-slate-400">
-                      <Presentation className="w-12 h-12 text-slate-200 mb-3" />
-                      <p className="text-sm font-medium text-slate-500">{t('table.no_data')}</p>
-                      <p className="text-xs mt-1 text-slate-400">{t('table.no_data_desc')}</p>
+                      <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
+                        <Presentation className="w-8 h-8 text-slate-200" />
+                      </div>
+                      <p className="text-sm font-bold text-slate-600">{t('table.no_data')}</p>
+                      <p className="text-xs mt-1 text-slate-400 font-medium">{t('table.no_data_desc')}</p>
                     </div>
                   </td>
                 </tr>
               ) : (
                 currentData.map((row) => (
-                  <tr key={row.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="px-6 py-4">
+                  <tr key={row.id} className="hover:bg-indigo-50/30 transition-colors cursor-pointer border-b border-slate-100 last:border-0">
+                    <td className="px-6 py-5">
                       <div 
-                        className="flex items-center gap-2 cursor-pointer group"
+                        className="flex items-center gap-3 cursor-pointer group"
                         onClick={() => router.push(`/olcutler/${row.alt_olcut_id}/ozdegerlendirme`)}
                       >
-                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-1 rounded group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
+                        <span className="font-mono text-xs font-black text-indigo-600 bg-indigo-50 border border-indigo-100 px-2 py-1 rounded group-hover:bg-indigo-600 group-hover:text-white transition-all">
                           {row.alt_olcutler?.kod || '-'}
                         </span>
-                        <div className="text-sm font-medium text-slate-700 max-w-[200px] truncate group-hover:text-blue-600 transition-colors" title={getLocalizedField(row.alt_olcutler, 'olcut_adi', locale)}>
+                        <div className="text-sm font-extrabold text-slate-800 max-w-[300px] truncate group-hover:text-indigo-600 transition-colors" title={getLocalizedField(row.alt_olcutler, 'olcut_adi', locale)}>
                           {getLocalizedField(row.alt_olcutler, 'olcut_adi', locale) || t('Assignments.sidebar.anonymous_user')}
                         </div>
                       </div>
                     </td>
                     {/* Phase Column Removed */}
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-medium text-slate-500">
+                    <td className="px-6 py-5 whitespace-nowrap">
+                      <span className="text-sm font-bold text-slate-500">
                         {formatDate(row.olusturulma_tarihi || row.created_at)}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-center">
+                    <td className="px-6 py-5 whitespace-nowrap text-center">
                       {getStatusBadge(row.durum)}
                     </td>
                     <td className="px-6 py-4">
@@ -247,10 +249,12 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
       {/* Revize Modal */ }
       {isModalOpen && selectedRow && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-xl border border-slate-100 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Upload className="w-5 h-5 text-blue-600" />
+          <div className="bg-white rounded-[2rem] shadow-2xl border border-slate-200/60 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-8 py-6 border-b border-slate-100 flex items-center justify-between bg-white">
+              <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-3">
+                <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center border border-indigo-100">
+                  <Upload className="w-5 h-5" />
+                </div>
                 {t('modal.title')}
               </h3>
               <button 

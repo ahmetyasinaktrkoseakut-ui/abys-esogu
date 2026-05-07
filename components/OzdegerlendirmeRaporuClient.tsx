@@ -183,6 +183,12 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
 
   const handleRaporOlustur = async () => {
+    // GÜVENLİK KİLİDİ: Kullanıcı onayı olmadan mevcut veriyi ezme
+    if (raporMetni && raporMetni.trim() !== '' && raporMetni !== '<p></p>') {
+      const confirmReset = window.confirm("DİKKAT: Bu işlem editörde yaptığınız tüm manuel değişiklikleri (yazılar ve atıflar) SİLECEK ve metni önceki aşamalardaki ham verilerle baştan oluşturacaktır. Onaylıyor musunuz?");
+      if (!confirmReset) return;
+    }
+
     setIsGenerating(true);
     try {
       const adimlar = ['planlama', 'uygulama', 'kontrol', 'onlem', 'olgunluk'];
@@ -312,6 +318,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       }
 
       alert(t('save_success'));
+      // fetchData() ÇAĞIRILMAYACAK - State koruması için sadece sessizce kaydetiyoruz
     } catch (err: any) {
       console.error(err);
       alert(`${t('error_prefix')}${err.message}`);
@@ -385,8 +392,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     const doc = kanitlar[index];
     if (!doc) return;
 
-    // KESİNLİKLE sayfa yönlendirmesini bozmayacak, yeni sekmede açılacak link formatı
-    const anchorHTML = `&nbsp;<a href="${doc.url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[${doc.name}]</a>&nbsp;`;
+    // KESİNLİKLE [Kanıt X] formatında, yeni sekmede açılacak link
+    const anchorHTML = `&nbsp;<a href="${doc.url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[Kanıt ${index + 1}]</a>&nbsp;`;
     
     if (editorRef.current) {
       editorRef.current.insertContent(anchorHTML);
@@ -422,8 +429,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       const updatedKanitlar = [...kanitlar, yeniKanit];
       setKanitlar(updatedKanitlar);
       
-      // Metin içine ekle
-      const anchorHTML = `&nbsp;<a href="${publicUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[${newEvidenceName}]</a>&nbsp;`;
+      // Metin içine ekle - [Kanıt X] formatında
+      const newIndex = updatedKanitlar.length;
+      const anchorHTML = `&nbsp;<a href="${publicUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[Kanıt ${newIndex}]</a>&nbsp;`;
       
       if (editorRef.current) {
         editorRef.current.insertContent(anchorHTML);
@@ -627,12 +635,12 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                       {kanitlar.map((doc, idx) => (
                         <tr key={idx} id={`kanit-${idx}`} className="hover:bg-slate-50 transition-colors group">
                           <td className="py-3 px-4 font-bold text-blue-600">
-                            [Kanıt {idx + 1}]
+                            Kanıt {idx + 1}
                           </td>
                           <td className="py-3 px-4">
                             <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-600 font-medium flex items-center gap-2">
                               <LinkIcon className="w-4 h-4 text-slate-400" />
-                              {doc.name}
+                              : ({doc.name})
                             </a>
                             {doc.size && <span className="text-xs text-slate-400 block mt-1">{doc.size} KB</span>}
                           </td>

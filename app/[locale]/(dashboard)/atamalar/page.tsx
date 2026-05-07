@@ -214,8 +214,8 @@ export default function AtamalarPage() {
     <div className="p-8 mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8 border-b border-slate-200 pb-6 flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold text-slate-800 tracking-tight flex items-center gap-3">
-            <UserCheck className="w-8 h-8 text-blue-600" />
+          <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+            <UserCheck className="w-8 h-8 text-indigo-600" />
             {t('title')}
           </h2>
           <p className="text-slate-500 mt-2 text-sm leading-relaxed max-w-2xl">
@@ -246,7 +246,7 @@ export default function AtamalarPage() {
 
       <div className="flex flex-col lg:flex-row gap-8 items-start h-[calc(100vh-250px)] min-h-[600px]">
         {/* Sol Taraf: Hocalar Listesi */}
-        <div className="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full">
+        <div className="w-full lg:w-1/3 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full">
           <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <Users className="w-5 h-5 text-indigo-500" />
@@ -305,7 +305,7 @@ export default function AtamalarPage() {
         </div>
 
         {/* Sağ Taraf: Ölçüt Atama İşlemleri */}
-        <div className="w-full lg:w-2/3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-full relative">
+        <div className="w-full lg:w-2/3 bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden flex flex-col h-full relative">
           {!selectedHoca ? (
             <div className="flex-1 flex flex-col items-center justify-center text-slate-400 p-8 text-center bg-slate-50/30">
               <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mb-4">
@@ -453,7 +453,7 @@ export default function AtamalarPage() {
                 <button
                   onClick={handleSave}
                   disabled={isSaving || (selectedPeriod ? !selectedPeriod.is_active : false)}
-                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl text-sm font-medium transition-all shadow-sm shadow-indigo-500/30 disabled:opacity-70"
+                  className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-md shadow-indigo-500/20 disabled:opacity-70 active:scale-95"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   {t('main.save_changes')}

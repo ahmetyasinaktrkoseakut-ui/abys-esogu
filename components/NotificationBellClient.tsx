@@ -141,7 +141,7 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white px-1">
+          <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-indigo-600 text-white text-[9px] font-bold flex items-center justify-center rounded-full border-2 border-white px-1 shadow-sm">
             {unreadCount}
           </span>
         )}
@@ -171,10 +171,10 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
                     <span className="text-xs font-bold text-slate-700 bg-slate-100 px-1.5 py-0.5 rounded">
                       {notif.alt_olcutler?.kod || 'Kriter'}
                     </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                      notif.durum === 'Onaylandı' ? 'bg-green-100 text-green-700' :
-                      notif.durum === 'Reddedildi' ? 'bg-red-100 text-red-700' :
-                      'bg-amber-100 text-amber-700'
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ${
+                      notif.durum === 'Onaylandı' ? 'bg-emerald-50 text-emerald-700 ring-emerald-600/20' :
+                      notif.durum === 'Reddedildi' ? 'bg-red-50 text-red-700 ring-red-600/20' :
+                      'bg-amber-50 text-amber-700 ring-amber-600/20'
                     }`}>
                       {notif.durum === 'Onaylandı' ? nt('status.approved') : 
                        notif.durum === 'Reddedildi' ? nt('status.rejected') : 

@@ -74,7 +74,7 @@ export default function OlcutlerPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-6 border-b border-slate-200 pb-4">
-        <h2 className="text-2xl font-bold text-[#0f172a] tracking-tight">{t('title') || 'Ölçütler'}</h2>
+        <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">{t('title') || 'Ölçütler'}</h2>
         <p className="text-slate-500 mt-1 text-sm">{t('description') || 'Kurumsal akreditasyon için değerlendirilecek ölçütleri yönetin.'}</p>
       </div>
 
@@ -99,7 +99,7 @@ export default function OlcutlerPage() {
             const isOpen = openGroups[harf] || false;
 
             return (
-              <div key={harf} className="animate-in fade-in duration-500 bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
+              <div key={harf} className="animate-in fade-in duration-500 bg-white rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
                 <button 
                   onClick={() => toggleGroup(harf)}
                   className="w-full px-6 py-5 flex items-center justify-between bg-slate-50/50 hover:bg-slate-50 transition-colors text-left"
@@ -117,16 +117,16 @@ export default function OlcutlerPage() {
                 </button>
                 
                 {isOpen && (
-                  <div className="p-6 border-t border-slate-100 bg-[#F8FAFC]">
+                  <div className="p-6 border-t border-slate-100 bg-slate-50/30">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {(items as any[]).map((olcut: any) => (
                         <Link 
                           key={olcut.id} 
                           href={`/olcutler/${olcut.id}/uygulama`}
-                          className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm hover:shadow-md hover:border-indigo-400 transition-all group flex flex-col justify-between h-full"
+                          className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:-translate-y-1 hover:border-indigo-200 transition-all group flex flex-col justify-between h-full"
                         >
                           <div>
-                            <div className="w-10 h-10 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-all">
                               <FileText className="w-5 h-5" />
                             </div>
                             <h4 className="font-semibold text-slate-800 line-clamp-2">

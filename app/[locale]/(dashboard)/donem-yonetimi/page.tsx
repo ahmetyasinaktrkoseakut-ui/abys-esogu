@@ -157,22 +157,22 @@ export default function PeriodManagementPage() {
     <div className="p-8 max-w-[1200px] mx-auto animate-in fade-in duration-500">
       <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-800 flex items-center gap-3">
-            <Calendar className="w-8 h-8 text-blue-600" />
+          <h1 className="text-3xl font-extrabold text-slate-900 flex items-center gap-3 tracking-tight">
+            <Calendar className="w-8 h-8 text-indigo-600" />
             {t('title')}
           </h1>
-          <p className="text-slate-500 mt-2">{t('description')}</p>
+          <p className="text-slate-500 mt-2 text-sm">{t('description')}</p>
         </div>
         <button 
           onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md active:scale-[0.98]"
+          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 active:scale-95"
         >
           <Plus className="w-5 h-5" />
           {t('add_new')}
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead>
             <tr className="bg-slate-50 border-b border-slate-200">
@@ -196,12 +196,12 @@ export default function PeriodManagementPage() {
                   </td>
                   <td className="px-6 py-4">
                     {period.is_active ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold border border-emerald-100">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-xs font-bold ring-1 ring-emerald-600/20">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         {t('status.active')}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold border border-slate-200">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-xs font-bold ring-1 ring-slate-600/20">
                         <XCircle className="w-3.5 h-3.5" />
                         {t('status.passive')}
                       </span>
@@ -278,7 +278,7 @@ export default function PeriodManagementPage() {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="flex justify-center items-center gap-2 px-6 py-3.5 text-white bg-blue-600 rounded-xl font-bold hover:bg-blue-700 shadow-md shadow-blue-500/30 transition-all active:scale-[0.98] disabled:opacity-70"
+                  className="flex justify-center items-center gap-2 px-6 py-4 text-white bg-indigo-600 rounded-2xl font-bold hover:bg-indigo-700 shadow-md shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-70"
                 >
                   {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                   {isSubmitting ? commonT('loading') : commonT('save')}

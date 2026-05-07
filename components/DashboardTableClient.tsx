@@ -21,11 +21,11 @@ export default function DashboardTableClient({ initialData, userRole }: { initia
 
   const getPukoBadgeColor = (asama: string) => {
     const lower = (asama || '').toLowerCase();
-    if (lower.includes('planla')) return 'bg-amber-100 text-amber-700 border-amber-200';
-    if (lower.includes('uygula')) return 'bg-blue-100 text-blue-700 border-blue-200';
-    if (lower.includes('kontrol')) return 'bg-purple-100 text-purple-700 border-purple-200';
-    if (lower.includes('önlem') || lower.includes('onlem')) return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    return 'bg-slate-100 text-slate-700 border-slate-200';
+    if (lower.includes('planla')) return 'bg-amber-50 text-amber-700 ring-1 ring-amber-600/20';
+    if (lower.includes('uygula')) return 'bg-indigo-50 text-indigo-700 ring-1 ring-indigo-600/20';
+    if (lower.includes('kontrol')) return 'bg-purple-50 text-purple-700 ring-1 ring-purple-600/20';
+    if (lower.includes('önlem') || lower.includes('onlem')) return 'bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20';
+    return 'bg-slate-50 text-slate-700 ring-1 ring-slate-600/20';
   };
 
   const getStatusIndicator = (durum: string) => {
@@ -100,7 +100,7 @@ export default function DashboardTableClient({ initialData, userRole }: { initia
 
   return (
     <>
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
@@ -188,7 +188,7 @@ export default function DashboardTableClient({ initialData, userRole }: { initia
                     
                     {/* Aşama Sütunu */}
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold border capitalize ${getPukoBadgeColor(row.puko_asamasi)}`}>
+                      <span className={`inline-flex px-3 py-1 rounded-full text-xs font-bold capitalize ${getPukoBadgeColor(row.puko_asamasi)}`}>
                         {row.puko_asamasi || '-'}
                       </span>
                     </td>

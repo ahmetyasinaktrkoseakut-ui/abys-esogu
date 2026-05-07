@@ -64,10 +64,10 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
 
   const getLinkClass = (path: string, exact: boolean = false) => {
     const isActive = exact ? pathname === path : pathname.startsWith(path);
-    return `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors text-sm ${
+    return `flex items-center gap-3 px-3 py-2.5 transition-all text-sm group ${
       isActive 
-        ? 'bg-blue-600/20 text-blue-400 font-medium border border-blue-500/20' 
-        : 'hover:bg-white/5 hover:text-white'
+        ? 'bg-slate-800/50 text-white font-semibold border-l-4 border-indigo-500' 
+        : 'text-slate-400 hover:bg-slate-800 hover:text-white border-l-4 border-transparent'
     }`;
   };
 

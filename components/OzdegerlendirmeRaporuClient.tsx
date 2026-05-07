@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download, Save, Plus, Link as LinkIcon } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
 import { useTranslations, useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
-import RichTextEditor from '@/components/RichTextEditor';
+import RichTextEditor, { RichTextEditorRef } from '@/components/RichTextEditor';
 
 interface OzdegerlendirmeRaporuClientProps {
   params: Promise<{ id: string }>;
@@ -37,6 +37,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const t = useTranslations('SelfEvaluation');
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
+  const editorRef = useRef<RichTextEditorRef>(null);
 
   const fetchData = async () => {
     if (!selectedPeriod) {
@@ -363,7 +364,13 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const handleKanitEkle = (index: number) => {
     if (isReadOnly) return;
     const anchorHTML = `&nbsp;<a href="#kanit-${index}" style="color: #2563eb; font-weight: bold; text-decoration: none; padding: 2px 6px; background-color: #eff6ff; border-radius: 4px; border: 1px solid #bfdbfe; font-size: 0.9em; display: inline-flex; align-items: center; gap: 4px;">[Kanıt ${index + 1}]</a>&nbsp;`;
-    setRaporMetni(prev => (prev || '') + anchorHTML);
+    
+    if (editorRef.current) {
+      editorRef.current.insertContent(anchorHTML);
+    } else {
+      // Fallback if ref is not ready
+      setRaporMetni(prev => (prev || '') + anchorHTML);
+    }
   };
 
   const handleYeniKanitTanımla = () => {
@@ -511,7 +518,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
             </div>
 
             <div className="p-8 lg:p-12 bg-[#FAFAFA] border-b border-slate-200">
-               <RichTextEditor content={raporMetni} onChange={setRaporMetni} readOnly={isReadOnly} minHeight="500px" />
+               <RichTextEditor ref={editorRef} content={raporMetni} onChange={setRaporMetni} readOnly={isReadOnly} minHeight="500px" />
             </div>
 
             <div className="p-8 lg:p-12 bg-white">

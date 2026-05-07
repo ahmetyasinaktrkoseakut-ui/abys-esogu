@@ -124,12 +124,12 @@ export default function DersIzlencesiClient({
       temelKaynaklar: '',
       yardimciKaynaklar: '',
       politikalar: DEFAULT_POLICIES,
-      haftalikIcerik: Array(14).fill(0).map((_, i) => ({ 
-        hafta: String(i + 1), konu: '', kaynaklar: '', isYuku: '' 
-      })).concat([
+      haftalikIcerik: [
+        ...Array(7).fill(0).map((_, i) => ({ hafta: String(i + 1), konu: '', kaynaklar: '', isYuku: '' })),
         { hafta: 'Arasınav', konu: 'Arasınav Haftası', kaynaklar: '', isYuku: '' },
+        ...Array(7).fill(0).map((_, i) => ({ hafta: String(i + 8), konu: '', kaynaklar: '', isYuku: '' })),
         { hafta: 'Final', konu: 'Final Haftası', kaynaklar: '', isYuku: '' }
-      ]),
+      ],
       degerlendirme: [
         { tur: 'Ara Sınav', aciklama: '', yuzde: 40 },
         { tur: 'Ödev', aciklama: '', yuzde: 0 },
@@ -151,8 +151,33 @@ export default function DersIzlencesiClient({
     };
 
     if (existing && existing.icerik && Object.keys(existing.icerik).length > 0) {
-      // Safe merge to prevent missing properties from crashing
-      setFormData({ ...defaultData, ...existing.icerik });
+      let mergedData = { ...defaultData, ...existing.icerik };
+      
+      if (mergedData.haftalikIcerik) {
+        const hIcerik = [...mergedData.haftalikIcerik];
+        const arasInavIdx = hIcerik.findIndex(h => h.hafta === 'Arasınav');
+        if (arasInavIdx !== -1 && arasInavIdx !== 7) {
+          const [arasinavRow] = hIcerik.splice(arasInavIdx, 1);
+          hIcerik.splice(7, 0, arasinavRow);
+          let weekCounter = 1;
+          hIcerik.forEach((row) => {
+            if (row.hafta !== 'Arasınav' && row.hafta !== 'Final') {
+              row.hafta = String(weekCounter++);
+            }
+          });
+          mergedData.haftalikIcerik = hIcerik;
+        }
+      }
+
+      // Backward compatibility for aktsIsYuku (recalc in case it was bad)
+      if (mergedData.aktsIsYuku) {
+        mergedData.aktsIsYuku = mergedData.aktsIsYuku.map((r: any) => ({
+          ...r,
+          toplam: ((parseFloat(r.sayisi) || 0) * (parseFloat(r.suresi) || 0)).toString()
+        }));
+      }
+
+      setFormData(mergedData);
     } else {
       setFormData(defaultData);
     }
@@ -420,17 +445,41 @@ export default function DersIzlencesiClient({
                     {(formData.aktsIsYuku || []).map((row: any, i: number) => (
                       <tr key={i}>
                         <td className="border p-2 font-medium">{row.etkinlik}</td>
-                        <td className="border p-1"><input className="w-full p-2 text-center outline-none" value={row.sayisi} onChange={e => {
-                          const newA = [...formData.aktsIsYuku]; newA[i].sayisi = e.target.value; setFormData({...formData, aktsIsYuku: newA});
+                        <td className="border p-1"><input type="number" className="w-full p-2 text-center outline-none bg-transparent" value={row.sayisi} onChange={e => {
+                          const newA = [...formData.aktsIsYuku]; 
+                          newA[i].sayisi = e.target.value; 
+                          newA[i].toplam = ((parseFloat(newA[i].sayisi) || 0) * (parseFloat(newA[i].suresi) || 0)).toString();
+                          setFormData({...formData, aktsIsYuku: newA});
                         }} /></td>
-                        <td className="border p-1"><input className="w-full p-2 text-center outline-none" value={row.suresi} onChange={e => {
-                          const newA = [...formData.aktsIsYuku]; newA[i].suresi = e.target.value; setFormData({...formData, aktsIsYuku: newA});
+                        <td className="border p-1"><input type="number" className="w-full p-2 text-center outline-none bg-transparent" value={row.suresi} onChange={e => {
+                          const newA = [...formData.aktsIsYuku]; 
+                          newA[i].suresi = e.target.value; 
+                          newA[i].toplam = ((parseFloat(newA[i].sayisi) || 0) * (parseFloat(newA[i].suresi) || 0)).toString();
+                          setFormData({...formData, aktsIsYuku: newA});
                         }} /></td>
-                        <td className="border p-1"><input className="w-full p-2 text-center outline-none" value={row.toplam} onChange={e => {
-                          const newA = [...formData.aktsIsYuku]; newA[i].toplam = e.target.value; setFormData({...formData, aktsIsYuku: newA});
-                        }} /></td>
+                        <td className="border p-1 bg-slate-50 text-slate-600 font-bold text-center">
+                          {row.toplam || '0'}
+                        </td>
                       </tr>
                     ))}
+                    <tr className="bg-slate-50 font-black text-slate-700">
+                      <td colSpan={3} className="border p-2 text-right uppercase text-[10px] tracking-widest">Toplam İş Yükü</td>
+                      <td className="border p-2 text-center text-blue-600">
+                        {formData.aktsIsYuku?.reduce((acc: number, row: any) => acc + (parseFloat(row.toplam) || 0), 0) || 0}
+                      </td>
+                    </tr>
+                    <tr className="bg-slate-50 font-black text-slate-700">
+                      <td colSpan={3} className="border p-2 text-right uppercase text-[10px] tracking-widest">Toplam İş Yükü / 30</td>
+                      <td className="border p-2 text-center text-blue-600">
+                        {((formData.aktsIsYuku?.reduce((acc: number, row: any) => acc + (parseFloat(row.toplam) || 0), 0) || 0) / 30).toFixed(2)}
+                      </td>
+                    </tr>
+                    <tr className="bg-slate-100 font-black text-slate-800">
+                      <td colSpan={3} className="border p-3 text-right uppercase text-[11px] tracking-widest">Dersin AKTS Kredisi</td>
+                      <td className="border p-3 text-center text-purple-700 text-lg">
+                        {Math.ceil((formData.aktsIsYuku?.reduce((acc: number, row: any) => acc + (parseFloat(row.toplam) || 0), 0) || 0) / 30)}
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>

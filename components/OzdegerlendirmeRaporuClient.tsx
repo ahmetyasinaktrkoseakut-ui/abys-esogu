@@ -34,6 +34,12 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const [rejectReason, setRejectReason] = useState('');
   const [isActionSubmitting, setIsActionSubmitting] = useState(false);
 
+  // Atıf (Kanıt) Yükleme Modalı
+  const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
+  const [newEvidenceName, setNewEvidenceName] = useState('');
+  const [isUploadingInText, setIsUploadingInText] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const t = useTranslations('SelfEvaluation');
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
@@ -376,29 +382,70 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
   const handleKanitEkle = (index: number) => {
     if (isReadOnly) return;
-    const anchorHTML = `&nbsp;<a href="#kanit-${index}" style="color: #2563eb; font-weight: bold; text-decoration: none; padding: 2px 6px; background-color: #eff6ff; border-radius: 4px; border: 1px solid #bfdbfe; font-size: 0.9em; display: inline-flex; align-items: center; gap: 4px;">[Kanıt ${index + 1}]</a>&nbsp;`;
+    const doc = kanitlar[index];
+    if (!doc) return;
+
+    // KESİNLİKLE sayfa yönlendirmesini bozmayacak, yeni sekmede açılacak link formatı
+    const anchorHTML = `&nbsp;<a href="${doc.url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[${doc.name}]</a>&nbsp;`;
     
     if (editorRef.current) {
       editorRef.current.insertContent(anchorHTML);
     } else {
-      // Fallback if ref is not ready
       setRaporMetni(prev => (prev || '') + anchorHTML);
+    }
+  };
+
+  const handleFileUploadForInText = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0 || !newEvidenceName.trim()) return;
+    
+    const file = event.target.files[0];
+    setIsUploadingInText(true);
+    
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${resolvedParams.id}_evidence_${Math.random()}.${fileExt}`;
+      const filePath = `ozdegerlendirme/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage.from('dokumanlar').upload(filePath, file);
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage.from('dokumanlar').getPublicUrl(filePath);
+      const publicUrl = publicUrlData.publicUrl;
+
+      const yeniKanit = { 
+        name: newEvidenceName, 
+        url: publicUrl, 
+        size: Math.round(file.size / 1024), 
+        manual: true 
+      };
+
+      const updatedKanitlar = [...kanitlar, yeniKanit];
+      setKanitlar(updatedKanitlar);
+      
+      // Metin içine ekle
+      const anchorHTML = `&nbsp;<a href="${publicUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[${newEvidenceName}]</a>&nbsp;`;
+      
+      if (editorRef.current) {
+        editorRef.current.insertContent(anchorHTML);
+      } else {
+        setRaporMetni(prev => (prev || '') + anchorHTML);
+      }
+
+      setIsEvidenceModalOpen(false);
+      setNewEvidenceName('');
+      alert("Kanıt başarıyla yüklendi ve metne eklendi.");
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      alert(`Yükleme hatası: ${error.message}`);
+    } finally {
+      setIsUploadingInText(false);
+      if (event.target) event.target.value = '';
     }
   };
 
   const handleYeniKanitTanımla = () => {
     if (isReadOnly) return;
-    const kanitAdi = prompt(t('enter_evidence_name'));
-    if (!kanitAdi) return;
-    const kanitUrl = prompt(t('enter_evidence_url'), 'https://');
-    if (!kanitUrl) return;
-
-    const yeniKanit = { name: kanitAdi, url: kanitUrl, size: 0, manual: true };
-    const updateKanitlar = [...kanitlar, yeniKanit];
-    setKanitlar(updateKanitlar);
-    
-    // Automatically add the link to the text for the newly added evidence
-    handleKanitEkle(updateKanitlar.length - 1);
+    setIsEvidenceModalOpen(true);
   };
 
   if (isLoading) {
@@ -659,6 +706,72 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
               >
                 {isActionSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
                 {t('confirm_reject')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Atıf (Kanıt) Yükleme Modalı */}
+      {isEvidenceModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-blue-50/50">
+              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                <Plus className="w-6 h-6 text-blue-600" />
+                Metin İçi Atıf / Kanıt Ekle
+              </h3>
+              <button onClick={() => setIsEvidenceModalOpen(false)} className="p-2 hover:bg-white rounded-full transition-colors">
+                <LinkIcon className="w-5 h-5 text-slate-400 rotate-45" />
+              </button>
+            </div>
+            
+            <div className="p-8 space-y-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Kanıt Adı</label>
+                <input 
+                  type="text"
+                  value={newEvidenceName}
+                  onChange={(e) => setNewEvidenceName(e.target.value)}
+                  placeholder="Örn: 2023 Yılı Memnuniyet Anketi"
+                  className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-slate-700 uppercase tracking-wider">Dosya Yükle (PDF/Word)</label>
+                <div 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-slate-200 rounded-3xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all group"
+                >
+                  <div className="p-4 bg-slate-100 rounded-2xl group-hover:bg-blue-100 transition-colors">
+                    <Plus className="w-8 h-8 text-slate-400 group-hover:text-blue-600" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-500 group-hover:text-blue-700">Dosya seçmek için tıklayın</span>
+                  <input 
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileUploadForInText}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx"
+                  />
+                </div>
+              </div>
+
+              {isUploadingInText && (
+                <div className="flex items-center justify-center gap-3 text-blue-600 font-bold py-4 bg-blue-50 rounded-2xl border border-blue-100">
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Dosya Yükleniyor ve Atıf Oluşturuluyor...
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end">
+              <button 
+                onClick={() => setIsEvidenceModalOpen(false)}
+                className="px-6 py-3 text-slate-600 font-bold hover:text-slate-800 transition-colors"
+              >
+                Vazgeç
               </button>
             </div>
           </div>

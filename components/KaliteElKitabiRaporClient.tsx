@@ -40,13 +40,14 @@ export default function KaliteElKitabiRaporClient() {
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
       <head><meta charset='utf-8'><title>Kurumsal Kalite El Kitabı</title>
       <style>
-        body { font-family: 'Calibri', 'Arial', sans-serif; padding: 20px; }
-        h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 10px; color: #1e40af; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 40px; page-break-inside: avoid; }
-        th { background-color: #2563eb; color: white; padding: 12px; text-align: left; font-size: 16px; border: 1px solid #1e40af; }
-        td.label { background-color: #2563eb; color: white; width: 30%; padding: 10px; font-weight: bold; border: 1px solid #1e40af; font-size: 12px; }
-        td.data { background-color: #f8fafc; padding: 10px; border: 1px solid #e2e8f0; font-size: 12px; }
-        .footer { text-align: center; font-size: 11px; color: #64748b; margin-top: 50px; }
+        body { font-family: 'Calibri', 'Arial', sans-serif; padding: 20px; color: #334155; }
+        h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 20px; color: #1e40af; font-size: 22px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; page-break-inside: avoid; break-inside: avoid; }
+        th { background-color: #2563eb; color: white; padding: 8px 12px; text-align: left; font-size: 14px; border: 1px solid #1e40af; }
+        td { vertical-align: top; line-height: 1.3; }
+        td.label { background-color: #2563eb; color: white; width: 30%; padding: 6px 10px; font-weight: bold; border: 1px solid #1e40af; font-size: 11px; }
+        td.data { background-color: #f8fafc; width: 70%; padding: 6px 10px; border: 1px solid #e2e8f0; font-size: 11px; color: #1e293b; }
+        .footer { text-align: center; font-size: 10px; color: #64748b; margin-top: 30px; }
       </style>
       </head>
       <body>

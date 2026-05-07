@@ -8,6 +8,14 @@ const handleI18nRouting = createIntlMiddleware(routing);
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = handleI18nRouting(request);
 
+  // Strip internal port from next-intl redirects
+  if (supabaseResponse.status >= 300 && supabaseResponse.status < 400) {
+    const location = supabaseResponse.headers.get('location');
+    if (location && location.includes(':8080')) {
+      supabaseResponse.headers.set('location', location.replace(':8080', ''));
+    }
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -19,6 +27,13 @@ export async function updateSession(request: NextRequest) {
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           supabaseResponse = handleI18nRouting(request)
+          // Strip internal port again if setAll triggers another routing pass
+          if (supabaseResponse.status >= 300 && supabaseResponse.status < 400) {
+            const location = supabaseResponse.headers.get('location');
+            if (location && location.includes(':8080')) {
+              supabaseResponse.headers.set('location', location.replace(':8080', ''));
+            }
+          }
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -45,36 +60,41 @@ export async function updateSession(request: NextRequest) {
     !pathname.startsWith('/favicon.ico') &&
     !pathname.startsWith('/public')
   ) {
-    // no user, redirect to login (next-intl will localize it on next pass)
     const url = request.nextUrl.clone()
+    url.port = '' // Force empty port for public redirect
     url.pathname = '/login'
     return NextResponse.redirect(url)
   }
 
-  // If user is authenticated, handle role-based routing
   if (user) {
-    // Check role from profiller
     const { data: profile } = await supabase
       .from('profiller')
       .select('rol')
       .eq('id', user.id)
       .single()
 
-
-
     if (isLoginPage) {
       const url = request.nextUrl.clone()
+      url.port = '' // Force empty port
       url.pathname = '/olcutler'
       return NextResponse.redirect(url)
     }
 
-    // Catch deleted or unauthorized old paths
     const oldPaths = ['/', '/puko', '/birimler'];
     
     if (oldPaths.some(p => pathWithoutLocale === p || pathWithoutLocale.startsWith('/birimler'))) {
       const url = request.nextUrl.clone()
+      url.port = '' // Force empty port
       url.pathname = '/olcutler'
       return NextResponse.redirect(url)
+    }
+  }
+
+  // Final check for the response being returned
+  if (supabaseResponse.status >= 300 && supabaseResponse.status < 400) {
+    const location = supabaseResponse.headers.get('location');
+    if (location && location.includes(':8080')) {
+      supabaseResponse.headers.set('location', location.replace(':8080', ''));
     }
   }
 

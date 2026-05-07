@@ -344,6 +344,15 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           .update({ onay_durumu: 'onaylandi', red_nedeni: null })
           .eq('id', currentRecord.id);
         if (error) throw error;
+        
+        // BİLDİRİM SENKRONİZASYONU: PUKÖ tablosundaki bekleyen tüm bildirimleri 'Onaylandı' yap
+        await supabase
+          .from('puko_degerlendirmeleri')
+          .update({ durum: 'Onaylandı', red_nedeni: null })
+          .eq('alt_olcut_id', resolvedParams.id)
+          .eq('donem_id', selectedPeriod?.id)
+          .eq('durum', 'Beklemede');
+
         setOnayDurumu('onaylandi');
       }
       alert(t('approve_success'));
@@ -374,6 +383,15 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           .update({ onay_durumu: 'reddedildi', red_nedeni: rejectReason })
           .eq('id', currentRecord.id);
         if (error) throw error;
+
+        // BİLDİRİM SENKRONİZASYONU: PUKÖ tablosundaki bekleyen bildirimi 'Reddedildi' yap
+        await supabase
+          .from('puko_degerlendirmeleri')
+          .update({ durum: 'Reddedildi', red_nedeni: rejectReason })
+          .eq('alt_olcut_id', resolvedParams.id)
+          .eq('donem_id', selectedPeriod?.id)
+          .eq('durum', 'Beklemede');
+
         setOnayDurumu('reddedildi');
         setRedNedeni(rejectReason);
       }

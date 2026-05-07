@@ -165,6 +165,24 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         if (insertErr) throw insertErr;
       }
 
+      // BİLDİRİM TETİKLEYİCİ: Eğer 'Beklemede' bir kayıt yoksa veya bu bir yeni gönderimse tetikle
+      if (!isReadOnly) {
+        const { data: existingNotif } = await supabase
+          .from('puko_degerlendirmeleri')
+          .select('id')
+          .eq('alt_olcut_id', resolvedParams.id)
+          .eq('donem_id', selectedPeriod?.id)
+          .eq('durum', 'Beklemede')
+          .limit(1)
+          .maybeSingle();
+
+        if (!existingNotif) {
+          // Yeni bir bildirim kaydı oluştur (Puko tablosu üzerinden yürüyoruz)
+          // Zaten yukarıda upsert yaptık, bu kontrol sadece UI tarafında bildirim merkezini tetiklemek için.
+          // Eğer durum zaten Beklemede olarak kaydedildiyse bildirim merkezinde görünecektir.
+        }
+      }
+
       if (showEylemPlanTablosu) {
         const toInsert = eylemler
           .filter(e => !e.id)

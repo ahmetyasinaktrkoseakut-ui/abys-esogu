@@ -63,12 +63,12 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
   const getStatusBadge = (durum: string) => {
     const lower = (durum || '').toLowerCase();
     if (lower === 'onaylandı' || lower === 'onaylandi') {
-      return <span className="bg-green-100 text-green-700 border border-green-200 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block shadow-sm">{t('status.approved')}</span>;
+      return <span className="bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block">{t('status.approved')}</span>;
     }
     if (lower === 'reddedildi') {
-      return <span className="bg-red-100 text-red-700 border border-red-200 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block shadow-sm">{t('status.rejected')}</span>;
+      return <span className="bg-red-50 text-red-700 ring-1 ring-red-600/20 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block">{t('status.rejected')}</span>;
     }
-    return <span className="bg-amber-100 text-amber-700 border border-amber-200 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block shadow-sm">{t('status.pending')}</span>;
+    return <span className="bg-amber-50 text-amber-700 ring-1 ring-amber-600/20 px-3 py-1 rounded-full text-xs font-bold w-24 text-center inline-block">{t('status.pending')}</span>;
   };
 
   const formatDate = (dateString: string) => {
@@ -146,7 +146,7 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
 
   return (
     <>
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+      <div className="bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse min-w-[900px]">
             <thead>
@@ -220,13 +220,18 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                           <div>
                             <button
                               onClick={() => handleOpenRevize(row)}
-                              className="text-xs font-semibold px-3 py-2 bg-white text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 transition-colors shadow-sm flex items-center gap-1.5"
+                              className="text-xs font-bold px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-all shadow-md shadow-indigo-500/20 flex items-center gap-2 active:scale-95"
                             >
                               <Upload className="w-3.5 h-3.5" />
                               {t('actions.revise')}
                             </button>
                           </div>
                         </div>
+                      ) : (row.durum || '').toLowerCase().includes('onay') ? (
+                        <span className="text-xs text-emerald-600 font-bold flex items-center gap-1">
+                          <Activity className="w-3 h-3" />
+                          Süreç Tamamlandı
+                        </span>
                       ) : (
                         <span className="text-xs text-slate-400 italic">{t('actions.no_action_needed')}</span>
                       )}

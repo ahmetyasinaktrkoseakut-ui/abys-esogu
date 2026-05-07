@@ -108,12 +108,8 @@ function SortableSoru({ id, children }: { id: string; children: React.ReactNode 
   );
 }
 
-export default function AnketYonetimiClient() {
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isCoordinator, setIsCoordinator] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const { selectedPeriod } = usePeriod();
+export default function AnketYonet  const t = useTranslations('Surveys');
+  const tCommon = useTranslations('Common');
   const locale = useLocale();
 
   const [olcutler, setOlcutler] = useState<any[]>([]);
@@ -291,7 +287,7 @@ export default function AnketYonetimiClient() {
   const handleSave = async () => {
     if (!selectedPeriod) return;
     if (hedefOlcutler.length === 0) {
-      alert('Lütfen en az bir hedef alt ölçüt seçiniz.');
+      alert(t('target_criteria'));
       return;
     }
     setIsSaving(true);
@@ -319,16 +315,13 @@ export default function AnketYonetimiClient() {
         isExpanded: true
       }]);
 
-      alert('Anket Başarıyla Oluşturuldu ve Dağıtıldı');
+      alert(t('save_success'));
 
-      // Yeni anketlerin listeye düşmesi için yayınlananları tekrar çekiyoruz
-      // expectedDbBaslik mantığını profil check'den geçirmeden yapabilmek için sayfayı reload yapmak en kolayıdır,
-      // veya yeniden fetch yapabiliriz. 
       window.location.reload();
 
     } catch (error: any) {
       console.error(error);
-      alert('Kaydedilirken bir hata oluştu: ' + error.message);
+      alert(tCommon('error') + ': ' + error.message);
     } finally {
       setIsSaving(false);
     }
@@ -451,17 +444,17 @@ export default function AnketYonetimiClient() {
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-slate-800 flex items-center gap-2">
           <Activity className="w-6 h-6 text-purple-600" />
-          Anket Yönetimi ve Dağıtımı
+          {t('title')}
         </h2>
-        <p className="text-slate-500 mt-2">Gelişmiş anketler oluşturun ve seçtiğiniz ölçütlerin "Kontrol Et" sayfalarına dağıtın.</p>
+        <p className="text-slate-500 mt-2">{t('desc')}</p>
       </div>
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
-          <label className="block text-md font-bold text-slate-800">Hedef Alt Ölçütler (Çoklu Seçim)</label>
+          <label className="block text-md font-bold text-slate-800">{t('target_criteria')}</label>
           <div className="space-x-2">
-            <button onClick={selectAll} className="text-xs font-semibold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg hover:bg-purple-100">Tümünü Seç</button>
-            <button onClick={deselectAll} className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200">Seçimi Temizle</button>
+            <button onClick={selectAll} className="text-xs font-semibold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg hover:bg-purple-100">{t('select_all')}</button>
+            <button onClick={deselectAll} className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200">{t('deselect_all')}</button>
           </div>
         </div>
         
@@ -492,7 +485,7 @@ export default function AnketYonetimiClient() {
           ))}
           {olcutler.length === 0 && <p className="text-sm text-slate-500">Gösterilecek ölçüt bulunamadı.</p>}
         </div>
-        <p className="text-xs text-slate-500 mt-2">Seçilen ölçüt sayısı: <strong className="text-purple-600">{hedefOlcutler.length}</strong></p>
+        <p className="text-xs text-slate-500 mt-2">{t('selected_count', { count: hedefOlcutler.length })}</p>
       </div>
 
       <div className="mb-6 flex justify-end">
@@ -501,7 +494,7 @@ export default function AnketYonetimiClient() {
           className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md shadow-purple-500/30 active:scale-[0.98]"
         >
           <Plus className="w-5 h-5" />
-          Yeni Form Ekle
+          {t('add_new_form')}
         </button>
       </div>
 
@@ -517,14 +510,14 @@ export default function AnketYonetimiClient() {
                 <div className={`p-2 rounded-lg ${anket.isExpanded ? 'bg-purple-100 text-purple-600' : 'bg-slate-100 text-slate-400'}`}>
                   {anket.isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
                 </div>
-                <h3 className="text-xl font-bold text-slate-800">{anket.baslik || 'İsimsiz Anket Formu'}</h3>
+                <h3 className="text-xl font-bold text-slate-800">{anket.baslik || t('form_placeholder')}</h3>
               </div>
               <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
                 <button 
                   onClick={() => deleteAnketFormItem(anketIdx)}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
                 >
-                  <Trash2 className="w-3.5 h-3.5" /> Formu Sil
+                  <Trash2 className="w-3.5 h-3.5" /> {t('delete_form')}
                 </button>
               </div>
             </div>
@@ -534,12 +527,12 @@ export default function AnketYonetimiClient() {
               <div className="animate-in slide-in-from-top-4 duration-300">
                 {/* 1. Anket Başlığı */}
                 <div className="p-8 border-b border-slate-100 bg-white">
-                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Anket Başlığı</label>
+                  <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">{t('form_title')}</label>
                   <input 
                     type="text" 
                     value={anket.baslik}
                     onChange={(e) => updateAnketField(anketIdx, 'baslik', e.target.value)}
-                    placeholder="Örn: Kurumsal Değerlendirme Anketi"
+                    placeholder={t('form_placeholder')}
                     className="w-full text-2xl font-black text-slate-800 border-b border-transparent hover:border-slate-200 focus:border-purple-500 focus:outline-none transition-colors bg-transparent pb-2"
                   />
                 </div>
@@ -548,31 +541,31 @@ export default function AnketYonetimiClient() {
                   <div className="p-8 bg-[#FAFAFA]">
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="flex items-center gap-2 font-bold text-slate-700 text-lg">
-                        <Edit3 className="w-5 h-5 text-purple-600" /> Soru Formu
+                        <Edit3 className="w-5 h-5 text-purple-600" /> {t('add_item')}
                       </h3>
                       <div className="flex items-center gap-2">
                         <button 
                           onClick={() => setPreviewAnket(anket)}
                           className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
                         >
-                          Önizleme
+                          {t('preview')}
                         </button>
                         <div className="relative group">
                           <button className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors">
-                            <Plus className="w-4 h-4" /> Yeni Öğe Ekle
+                            <Plus className="w-4 h-4" /> {t('add_item')}
                           </button>
                           <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-20 flex flex-col p-2">
-                            <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase">Standart Sorular</div>
-                            <button onClick={() => handleAddSoru(anketIdx, 'coktan_secmeli')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔘 Çoktan Seçmeli (Tekil)</button>
-                            <button onClick={() => handleAddSoru(anketIdx, 'coklu_secim')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">☑️ Çoklu Seçim (Çoklu)</button>
-                            <button onClick={() => handleAddSoru(anketIdx, 'acilir_menu')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔽 Açılır Menü (Dropdown)</button>
-                            <button onClick={() => handleAddSoru(anketIdx, 'kisa_yanit')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📝 Kısa Yanıt</button>
-                            <button onClick={() => handleAddSoru(anketIdx, 'uzun_yanit')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📄 Uzun Yanıt</button>
+                            <div className="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase">{t('types.standard')}</div>
+                            <button onClick={() => handleAddSoru(anketIdx, 'coktan_secmeli')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔘 {t('types.coktan_secmeli')}</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'coklu_secim')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">☑️ {t('types.coklu_secim')}</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'acilir_menu')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔽 {t('types.acilir_menu')}</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'kisa_yanit')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📝 {t('types.kisa_yanit')}</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'uzun_yanit')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📄 {t('types.uzun_yanit')}</button>
                             
-                            <div className="px-3 py-1 mt-2 text-[10px] font-bold text-slate-400 uppercase border-t pt-2">Gelişmiş Yapılar</div>
-                            <button onClick={() => handleAddSoru(anketIdx, 'likert')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📊 Likert Ölçek (Tablo)</button>
-                            <button onClick={() => handleAddSoru(anketIdx, 'coklu_metin')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔢 Çoklu Birim Metin Girişi</button>
-                            <button onClick={() => handleAddSoru(anketIdx, 'bilgi_kutusu')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">ℹ️ Bilgi / Açıklama Kutusu</button>
+                            <div className="px-3 py-1 mt-2 text-[10px] font-bold text-slate-400 uppercase border-t pt-2">{t('types.advanced')}</div>
+                            <button onClick={() => handleAddSoru(anketIdx, 'likert')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📊 {t('types.likert')}</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'coklu_metin')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔢 {t('types.coklu_metin')}</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'bilgi_kutusu')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">ℹ️ {t('types.bilgi_kutusu')}</button>
                           </div>
                         </div>
                       </div>
@@ -598,7 +591,7 @@ export default function AnketYonetimiClient() {
                                     </span>
                                     <div className="flex flex-col">
                                       <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">
-                                        {soru.tip.replace('_', ' ')}
+                                        {t(`types.${soru.tip}`)}
                                       </span>
                                     </div>
                                   </div>
@@ -611,7 +604,7 @@ export default function AnketYonetimiClient() {
                                           onChange={(e) => updateSoru(anketIdx, soru.id, { zorunlu: e.target.checked })}
                                           className="w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500"
                                         />
-                                        <span className="text-xs font-bold text-slate-500 uppercase">Zorunlu</span>
+                                        <span className="text-xs font-bold text-slate-500 uppercase">{t('required')}</span>
                                       </label>
                                     )}
                                     <button onClick={() => handleRemoveSoru(anketIdx, soru.id)} className="text-slate-300 hover:text-red-500 transition-colors p-1">
@@ -767,7 +760,7 @@ export default function AnketYonetimiClient() {
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
         >
           {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-          {isSaving ? 'Kaydediliyor...' : 'Anketleri Dağıt ve Kaydet'}
+          {isSaving ? t('saving') : t('save_and_distribute')}
         </button>
       </div>
 
@@ -776,7 +769,7 @@ export default function AnketYonetimiClient() {
         <div className="mt-12">
           <div className="flex items-center gap-3 mb-6 border-b border-slate-200 pb-4">
             <div className="bg-purple-100 p-2 rounded-lg"><BarChart2 className="w-6 h-6 text-purple-600" /></div>
-            <h2 className="text-2xl font-bold text-slate-800">Yayınlanan Anketler ve Canlı Analizler</h2>
+            <h2 className="text-2xl font-bold text-slate-800">{t('published_surveys')}</h2>
           </div>
 
           <div className="space-y-8">
@@ -792,11 +785,15 @@ export default function AnketYonetimiClient() {
                       <h3 className="text-xl font-bold text-slate-800">{anket.baslik}</h3>
                       <div className="flex flex-wrap gap-2 mt-2">
                         <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded-lg border border-purple-200">
-                          {yanitSayisi} Yanıt
+                          {t('responses', { count: yanitSayisi })}
                         </span>
                         <button 
                           onClick={() => handleCopyLink(anketId)}
                           className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors"
+                        >
+                          <LinkIcon className="w-3.5 h-3.5" /> {t('copy_link')}
+                        </button>
+bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors"
                         >
                           <LinkIcon className="w-3.5 h-3.5" /> Linki Kopyala
                         </button>

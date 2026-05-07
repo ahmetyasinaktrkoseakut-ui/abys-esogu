@@ -4,9 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
 import { Lock, Mail, User, Loader2, Eye, EyeOff, LayoutDashboard } from 'lucide-react'
+import { useTranslations, useLocale } from 'next-intl'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 export default function LoginPage() {
   const router = useRouter()
+  const t = useTranslations('Auth')
+  const locale = useLocale()
   
   const [isLogin, setIsLogin] = useState(true)
   const [adSoyad, setAdSoyad] = useState('')
@@ -29,7 +33,7 @@ export default function LoginPage() {
           password,
         })
         if (error) throw error
-        router.push('/olcutler')
+        router.push(`/${locale}/olcutler`)
         router.refresh()
       } else {
         // SIGN UP
@@ -47,22 +51,34 @@ export default function LoginPage() {
         if (error) throw error
 
         if (data.user) {
-          // BİLDİRİM VE PROFİL SENKRONİZASYONU
-          // Kayıt anında profiller tablosuna zorunlu kayıt atıyoruz
-          const { error: profileError } = await supabase.from('profiller').upsert({
-            id: data.user.id,
-            ad_soyad: adSoyad,
-            rol: 'BirimSorumlusu'
-          })
-          
-          if (profileError) console.error("Profil oluşturma hatası:", profileError)
+          // GÜVENLİ VERİTABANI SENKRONİZASYONU (API Route üzerinden)
+          try {
+            const syncRes = await fetch('/api/auth/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: data.user.id,
+                email: data.user.email,
+                ad_soyad: adSoyad,
+                rol: 'BirimSorumlusu'
+              })
+            });
+            
+            if (!syncRes.ok) {
+              const syncData = await syncRes.json();
+              throw new Error(syncData.error || 'Profil senkronizasyonu başarısız oldu.');
+            }
+          } catch (syncErr: any) {
+            console.error("Senkronizasyon Hatası:", syncErr);
+            throw syncErr; // Kayıt işlemini durdur ve hatayı göster
+          }
         }
 
-        setMessage({ type: 'success', text: 'Kayıt başarılı! Giriş yapabilirsiniz.' })
+        setMessage({ type: 'success', text: t('signup_success') })
         setIsLogin(true)
       }
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || 'Bir hata oluştu.' })
+      setMessage({ type: 'error', text: err.message || t('error_default') })
     } finally {
       setIsSubmitting(false)
     }
@@ -72,7 +88,13 @@ export default function LoginPage() {
     <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-white font-sans overflow-hidden">
       
       {/* SOL TARAF: FORM ALANI */}
-      <div className="flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 animate-in fade-in slide-in-from-left duration-700">
+      <div className="flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 animate-in fade-in slide-in-from-left duration-700 relative">
+        
+        {/* DİL SEÇİCİ - Sağ Üst */}
+        <div className="absolute top-8 right-8">
+          <LanguageSwitcher />
+        </div>
+
         <div className="w-full max-w-md">
           
           {/* Logo ve Başlık */}
@@ -82,10 +104,10 @@ export default function LoginPage() {
             </div>
             <div>
               <h1 className="text-xl font-black text-slate-900 leading-tight tracking-tight uppercase">
-                Akreditasyon Bilgi
+                {t('system_name')}
               </h1>
               <h2 className="text-lg font-bold text-slate-500 leading-tight">
-                Yönetim Sistemi
+                {t('system_subname')}
               </h2>
             </div>
           </div>
@@ -93,12 +115,10 @@ export default function LoginPage() {
           {/* Karşılama Metni */}
           <div className="mb-10">
             <h3 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
-              {isLogin ? 'Hoş Geldiniz' : 'Hesap Oluşturun'}
+              {isLogin ? t('login_title') : t('signup_title')}
             </h3>
             <p className="text-slate-500 font-medium">
-              {isLogin 
-                ? 'Kalite süreçlerini yönetmeye başlamak için giriş yapın.' 
-                : 'Sisteme kayıt olarak akreditasyon süreçlerine dahil olun.'}
+              {isLogin ? t('login_desc') : t('signup_desc')}
             </p>
           </div>
 
@@ -116,7 +136,7 @@ export default function LoginPage() {
             
             {!isLogin && (
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ad Soyad</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('full_name')}</label>
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors">
                     <User className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
@@ -127,14 +147,14 @@ export default function LoginPage() {
                     value={adSoyad}
                     onChange={(e) => setAdSoyad(e.target.value)}
                     className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
-                    placeholder="Adınız ve Soyadınız"
+                    placeholder={t('full_name_placeholder')}
                   />
                 </div>
               </div>
             )}
 
             <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">E-posta</label>
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('email')}</label>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
@@ -145,15 +165,15 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
-                  placeholder="isim@universite.edu.tr"
+                  placeholder={t('email_placeholder')}
                 />
               </div>
             </div>
 
             <div className="space-y-2">
               <div className="flex justify-between items-end pr-1">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Şifre</label>
-                {isLogin && <button type="button" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Şifremi Unuttum</button>}
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('password')}</label>
+                {isLogin && <button type="button" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">{t('forgot_password')}</button>}
               </div>
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -165,7 +185,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
-                  placeholder="••••••••"
+                  placeholder={t('password_placeholder')}
                 />
                 <button 
                   type="button" 
@@ -184,19 +204,19 @@ export default function LoginPage() {
                 className="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white py-5 rounded-2xl font-black text-lg transition-all shadow-2xl shadow-indigo-500/40 disabled:opacity-70 disabled:active:scale-100 uppercase tracking-tighter"
               >
                 {isSubmitting && <Loader2 className="w-6 h-6 animate-spin" />}
-                {isLogin ? 'Giriş Yap' : 'Hesap Oluştur'}
+                {isLogin ? t('login_button') : t('signup_button')}
               </button>
             </div>
           </form>
 
           <div className="mt-10 text-center">
             <p className="text-slate-500 font-bold">
-              {isLogin ? 'Henüz hesabınız yok mu?' : 'Zaten bir hesabınız var mı?'}
+              {isLogin ? t('no_account') : t('have_account')}
               <button 
                 onClick={() => setIsLogin(!isLogin)}
                 className="ml-2 text-indigo-600 hover:text-indigo-700 underline underline-offset-4 decoration-2"
               >
-                {isLogin ? 'Hemen Kayıt Olun' : 'Giriş Yapın'}
+                {isLogin ? t('signup_link') : t('login_link')}
               </button>
             </p>
           </div>
@@ -215,11 +235,11 @@ export default function LoginPage() {
           <div className="max-w-lg space-y-8">
             <div className="w-24 h-2 w-px bg-white/20 mx-auto mb-8"></div>
             <h4 className="text-4xl lg:text-5xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl">
-              "Akreditasyon, eğitimde mükemmeliyetin ve şeffaflığın temelidir."
+              "{t('quote')}"
             </h4>
             <div className="flex items-center justify-center gap-4 pt-8">
               <div className="h-px w-12 bg-white/30"></div>
-              <span className="text-white/60 font-bold text-sm tracking-widest uppercase">Kalite Yönetim Sistemi</span>
+              <span className="text-white/60 font-bold text-sm tracking-widest uppercase">{t('quality_system')}</span>
               <div className="h-px w-12 bg-white/30"></div>
             </div>
           </div>

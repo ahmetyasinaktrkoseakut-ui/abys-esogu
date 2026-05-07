@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, CheckCircle2, ClipboardList, Send } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface PublicAnketClientProps {
   params: Promise<{ id: string }>;
@@ -10,6 +11,9 @@ interface PublicAnketClientProps {
 
 export default function PublicAnketClient({ params }: PublicAnketClientProps) {
   const resolvedParams = use(params);
+  const t = useTranslations('Surveys.public');
+  const locale = useLocale();
+  
   const [anket, setAnket] = useState<any>(null);
   const [cevaplar, setCevaplar] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
@@ -104,8 +108,8 @@ export default function PublicAnketClient({ params }: PublicAnketClientProps) {
       <div className="min-h-screen bg-[#F0F2F5] flex items-center justify-center p-4">
         <div className="bg-white p-10 rounded-2xl shadow-md text-center max-w-md w-full border-t-8 border-t-emerald-500 animate-in zoom-in-95 duration-500">
           <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-800 mb-2">Yanıtınız Kaydedildi</h2>
-          <p className="text-slate-600 mb-6">Ankete katıldığınız için teşekkür ederiz. Yanıtınız başarıyla sisteme iletildi.</p>
+          <h2 className="text-2xl font-bold text-slate-800 mb-2">{t('success_title')}</h2>
+          <p className="text-slate-600 mb-6">{t('success_desc')}</p>
         </div>
       </div>
     );
@@ -121,10 +125,10 @@ export default function PublicAnketClient({ params }: PublicAnketClientProps) {
             <h1 className="text-3xl font-bold text-slate-900 mb-3">{anket.baslik}</h1>
             <div className="flex items-center gap-2 text-sm text-slate-500 mb-4 border-b border-slate-100 pb-4">
               <ClipboardList className="w-4 h-4" />
-              <span>Kalite ve Özdeğerlendirme Anketi</span>
+              <span>{t('title')}</span>
             </div>
             <p className="text-slate-600 leading-relaxed">
-              Bu anket, kurumumuzun ilgili ölçüt kapsamındaki uygulamalarını değerlendirmek amacıyla hazırlanmıştır. Katkılarınız için teşekkür ederiz.
+              {anket.aciklama || t('desc')}
             </p>
           </div>
         </div>
@@ -303,11 +307,10 @@ export default function PublicAnketClient({ params }: PublicAnketClientProps) {
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-8 py-3 rounded-lg font-bold transition-all shadow-md hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
-              {isSubmitting ? 'Gönderiliyor...' : 'Gönder'}
+              {isSubmitting ? t('submitting') : t('submit')}
             </button>
             <div className="text-xs text-slate-400 text-right">
-              Bu içerik BKY Sistemi kullanılarak oluşturulmuştur.<br/>
-              Asla şifrelerinizi göndermeyin.
+              {t('footer')}
             </div>
           </div>
         </form>

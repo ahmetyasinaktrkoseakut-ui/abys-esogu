@@ -3,177 +3,234 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase/client'
-import { Lock, Mail, ShieldCheck, Loader2 } from 'lucide-react'
+import { Lock, Mail, User, Loader2, Eye, EyeOff, LayoutDashboard } from 'lucide-react'
 
 export default function LoginPage() {
   const router = useRouter()
-
   
+  const [isLogin, setIsLogin] = useState(true)
+  const [adSoyad, setAdSoyad] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsSubmitting(true)
     setMessage(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (error) {
-        throw error
-      }
-
-      // Success, middleware will handle the redirect based on role
-      router.push('/olcutler')
-      router.refresh()
-
-    } catch (err: unknown) {
-      const error = err as Error
-      setMessage({ type: 'error', text: error.message || 'Giriş başarısız oldu.' })
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleSignUp = async () => {
-    if (!email || !password) {
-      setMessage({ type: 'error', text: 'Lütfen kayıt için e-posta ve şifrenizi girin.' })
-      return
-    }
-
-    setIsSubmitting(true)
-    setMessage(null)
-
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-
-      if (error) {
-        throw error
-      }
-
-      // Automatically create a profile for demo purposes (if RLS allows, else backend trigger should do it)
-      // Usually users are registered successfully but email confirmation might be needed.
-      if (data.user) {
-        // Attempt to insert a default role (if it fails due to RLS, it's fine, we try)
-        await supabase.from('profiller').insert({
-          id: data.user.id,
-          rol: 'BirimSorumlusu'
+      if (isLogin) {
+        // LOGIN
+        const { error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
         })
-      }
+        if (error) throw error
+        router.push('/olcutler')
+        router.refresh()
+      } else {
+        // SIGN UP
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              ad_soyad: adSoyad,
+              full_name: adSoyad // Compatibility
+            }
+          }
+        })
 
-      setMessage({ type: 'success', text: 'Kayıt başarılı! E-postanızı doğrulamanız gerekmiyorsa giriş yapabilirsiniz.' })
-      
-    } catch (err: unknown) {
-      const error = err as Error
-      let errText = error.message;
-      if (errText.toLowerCase().includes('rate limit')) {
-        errText = "Çok fazla kayıt emaili gönderildi. Supabase panelinden 'Rate Limit / Email Confirm' ayarını kapatmalısınız.";
+        if (error) throw error
+
+        if (data.user) {
+          // BİLDİRİM VE PROFİL SENKRONİZASYONU
+          // Kayıt anında profiller tablosuna zorunlu kayıt atıyoruz
+          const { error: profileError } = await supabase.from('profiller').upsert({
+            id: data.user.id,
+            ad_soyad: adSoyad,
+            rol: 'BirimSorumlusu'
+          })
+          
+          if (profileError) console.error("Profil oluşturma hatası:", profileError)
+        }
+
+        setMessage({ type: 'success', text: 'Kayıt başarılı! Giriş yapabilirsiniz.' })
+        setIsLogin(true)
       }
-      setMessage({ type: 'error', text: errText || 'Kayıt olurken bir hata oluştu.' })
+    } catch (err: any) {
+      setMessage({ type: 'error', text: err.message || 'Bir hata oluştu.' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 font-sans p-4">
-      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden animate-in fade-in zoom-in-95 duration-500">
-        
-        <div className="bg-slate-900 p-8 text-center relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500 rounded-full blur-3xl opacity-20 -mr-10 -mt-10"></div>
-          <div className="relative z-10 flex flex-col items-center">
-            <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/20 mb-4">
-              <ShieldCheck className="w-8 h-8 text-white" />
+    <div className="min-h-screen grid grid-cols-1 md:grid-cols-2 bg-white font-sans overflow-hidden">
+      
+      {/* SOL TARAF: FORM ALANI */}
+      <div className="flex flex-col items-center justify-center p-8 md:p-16 lg:p-24 animate-in fade-in slide-in-from-left duration-700">
+        <div className="w-full max-w-md">
+          
+          {/* Logo ve Başlık */}
+          <div className="flex items-center gap-4 mb-12">
+            <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-500/40 transform -rotate-3 hover:rotate-0 transition-transform cursor-pointer">
+              <LayoutDashboard className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white tracking-tight">BKY Sistemine Giriş</h1>
-            <p className="text-slate-400 text-sm mt-2">Lütfen devam etmek için bilgilerinizi girin.</p>
+            <div>
+              <h1 className="text-xl font-black text-slate-900 leading-tight tracking-tight uppercase">
+                Akreditasyon Bilgi
+              </h1>
+              <h2 className="text-lg font-bold text-slate-500 leading-tight">
+                Yönetim Sistemi
+              </h2>
+            </div>
           </div>
-        </div>
 
-        <div className="p-8">
+          {/* Karşılama Metni */}
+          <div className="mb-10">
+            <h3 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
+              {isLogin ? 'Hoş Geldiniz' : 'Hesap Oluşturun'}
+            </h3>
+            <p className="text-slate-500 font-medium">
+              {isLogin 
+                ? 'Kalite süreçlerini yönetmeye başlamak için giriş yapın.' 
+                : 'Sisteme kayıt olarak akreditasyon süreçlerine dahil olun.'}
+            </p>
+          </div>
+
           {message && (
-            <div className={`mb-6 p-4 rounded-xl text-sm font-medium border ${
+            <div className={`mb-8 p-4 rounded-2xl text-sm font-bold border animate-in slide-in-from-top duration-300 ${
               message.type === 'error' 
-                ? 'bg-red-50 text-red-700 border-red-200' 
-                : 'bg-green-50 text-green-700 border-green-200'
+                ? 'bg-red-50 text-red-700 border-red-100' 
+                : 'bg-emerald-50 text-emerald-700 border-emerald-100'
             }`}>
               {message.text}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleAuth} className="space-y-5">
             
-            <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-slate-700 ml-1">E-posta Adresi</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pt-0.5 pointer-events-none">
-                  <Mail className="h-5 w-5 text-slate-400" />
+            {!isLogin && (
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Ad Soyad</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors">
+                    <User className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    value={adSoyad}
+                    onChange={(e) => setAdSoyad(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
+                    placeholder="Adınız ve Soyadınız"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">E-posta</label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Mail className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
                 </div>
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm"
+                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
                   placeholder="isim@universite.edu.tr"
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-sm font-semibold text-slate-700 ml-1">Şifre</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pt-0.5 pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-400" />
+            <div className="space-y-2">
+              <div className="flex justify-between items-end pr-1">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">Şifre</label>
+                {isLogin && <button type="button" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Şifremi Unuttum</button>}
+              </div>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-11 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all sm:text-sm"
+                  className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
                   placeholder="••••••••"
                 />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </div>
 
-            <div className="pt-2 flex flex-col gap-3">
+            <div className="pt-6">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white py-3 rounded-xl font-medium transition-all shadow-sm shadow-blue-500/30 disabled:opacity-70 disabled:active:scale-100"
+                className="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white py-5 rounded-2xl font-black text-lg transition-all shadow-2xl shadow-indigo-500/40 disabled:opacity-70 disabled:active:scale-100 uppercase tracking-tighter"
               >
-                {isSubmitting && <Loader2 className="w-5 h-5 animate-spin" />}
-                Giriş Yap
-              </button>
-              
-              <div className="relative py-2 flex items-center">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink-0 mx-4 text-slate-400 text-xs">veya</span>
-                <div className="flex-grow border-t border-slate-200"></div>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleSignUp}
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-50 border border-slate-200 active:scale-[0.98] text-slate-700 py-3 rounded-xl font-medium transition-all disabled:opacity-70 disabled:active:scale-100"
-              >
-                Kayıt Ol (Test)
+                {isSubmitting && <Loader2 className="w-6 h-6 animate-spin" />}
+                {isLogin ? 'Giriş Yap' : 'Hesap Oluştur'}
               </button>
             </div>
-
           </form>
+
+          <div className="mt-10 text-center">
+            <p className="text-slate-500 font-bold">
+              {isLogin ? 'Henüz hesabınız yok mu?' : 'Zaten bir hesabınız var mı?'}
+              <button 
+                onClick={() => setIsLogin(!isLogin)}
+                className="ml-2 text-indigo-600 hover:text-indigo-700 underline underline-offset-4 decoration-2"
+              >
+                {isLogin ? 'Hemen Kayıt Olun' : 'Giriş Yapın'}
+              </button>
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* SAĞ TARAF: GÖRSEL ALAN */}
+      <div className="hidden md:block relative overflow-hidden group">
+        <div 
+          className="absolute inset-0 bg-cover bg-center transition-transform duration-[10s] group-hover:scale-110"
+          style={{ backgroundImage: "url('/login_illustration_1778194858641.png')" }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/60 to-slate-900/80 backdrop-blur-[2px]" />
         
+        <div className="absolute inset-0 flex flex-col items-center justify-center p-16 text-center">
+          <div className="max-w-lg space-y-8">
+            <div className="w-24 h-2 w-px bg-white/20 mx-auto mb-8"></div>
+            <h4 className="text-4xl lg:text-5xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl">
+              "Akreditasyon, eğitimde mükemmeliyetin ve şeffaflığın temelidir."
+            </h4>
+            <div className="flex items-center justify-center gap-4 pt-8">
+              <div className="h-px w-12 bg-white/30"></div>
+              <span className="text-white/60 font-bold text-sm tracking-widest uppercase">Kalite Yönetim Sistemi</span>
+              <div className="h-px w-12 bg-white/30"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Dekoratif Elementler */}
+        <div className="absolute bottom-10 right-10 flex gap-3">
+          <div className="w-3 h-3 rounded-full bg-white/20"></div>
+          <div className="w-3 h-3 rounded-full bg-white/50"></div>
+          <div className="w-3 h-3 rounded-full bg-white/20"></div>
+        </div>
       </div>
     </div>
   )

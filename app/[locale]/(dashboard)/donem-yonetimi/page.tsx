@@ -20,6 +20,7 @@ import { logAction } from '@/lib/logger';
 import { useTranslations } from 'next-intl';
 
 interface Period {
+  id: string;
   donem_adi: string;
   is_active: boolean;
   is_sealed?: boolean;
@@ -170,6 +171,18 @@ export default function PeriodManagementPage() {
       alert("Mühürleme hatası: " + error.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm(t('messages.delete_confirm'))) return;
+    try {
+      const { error } = await supabase.from('donemler').delete().eq('id', id);
+      if (error) throw error;
+      fetchPeriods();
+      window.location.reload();
+    } catch (error: any) {
+      alert(error.message);
     }
   };
 

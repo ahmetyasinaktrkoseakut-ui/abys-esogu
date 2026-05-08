@@ -1,4 +1,4 @@
-import { HelpCircle } from 'lucide-react';
+
 import { createClient } from '@/lib/supabase/server';
 import { getTranslations } from 'next-intl/server';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -64,9 +64,7 @@ export default async function Header() {
         <LanguageSwitcher />
         <div className="h-4 w-px bg-slate-200"></div>
         {user && <NotificationBellClient userId={user.id} isAdmin={isAdmin} />}
-        <button className="text-slate-500 hover:text-blue-600 transition-colors">
-          <HelpCircle className="w-5 h-5" />
-        </button>
+
         
         <div className="h-6 w-px bg-slate-200"></div>
         

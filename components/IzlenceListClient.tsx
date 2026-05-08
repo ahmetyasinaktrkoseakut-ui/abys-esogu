@@ -104,7 +104,7 @@ export default function IzlenceListClient({ initialDersler, izlenceler, user, ka
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {katDersleri.map((ders) => {
+                    {katDersleri.map((ders, idx) => {
                       const izlence = (izlenceler || []).find(i => i.ders_id === ders.kod);
                       const isFilled = isTrulyFilled(izlence?.icerik);
                       
@@ -113,7 +113,7 @@ export default function IzlenceListClient({ initialDersler, izlenceler, user, ka
                       const canView = isFilled && !isPlaceholder;
 
                       return (
-                        <tr key={ders.id || ders.kod + ders.ad} className="hover:bg-blue-50/50 transition-colors group">
+                        <tr key={`${ders.kod}-${ders.ad}-${idx}`} className="hover:bg-blue-50/50 transition-colors group">
                           <td className="p-4 text-center font-mono font-bold text-slate-400 group-hover:text-blue-600 transition-colors">{ders.kod}</td>
                           <td className="p-4 text-center font-black text-blue-900 border-x border-slate-50">{ders.tur}</td>
                           <td className="p-4 font-bold">

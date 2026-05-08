@@ -19,6 +19,7 @@ interface KaliteData {
   performans_gostergeleri: string;
   degerlendirme_iyilestirme_tarihi: string;
   bgs_yeri: string;
+  aciklama_metni?: string;
 }
 
 const initialData: KaliteData = {
@@ -32,6 +33,7 @@ const initialData: KaliteData = {
   performans_gostergeleri: '',
   degerlendirme_iyilestirme_tarihi: '',
   bgs_yeri: '',
+  aciklama_metni: '',
 };
 
 export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id: string }> }) {
@@ -102,7 +104,8 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
             izleme_mekanizmalari: formData.izleme_mekanizmalari,
             performans_gostergeleri: formData.performans_gostergeleri,
             degerlendirme_iyilestirme_tarihi: formData.degerlendirme_iyilestirme_tarihi,
-            bgs_yeri: formData.bgs_yeri
+            bgs_yeri: formData.bgs_yeri,
+            aciklama_metni: formData.aciklama_metni
           }
         })
         .eq('id', resolvedParams.id);
@@ -143,6 +146,23 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
       </div>
 
       {resolvedParams?.id && <StepPanel activeStepId="kalite_el_kitabi" altOlcutId={resolvedParams.id} />}
+
+      <div className="mb-8">
+        <label className="block text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+          <FileText className="w-5 h-5 text-indigo-600" />
+          KALİTE EL KİTABI AÇIKLAMASI
+        </label>
+        <div className="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+          <textarea
+            value={formData.aciklama_metni}
+            onChange={(e) => handleInputChange('aciklama_metni', e.target.value)}
+            disabled={isReadOnly}
+            rows={12}
+            className="w-full p-8 text-slate-700 bg-transparent border-none outline-none resize-y min-h-[300px] leading-relaxed font-medium placeholder:text-slate-300"
+            placeholder="Bu ölçüte dair detaylı açıklama metnini veya raporu buraya giriniz..."
+          />
+        </div>
+      </div>
 
       <div className="bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden mb-10">
         <table className="w-full border-collapse table-fixed">

@@ -75,7 +75,7 @@ export default function OlcutlerPage() {
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="mb-8 border-b border-slate-200/60 pb-6">
         <h2 className="text-4xl font-extrabold text-slate-900 tracking-tight">{t('title') || 'Ölçütler'}</h2>
-        <p className="text-slate-500 mt-2 font-medium">{t('description') || 'Kurumsal akreditasyon için değerlendirilecek ölçütleri yönetin.'}</p>
+        <p className="text-slate-600 mt-2 font-bold text-sm leading-relaxed">{t('description') || 'Kurumsal akreditasyon için değerlendirilecek ölçütleri yönetin.'}</p>
       </div>
 
       {isLoading ? (

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, BookOpen, Search, Info } from 'lucide-react';
+import { Loader2, BookOpen, Search, Info, FileText } from 'lucide-react';
 import { useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
@@ -58,6 +58,10 @@ export default function KaliteElKitabiRaporClient() {
     altOlcutler.forEach((olcut, index) => {
       const data = olcut.kalite_el_kitabi;
       htmlContent += `
+        <div style="margin-top: 30px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #1e40af;">
+          ${index + 1}. ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}
+        </div>
+        ${data.aciklama_metni ? `<div class="description-box"><strong>KALİTE EL KİTABI AÇIKLAMASI:</strong><br/>${data.aciklama_metni}</div>` : ''}
         <table>
           <thead>
             <tr>
@@ -133,6 +137,17 @@ export default function KaliteElKitabiRaporClient() {
                   </h3>
                   <Info className="w-5 h-5 text-indigo-200" />
                 </div>
+                
+                {data.aciklama_metni && (
+                  <div className="p-8 bg-slate-50 border-b border-slate-100">
+                    <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                      <FileText className="w-4 h-4" /> KALİTE EL KİTABI AÇIKLAMASI
+                    </h4>
+                    <div className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-wrap bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+                      {data.aciklama_metni}
+                    </div>
+                  </div>
+                )}
                 <table className="w-full border-collapse">
                   <tbody className="divide-y divide-slate-100">
                     {[

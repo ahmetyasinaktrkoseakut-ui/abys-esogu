@@ -36,7 +36,7 @@ export default async function DashboardPage() {
             <Presentation className="w-8 h-8 text-indigo-600" />
             Akreditasyon Panosu
           </h2>
-          <p className="text-slate-500 font-medium mt-1">Sistemin genel yürütme durumu ve birim istatistikleri.</p>
+          <p className="text-slate-600 font-bold mt-1 text-sm leading-relaxed">Sistemin genel yürütme durumu ve birim istatistikleri.</p>
         </div>
       </div>
 

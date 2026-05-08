@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Plus, Info, Save, Link as LinkIcon, Settings, CalendarDays, ExternalLink, Trash2 } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { logAction } from '@/lib/logger';
 import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
 import { getLocalizedField } from '@/lib/i18n-utils';
@@ -56,7 +57,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       if (user) {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = profile?.rol?.toLowerCase() || '';
-        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false) {
+        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false || selectedPeriod?.is_sealed === true) {
           setIsReadOnly(true);
         }
       }
@@ -158,11 +159,27 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           .update(upsertData)
           .eq('id', existingRecord.id);
         if (updateErr) throw updateErr;
+        
+        await logAction({
+          islemTipi: 'UPDATE',
+          tabloAdi: 'puko_degerlendirmeleri',
+          kayitId: existingRecord.id,
+          yeniVeri: upsertData
+        });
       } else {
-        const { error: insertErr } = await supabase
+        const { data: newRec, error: insertErr } = await supabase
           .from('puko_degerlendirmeleri')
-          .insert(upsertData);
+          .insert(upsertData)
+          .select('id')
+          .single();
         if (insertErr) throw insertErr;
+
+        await logAction({
+          islemTipi: 'INSERT',
+          tabloAdi: 'puko_degerlendirmeleri',
+          kayitId: newRec?.id,
+          yeniVeri: upsertData
+        });
       }
 
       // BİLDİRİM TETİKLEYİCİ: Eğer 'Beklemede' bir kayıt yoksa veya bu bir yeni gönderimse tetikle
@@ -257,9 +274,33 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
     }
   };
 
-  const handleRemoveDoc = (index: number) => {
+  const handleRemoveDoc = async (index: number) => {
     if (confirm(t('delete_confirm'))) {
-        setDokumanlar(prev => prev.filter((_, i) => i !== index));
+      const docToRemove = dokumanlar[index];
+      
+      try {
+        // 1. Storage'dan Fiziksel Silme
+        if (docToRemove.url) {
+          const urlParts = docToRemove.url.split('/');
+          const fileName = urlParts[urlParts.length - 1];
+          await supabase.storage.from('dokumanlar').remove([fileName]);
+        }
+
+        // 2. State'den Kaldırma
+        const newDocs = dokumanlar.filter((_, i) => i !== index);
+        setDokumanlar(newDocs);
+
+        // 3. Audit Log
+        await logAction({
+          islemTipi: 'DELETE',
+          tabloAdi: 'dokumanlar (puko_kanit)',
+          kayitId: pukoId || undefined,
+          eskiVeri: docToRemove
+        });
+
+      } catch (error) {
+        console.error('Evidence Removal Error:', error);
+      }
     }
   };
 

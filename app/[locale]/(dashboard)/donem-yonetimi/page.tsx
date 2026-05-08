@@ -12,14 +12,17 @@ import {
   Loader2, 
   AlertTriangle,
   X,
-  Save
+  Save,
+  Lock,
+  Unlock
 } from 'lucide-react';
+import { logAction } from '@/lib/logger';
 import { useTranslations } from 'next-intl';
 
 interface Period {
-  id: string;
   donem_adi: string;
   is_active: boolean;
+  is_sealed?: boolean;
   created_at?: string;
 }
 
@@ -124,16 +127,49 @@ export default function PeriodManagementPage() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm(t('messages.delete_confirm'))) return;
+  const handleSealPeriod = async (period: Period) => {
+    if (!confirm(`${period.donem_adi} dönemini mühürlemek istediğinize emin misiniz? Bu işlem geri alınamaz ve tüm veriler salt okunur (read-only) olacaktır.`)) return;
 
     try {
-      const { error } = await supabase.from('donemler').delete().eq('id', id);
+      setIsLoading(true);
+      
+      // 1. Dönemi mühürle
+      const { error } = await supabase
+        .from('donemler')
+        .update({ is_sealed: true, is_active: false })
+        .eq('id', period.id);
+      
       if (error) throw error;
+
+      // 2. Audit Log
+      await logAction({
+        islemTipi: 'SEAL',
+        tabloAdi: 'donemler',
+        kayitId: period.id,
+        yeniVeri: { is_sealed: true }
+      });
+
+      // 3. Otomatik Yeni Dönem Şablonu (2026 -> 2027 gibi)
+      const currentYear = parseInt(period.donem_adi);
+      if (!isNaN(currentYear)) {
+        const nextYear = (currentYear + 1).toString();
+        const { data: existingNext } = await supabase.from('donemler').select('id').eq('donem_adi', nextYear).maybeSingle();
+        
+        if (!existingNext) {
+          await supabase.from('donemler').insert({
+            donem_adi: nextYear,
+            is_active: true
+          });
+        }
+      }
+
+      alert("Dönem başarıyla mühürlendi ve yeni dönem şablonu hazırlandı.");
       fetchPeriods();
       window.location.reload();
     } catch (error: any) {
-      alert(error.message);
+      alert("Mühürleme hatası: " + error.message);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -200,6 +236,11 @@ export default function PeriodManagementPage() {
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         {t('status.active')}
                       </span>
+                    ) : period.is_sealed ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-900 text-white rounded-full text-xs font-bold ring-1 ring-slate-800">
+                        <Lock className="w-3.5 h-3.5" />
+                        MÜHÜRLÜ
+                      </span>
                     ) : (
                       <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-50 text-slate-500 rounded-full text-xs font-bold ring-1 ring-slate-600/20">
                         <XCircle className="w-3.5 h-3.5" />
@@ -208,18 +249,32 @@ export default function PeriodManagementPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-right space-x-2">
-                    <button 
-                      onClick={() => handleOpenModal(period)}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                    >
-                      <Edit2 className="w-5 h-5" />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(period.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    {!period.is_sealed && (
+                      <>
+                        <button 
+                          onClick={() => handleSealPeriod(period)}
+                          className="p-2 text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+                          title="Dönemi Mühürle (Kalıcı Kilit)"
+                        >
+                          <Lock className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleOpenModal(period)}
+                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        >
+                          <Edit2 className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(period.id)}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        >
+                          <Trash2 className="w-5 h-5" />
+                        </button>
+                      </>
+                    )}
+                    {period.is_sealed && (
+                      <span className="text-xs font-bold text-slate-400 italic">Arşivlenmiş Dönem</span>
+                    )}
                   </td>
                 </tr>
               ))

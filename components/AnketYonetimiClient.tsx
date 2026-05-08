@@ -806,7 +806,7 @@ export default function AnketYonetimiClient() {
                           onClick={() => deleteYayinlananAnket(anketId, anket.baslik)}
                           className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
                         >
-                          <Trash2 className="w-3.5 h-3.5" /> Anketi Kaldır
+                          <Trash2 className="w-3.5 h-3.5" /> {t('remove_survey') || 'Anketi Kaldır'}
                         </button>
                       </div>
                     </div>
@@ -826,8 +826,8 @@ export default function AnketYonetimiClient() {
                   
                   <div className="p-6">
                     {yanitSayisi === 0 ? (
-                      <div className="text-center py-8 text-slate-500 font-medium text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                        Henüz hiç yanıt alınmamış.
+                      <div className="text-center py-8 text-slate-600 font-bold text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        {t('no_responses') || 'Henüz hiç yanıt alınmamış.'}
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

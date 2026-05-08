@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, File, ExternalLink, Download, Search } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
 interface DokumanItem {
@@ -21,6 +21,8 @@ export default function DokumanlarPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const locale = useLocale();
+  const t = useTranslations('Documents');
+  const commonT = useTranslations('Common');
 
   useEffect(() => {
     async function fetchDocs() {
@@ -66,8 +68,8 @@ export default function DokumanlarPage() {
     <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
       <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Kurumsal Doküman Yönetimi</h2>
-          <p className="text-slate-500 mt-1 text-sm">Sisteme yüklenen tüm PUKÖ kanıt dosyaları ve belgeler.</p>
+          <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{t('title') || 'Kurumsal Doküman Yönetimi'}</h2>
+          <p className="text-slate-600 mt-1 text-sm font-medium">{t('description') || 'Sisteme yüklenen tüm PUKÖ kanıt dosyaları ve belgeler.'}</p>
         </div>
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -90,12 +92,12 @@ export default function DokumanlarPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/80 border-b border-slate-200">
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Doküman Adı</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">İlgili Ölçüt</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">PUKÖ Aşaması</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Boyut</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">İşlemler</th>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-6 py-4 text-xs font-bold text-slate-600 uppercase tracking-widest">{t('table.file_name')}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-600 uppercase tracking-widest">{t('table.related_criteria')}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-600 uppercase tracking-widest">{t('table.phase')}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-600 uppercase tracking-widest">{t('table.size')}</th>
+                  <th className="px-6 py-4 text-xs font-bold text-slate-600 uppercase tracking-widest text-right">{t('table.actions')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">

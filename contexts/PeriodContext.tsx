@@ -7,6 +7,7 @@ interface Period {
   id: string;
   donem_adi: string;
   is_active: boolean;
+  is_sealed?: boolean;
 }
 
 interface PeriodContextType {

@@ -92,7 +92,7 @@ export default function OlcutlerPage() {
       }
     }
     fetchData();
-  }, [selectedPeriod]);
+  }, [selectedPeriod, userRole]); // Added userRole to dependencies to ensure re-render if role is updated
 
   return (
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-500">

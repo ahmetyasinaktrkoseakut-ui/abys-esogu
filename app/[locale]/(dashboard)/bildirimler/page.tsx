@@ -31,7 +31,9 @@ export default function BildirimlerPage() {
 
         const role = profile?.rol?.toLowerCase() || '';
         const isUserAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
-        setIsAdmin(isUserAdmin);
+        const isUserCoordinator = !isUserAdmin && (role.includes('koordinatör') || role.includes('koordinator'));
+        
+        setIsAdmin(isUserAdmin || isUserCoordinator); // Both roles see the approval view
 
         if (isUserAdmin) {
           const { data } = await supabase
@@ -44,6 +46,41 @@ export default function BildirimlerPage() {
           if (data) {
             const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
             setNotifications(uniqueData);
+          } else {
+            setNotifications([]);
+          }
+        } else if (isUserCoordinator) {
+          // Koordinatörün atandığı ana başlıkları çek
+          const { data: assignments } = await supabase
+            .from('baslik_koordinatorleri')
+            .select('ana_baslik_id')
+            .eq('kullanici_id', user.id);
+
+          if (assignments && assignments.length > 0) {
+            const assignedBaslikIds = assignments.map(a => a.ana_baslik_id);
+            
+            // Bu başlıklar altındaki TÜM alt ölçütleri bul
+            const { data: olcutler } = await supabase
+              .from('alt_olcutler')
+              .select('id')
+              .in('ana_baslik_id', assignedBaslikIds);
+            
+            const allowedAltOlcutIds = olcutler?.map(o => o.id) || [];
+
+            const { data } = await supabase
+              .from('puko_degerlendirmeleri')
+              .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
+              .in('alt_olcut_id', allowedAltOlcutIds)
+              .eq('durum', 'Beklemede')
+              .eq('donem_id', selectedPeriod.id)
+              .order('olusturulma_tarihi', { ascending: false });
+
+            if (data) {
+              const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
+              setNotifications(uniqueData);
+            } else {
+              setNotifications([]);
+            }
           } else {
             setNotifications([]);
           }

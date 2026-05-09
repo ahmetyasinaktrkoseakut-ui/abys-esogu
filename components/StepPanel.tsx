@@ -105,28 +105,45 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
   useEffect(() => {
     async function fetchProgresses() {
       try {
-        const { data } = await supabase
+        // PUKO verilerini çek (1-6. adımlar için)
+        const { data: pukoData } = await supabase
           .from('puko_degerlendirmeleri')
           .select('puko_asamasi, aciklama, kanit_dosyalari')
           .eq('alt_olcut_id', altOlcutId)
           .eq('donem_id', selectedPeriod?.id);
+
+        // ÖDR verisini çek (7. adım için)
+        const { data: raporData } = await supabase
+          .from('ozdegerlendirme_raporlari')
+          .select('icerik, kanitlar')
+          .eq('alt_olcut_id', altOlcutId)
+          .eq('donem_id', selectedPeriod?.id)
+          .maybeSingle();
           
-        if (data && data.length > 0) {
-          setSteps(prevSteps => prevSteps.map(step => {
-            const row = data.find(r => r.puko_asamasi === step.id);
-            let progress = 0;
+        setSteps(prevSteps => prevSteps.map(step => {
+          let progress = 0;
+
+          if (step.id === 'rapor') {
+            // 7. Buton Kontrolü
+            const hasContent = raporData?.icerik && raporData.icerik.length > 50;
+            const hasEvidences = raporData?.kanitlar && Array.isArray(raporData.kanitlar) && raporData.kanitlar.length > 0;
+            if (hasContent || hasEvidences) progress = 100;
+          } else {
+            // 1-6. Buton Kontrolü
+            const row = pukoData?.find(r => r.puko_asamasi === step.id);
             if (row) {
-              const hasText = row.aciklama && row.aciklama.length > 10;
+              const hasText = row.aciklama && row.aciklama.replace(/<[^>]*>/g, '').trim().length > 10;
               const hasDoc = row.kanit_dosyalari && Array.isArray(row.kanit_dosyalari) && row.kanit_dosyalari.length > 0;
               if (hasText || hasDoc) progress = 100;
             }
-            return {
-              ...step,
-              progress,
-              status: activeStepId === step.id ? 'active' : (progress === 100 ? 'completed' : 'pending')
-            };
-          }));
-        }
+          }
+
+          return {
+            ...step,
+            progress,
+            status: activeStepId === step.id ? 'active' : (progress === 100 ? 'completed' : 'pending')
+          };
+        }));
       } catch (e) {
         console.error(e);
       }

@@ -426,14 +426,6 @@ export default function RaporlarClient() {
                 <span className="text-lg relative z-10">{t('create_report')}</span>
               </button>
 
-              <button 
-                onClick={handleKaliteRaporuOlustur}
-                disabled={isGenerating}
-                className="mt-6 flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-bold transition-all text-sm group"
-              >
-                <BookOpen className="w-4 h-4 group-hover:scale-110 transition-transform" /> 
-                <span className="border-b border-emerald-200 group-hover:border-emerald-600">Kalite El Kitabı Raporu Al (.doc)</span>
-              </button>
             </div>
           )}
         </div>

@@ -390,13 +390,6 @@ export default function RaporlarClient() {
           <p className="text-slate-500 mt-2">{t('description')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <button 
-            onClick={handleKaliteRaporuOlustur}
-            disabled={isGenerating}
-            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md disabled:opacity-50"
-          >
-            <BookOpen className="w-5 h-5" /> Kalite El Kitabı Raporu Al
-          </button>
           {raporData && (
             <button 
               onClick={exportToWord}
@@ -431,6 +424,15 @@ export default function RaporlarClient() {
               >
                 <FileText className="w-6 h-6 relative z-10" />
                 <span className="text-lg relative z-10">{t('create_report')}</span>
+              </button>
+
+              <button 
+                onClick={handleKaliteRaporuOlustur}
+                disabled={isGenerating}
+                className="mt-6 flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-bold transition-all text-sm group"
+              >
+                <BookOpen className="w-4 h-4 group-hover:scale-110 transition-transform" /> 
+                <span className="border-b border-emerald-200 group-hover:border-emerald-600">Kalite El Kitabı Raporu Al (.doc)</span>
               </button>
             </div>
           )}

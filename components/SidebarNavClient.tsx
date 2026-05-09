@@ -120,10 +120,13 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
         <div className="pt-2">
           {showFullMenu && (
             <>
-              <Link href="/bildirimler" className={getLinkClass('/bildirimler')}>
-                <Bell className="w-5 h-5 flex-shrink-0" />
-                {t('notifications')}
-              </Link>
+              {/* Koordinatör için Bildirimler menüsünü kaldırıyoruz, Veri Onayı tek merkez olacak */}
+              {!isCoordinator && (
+                <Link href="/bildirimler" className={getLinkClass('/bildirimler')}>
+                  <Bell className="w-5 h-5 flex-shrink-0" />
+                  {t('notifications')}
+                </Link>
+              )}
               {isAdmin && (
                 <Link href="/takvim" className={getLinkClass('/takvim')}>
                   <Calendar className="w-5 h-5 flex-shrink-0" />

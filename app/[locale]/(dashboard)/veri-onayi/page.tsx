@@ -150,16 +150,32 @@ export default function VeriOnayiPage() {
     
     try {
       setIsSubmitting(true);
-      const { error } = await supabase
+      
+      // 1. Raporu al (alt_olcut_id ve donem_id'ye ulaşmak için)
+      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('alt_olcut_id, donem_id').eq('id', id).single();
+
+      // 2. Raporu onayla
+      const { error: reportError } = await supabase
         .from('ozdegerlendirme_raporlari')
         .update({ onay_durumu: 'onaylandi', red_nedeni: null })
         .eq('id', id);
 
-      if (error) throw error;
+      if (reportError) throw reportError;
 
-      setMessage({ type: 'success', text: 'Rapor başarıyla onaylandı.' });
+      // 3. PUKÖ Tablosundaki ilgili tüm bildirimleri 'Onaylandı' yap (Yönetici panelinde de böyle gözükecek)
+      if (report) {
+        await supabase
+          .from('puko_degerlendirmeleri')
+          .update({ durum: 'Onaylandı', red_nedeni: null })
+          .eq('alt_olcut_id', report.alt_olcut_id)
+          .eq('donem_id', report.donem_id)
+          .eq('durum', 'Beklemede');
+      }
+
+      setMessage({ type: 'success', text: 'Rapor ve ilgili PUKÖ kayıtları başarıyla onaylandı.' });
       setReports(prev => prev.filter(r => r.id !== id));
     } catch (error: any) {
+      console.error("Onay hatası:", error);
       setMessage({ type: 'error', text: 'Onaylanırken hata oluştu.' });
     } finally {
       setIsSubmitting(false);
@@ -171,7 +187,12 @@ export default function VeriOnayiPage() {
     
     try {
       setIsSubmitting(true);
-      const { error } = await supabase
+      
+      // 1. Raporu al
+      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('alt_olcut_id, donem_id').eq('id', selectedReportId).single();
+
+      // 2. Raporu reddet
+      const { error: reportError } = await supabase
         .from('ozdegerlendirme_raporlari')
         .update({ 
           onay_durumu: 'reddedildi', 
@@ -179,14 +200,25 @@ export default function VeriOnayiPage() {
         })
         .eq('id', selectedReportId);
 
-      if (error) throw error;
+      if (reportError) throw reportError;
 
-      setMessage({ type: 'success', text: 'Rapor reddedildi.' });
+      // 3. PUKÖ Tablosunu güncelle
+      if (report) {
+        await supabase
+          .from('puko_degerlendirmeleri')
+          .update({ durum: 'Reddedildi', red_nedeni: rejectReason.trim() })
+          .eq('alt_olcut_id', report.alt_olcut_id)
+          .eq('donem_id', report.donem_id)
+          .eq('durum', 'Beklemede');
+      }
+
+      setMessage({ type: 'success', text: 'Rapor reddedildi ve bildirimler güncellendi.' });
       setReports(prev => prev.filter(r => r.id !== selectedReportId));
       setIsRejectModalOpen(false);
       setSelectedReportId(null);
       setRejectReason('');
     } catch (error: any) {
+      console.error("Red hatası:", error);
       setMessage({ type: 'error', text: 'Reddedilirken hata oluştu.' });
     } finally {
       setIsSubmitting(false);

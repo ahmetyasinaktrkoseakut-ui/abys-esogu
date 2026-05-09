@@ -5,14 +5,14 @@ import { supabase } from '@/lib/supabase/client';
 import BildirimlerTableClient from '@/components/BildirimlerTableClient';
 import { useTranslations } from 'next-intl';
 import { usePeriod } from '@/contexts/PeriodContext';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle } from 'lucide-react';
 
 export default function BildirimlerPage() {
   const t = useTranslations('Notifications');
   const { selectedPeriod } = usePeriod();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [userRole, setUserRole] = useState('');
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
@@ -20,6 +20,7 @@ export default function BildirimlerPage() {
       if (!selectedPeriod) return;
       
       setIsLoading(true);
+      setErrorStatus(null);
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -31,11 +32,11 @@ export default function BildirimlerPage() {
           .single();
 
         const role = (profile?.rol || '').toLowerCase();
-        setUserRole(role);
         const isUserAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
         const isUserCoordinator = !isUserAdmin && (role.includes('koordinatör') || role.includes('koordinator'));
         
-        setIsAdmin(isUserAdmin || isUserCoordinator); // Both roles see approval buttons
+        // Zorunlu (force) true for coordinator/admin
+        setIsAdmin(isUserAdmin || isUserCoordinator); 
 
         if (isUserAdmin) {
           const { data } = await supabase
@@ -52,27 +53,41 @@ export default function BildirimlerPage() {
             setNotifications([]);
           }
         } else if (isUserCoordinator) {
-          // Hard-coded Brute Force Mapping for Notifications
+          // 1. Manuel Yetki Haritası
+          const authorityMap: Record<string, string> = { 
+            'kalite': 'A', 
+            'eğitim': 'B', 
+            'öğretim': 'B', 
+            'araştırma': 'C', 
+            'toplumsal': 'D', 
+            'yönetim': 'E' 
+          };
+
           const { data: coordData } = await supabase
             .from('baslik_koordinatorleri')
             .select('baslik')
             .eq('kullanici_id', user.id)
             .single();
 
-          let targetLetter = '';
+          let foundLetter = '';
           if (coordData?.baslik) {
             const b = coordData.baslik.toLowerCase();
-            if (b.includes('kalite')) targetLetter = 'A';
-            else if (b.includes('eğitim') || b.includes('öğretim')) targetLetter = 'B';
-            else if (b.includes('araştırma')) targetLetter = 'C';
-            else if (b.includes('toplumsal')) targetLetter = 'D';
-            else if (b.includes('yönetim')) targetLetter = 'E';
+            for (const key in authorityMap) {
+              if (b.includes(key)) {
+                foundLetter = authorityMap[key];
+                break;
+              }
+            }
           }
 
-          if (targetLetter) {
+          if (!foundLetter) {
+            setErrorStatus('Hata: Yetkili Olduğunuz Başlık Tespit Edilemedi');
+            setNotifications([]);
+          } else {
+            // 3. Bildirimler Zorunlu Filtreleme
             const { data: tumOlcutler } = await supabase.from('alt_olcutler').select('id, kod');
             const allowedAltOlcutIds = (tumOlcutler || [])
-              .filter(o => o.kod && o.kod.startsWith(targetLetter))
+              .filter(o => o.kod && o.kod.startsWith(foundLetter))
               .map(o => o.id);
 
             if (allowedAltOlcutIds.length > 0) {
@@ -93,11 +108,9 @@ export default function BildirimlerPage() {
             } else {
               setNotifications([]);
             }
-          } else {
-            console.error('Coordinator title not matched for notifications:', coordData?.baslik);
-            setNotifications([]);
           }
         } else {
+          // Birim Kullanıcısı
           const { data: atamalar } = await supabase
             .from('kullanici_olcut_atamalari')
             .select('alt_olcut_id')
@@ -124,7 +137,7 @@ export default function BildirimlerPage() {
           }
         }
       } catch (error) {
-        console.error("Bildirimler fetch error:", error);
+        console.error("Bildirimler Page Error:", error);
       } finally {
         setIsLoading(false);
       }
@@ -133,10 +146,8 @@ export default function BildirimlerPage() {
     fetchData();
   }, [selectedPeriod]);
 
-  const isCoord = userRole.includes('koordinatör') || userRole.includes('koordinator');
-
   if (isLoading) {
-    return <div className="h-[calc(100vh-100px)] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;
+    return <div className="h-[calc(100vh-100px)] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-600" /></div>;
   }
 
   return (
@@ -148,10 +159,11 @@ export default function BildirimlerPage() {
         </p>
       </div>
 
-      {isCoord && notifications.length === 0 && (
-          <div className="mb-6 bg-amber-50 border border-amber-200 p-6 rounded-2xl text-amber-800 text-center font-bold">
-            Yetkili olduğunuz başlık bulunamadı veya onay bekleyen bir bildirim yok.
-          </div>
+      {errorStatus && (
+        <div className="mb-8 p-6 bg-red-50 border-2 border-red-200 rounded-3xl flex items-center gap-4 animate-bounce">
+          <AlertTriangle className="w-8 h-8 text-red-600 animate-pulse" />
+          <h3 className="text-xl font-black text-red-700 uppercase tracking-tighter">{errorStatus}</h3>
+        </div>
       )}
       
       <BildirimlerTableClient initialData={notifications} isApprover={isAdmin} />

@@ -427,5 +427,20 @@
       "success_desc": "Ankete katıldığınız için teşekkür ederiz. Yanıtınız başarıyla sisteme iletildi.",
       "footer": "Bu içerik BKY Sistemi kullanılarak oluşturulmuştur."
     }
+  },
+  "Documents": {
+    "title": "Döküman Yönetimi",
+    "description": "Sistem genelindeki tüm PUKÖ kanıt dosyaları ve belgeler.",
+    "table": {
+      "file_name": "Dosya Adı",
+      "related_criteria": "İlgili Ölçüt",
+      "phase": "Aşama",
+      "size": "Boyut",
+      "actions": "İşlemler"
+    }
+  },
+  "Syllabi": {
+    "title": "Ders İzlenceleri (Syllabus)",
+    "description": "Bölümdeki tüm derslerin içeriklerini, haftalık planlarını ve değerlendirme yöntemlerini yönetin."
   }
 }

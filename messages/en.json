@@ -427,5 +427,20 @@
       "success_desc": "Thank you for participating in the survey. Your response has been successfully sent to the system.",
       "footer": "This content was created using the BKY System."
     }
+  },
+  "Documents": {
+    "title": "Document Management",
+    "description": "All PDCA evidence files and documents throughout the system.",
+    "table": {
+      "file_name": "File Name",
+      "related_criteria": "Related Criterion",
+      "phase": "Phase",
+      "size": "Size",
+      "actions": "Actions"
+    }
+  },
+  "Syllabi": {
+    "title": "Course Syllabi (Syllabus)",
+    "description": "Manage the contents, weekly plans, and evaluation methods of all courses in the department."
   }
 }

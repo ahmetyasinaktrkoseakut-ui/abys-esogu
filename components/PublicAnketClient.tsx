@@ -136,11 +136,16 @@ export default function PublicAnketClient({ params }: PublicAnketClientProps) {
         {/* Form İçeriği */}
         <form onSubmit={handleSubmit} className="space-y-6">
           {anket.sorular?.map((soru: any, index: number) => (
-            <div key={soru.id} className={`bg-white p-8 rounded-2xl shadow-sm border transition-all ${soru.tip === 'bilgi_kutusu' ? 'border-amber-200 bg-amber-50/20' : 'border-slate-200 focus-within:shadow-md focus-within:border-purple-300'}`}>
+            <div key={soru.id} className={`bg-white p-8 rounded-2xl shadow-sm border transition-all ${soru.tip === 'bilgi_kutusu' ? 'border-amber-200 bg-amber-50/20' : soru.tip === 'bolum_basligi' ? 'border-none bg-gradient-to-r from-purple-50 to-blue-50 shadow-inner' : 'border-slate-200 focus-within:shadow-md focus-within:border-purple-300'}`}>
               {soru.tip === 'bilgi_kutusu' ? (
                 <div className="prose prose-slate max-w-none">
                   <h3 className="text-xl font-bold text-slate-900 border-b pb-2 mb-4">{soru.soru}</h3>
                   <div dangerouslySetInnerHTML={{ __html: soru.aciklama || '' }} />
+                </div>
+              ) : soru.tip === 'bolum_basligi' ? (
+                <div className="py-4 border-b-2 border-purple-500 pb-4">
+                  <h2 className="text-2xl font-black text-slate-800 tracking-tight">{soru.soru}</h2>
+                  {soru.aciklama && <p className="text-sm text-slate-500 mt-2 font-medium">{soru.aciklama}</p>}
                 </div>
               ) : (
                 <>
@@ -230,44 +235,46 @@ export default function PublicAnketClient({ params }: PublicAnketClientProps) {
 
                     {/* Likert Ölçek */}
                     {soru.tip === 'likert' && (
-                      <div className="overflow-x-auto -mx-4 md:mx-0">
-                        <table className="w-full border-collapse min-w-[600px]">
+                      <div className="overflow-x-auto -mx-4 md:mx-0 border border-slate-200 rounded-xl">
+                        <table className="w-full border-collapse min-w-[600px] text-left">
                           <thead>
-                            <tr className="bg-slate-50">
-                              <th className="p-4 text-left text-xs font-black text-slate-500 uppercase tracking-widest border-b border-slate-200">Sorular</th>
-                              {Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => (
-                                <th key={i} className="p-4 text-center text-xs font-black text-slate-500 uppercase border-b border-slate-200">
-                                  {i + 1}
+                            <tr className="bg-slate-50 border-b border-slate-200">
+                              <th className="p-4 text-xs font-black text-slate-500 uppercase tracking-widest w-1/3 min-w-[250px] border-r border-slate-200">Sorular</th>
+                              {(soru.secenekler && soru.secenekler.length > 0 ? soru.secenekler : Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => ({ id: `col${i}`, metin: (i + 1).toString() }))).map((sec: any) => (
+                                <th key={sec.id} className="p-4 text-center text-xs font-black text-slate-500 uppercase border-r border-slate-200 last:border-0">
+                                  {sec.metin}
                                 </th>
                               ))}
                             </tr>
                           </thead>
                           <tbody>
-                            {/* Likert'te her satır ayrı bir soru olabilir ama şu anki şemada 'secenekler' satırlar için kullanılabilir */}
-                            {(soru.secenekler && soru.secenekler.length > 0 ? soru.secenekler : [{id: 'row1', metin: 'Değerlendirme'}]).map((satir: any) => (
-                              <tr key={satir.id} className="hover:bg-purple-50/30 transition-colors border-b border-slate-100 last:border-0">
-                                <td className="p-4 text-sm font-medium text-slate-700">{satir.metin}</td>
-                                {Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => {
-                                  const val = (i + 1).toString();
-                                  const currentVal = (cevaplar[soru.id] || {})[satir.id];
-                                  return (
-                                    <td key={i} className="p-4 text-center">
-                                      <input 
-                                        type="radio"
-                                        required={soru.zorunlu}
-                                        name={`likert_${soru.id}_${satir.id}`}
-                                        checked={currentVal === val}
-                                        onChange={() => {
-                                          const next = { ...(cevaplar[soru.id] || {}), [satir.id]: val };
-                                          handleCevapChange(soru.id, next);
-                                        }}
-                                        className="w-5 h-5 text-purple-600 focus:ring-purple-500"
-                                      />
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))}
+                            {(soru.birimler && soru.birimler.length > 0 ? soru.birimler : ['Değerlendirme İfadesi']).map((ifade: string, iIdx: number) => {
+                              const safeRowId = `row_${iIdx}`;
+                              return (
+                                <tr key={safeRowId} className="hover:bg-purple-50/30 transition-colors border-b border-slate-100 last:border-0">
+                                  <td className="p-4 text-sm font-medium text-slate-700 border-r border-slate-200">{ifade}</td>
+                                  {(soru.secenekler && soru.secenekler.length > 0 ? soru.secenekler : Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => ({ id: `col${i}`, metin: (i + 1).toString() }))).map((sec: any) => {
+                                    const val = sec.id || sec.metin;
+                                    const currentVal = (cevaplar[soru.id] || {})[safeRowId];
+                                    return (
+                                      <td key={sec.id} className="p-4 text-center border-r border-slate-200 last:border-0">
+                                        <input 
+                                          type="radio"
+                                          required={soru.zorunlu}
+                                          name={`likert_${soru.id}_${safeRowId}`}
+                                          checked={currentVal === val}
+                                          onChange={() => {
+                                            const next = { ...(cevaplar[soru.id] || {}), [safeRowId]: val };
+                                            handleCevapChange(soru.id, next);
+                                          }}
+                                          className="w-5 h-5 text-purple-600 focus:ring-purple-500"
+                                        />
+                                      </td>
+                                    );
+                                  })}
+                                </tr>
+                              );
+                            })}
                           </tbody>
                         </table>
                       </div>

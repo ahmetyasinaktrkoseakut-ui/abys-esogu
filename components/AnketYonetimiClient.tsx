@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, ChevronDown, ChevronUp, BarChart2 } from 'lucide-react';
+import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, ChevronDown, ChevronUp, BarChart2, Pencil, Info, GripVertical, PlusCircle } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useLocale, useTranslations } from 'next-intl';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from 'recharts';
@@ -37,7 +37,8 @@ type SoruTipi =
   | 'acilir_menu' 
   | 'likert' 
   | 'coklu_metin' 
-  | 'bilgi_kutusu';
+  | 'bilgi_kutusu'
+  | 'bolum_basligi';
 
 interface Secenek {
   id: string;
@@ -574,6 +575,7 @@ export default function AnketYonetimiClient() {
                             <button onClick={() => handleAddSoru(anketIdx, 'likert')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📊 {t('types.likert')}</button>
                             <button onClick={() => handleAddSoru(anketIdx, 'coklu_metin')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔢 {t('types.coklu_metin')}</button>
                             <button onClick={() => handleAddSoru(anketIdx, 'bilgi_kutusu')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">ℹ️ {t('types.bilgi_kutusu')}</button>
+                            <button onClick={() => handleAddSoru(anketIdx, 'bolum_basligi')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📌 Bölüm Başlığı</button>
                           </div>
                         </div>
                       </div>
@@ -591,7 +593,7 @@ export default function AnketYonetimiClient() {
                         <div className="space-y-6">
                           {anket.sorular.map((soru, sIdx) => (
                             <SortableSoru key={soru.id} id={soru.id}>
-                              <div className={`bg-white p-6 rounded-2xl border-2 shadow-sm relative group/soru transition-all ${soru.tip === 'bilgi_kutusu' ? 'border-amber-100 bg-amber-50/30' : 'border-slate-100'}`}>
+                              <div className={`bg-white p-6 rounded-2xl border-2 shadow-sm relative group/soru transition-all ${soru.tip === 'bilgi_kutusu' ? 'border-amber-100 bg-amber-50/30' : soru.tip === 'bolum_basligi' ? 'border-blue-100 bg-blue-50/30' : 'border-slate-100'}`}>
                                 <div className="flex items-start justify-between mb-4">
                                   <div className="flex items-center gap-3">
                                     <span className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center font-bold text-sm">
@@ -599,12 +601,12 @@ export default function AnketYonetimiClient() {
                                     </span>
                                     <div className="flex flex-col">
                                       <span className="text-[10px] font-black text-purple-600 uppercase tracking-widest">
-                                        {t(`types.${soru.tip}`)}
+                                        {soru.tip === 'bolum_basligi' ? 'BÖLÜM BAŞLIĞI' : t(`types.${soru.tip}`)}
                                       </span>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    {soru.tip !== 'bilgi_kutusu' && (
+                                    {soru.tip !== 'bilgi_kutusu' && soru.tip !== 'bolum_basligi' && (
                                       <label className="flex items-center gap-1.5 cursor-pointer mr-4">
                                         <input 
                                           type="checkbox" 
@@ -650,20 +652,142 @@ export default function AnketYonetimiClient() {
                                     </div>
                                   )}
 
-                                  {/* Likert Seçenekleri */}
+                                  {/* Likert Seçenekleri ve Matris */}
                                   {soru.tip === 'likert' && (
-                                    <div className="flex items-center gap-4 bg-purple-50 p-3 rounded-xl border border-purple-100">
-                                      <span className="text-xs font-bold text-purple-700 uppercase">Ölçek Tipi:</span>
-                                      <div className="flex gap-2">
-                                        {[3, 5, 7].map(v => (
+                                    <div className="space-y-4 mt-2 border-t border-slate-100 pt-4">
+                                      <div className="flex items-center gap-4 bg-purple-50 p-3 rounded-xl border border-purple-100 mb-6">
+                                        <span className="text-xs font-bold text-purple-700 uppercase">Ölçek Tipi:</span>
+                                        <div className="flex gap-2">
+                                          {[3, 5, 7].map(v => (
+                                            <button 
+                                              key={v}
+                                              onClick={() => {
+                                                const defaultOptions = v === 3 ? ['Katılmıyorum', 'Kararsızım', 'Katılıyorum'] : 
+                                                                       v === 5 ? ['Hiç Katılmıyorum', 'Katılmıyorum', 'Kararsızım', 'Katılıyorum', 'Tamamen Katılıyorum'] :
+                                                                       ['Kesinlikle Katılmıyorum', 'Katılmıyorum', 'Biraz Katılmıyorum', 'Kararsızım', 'Biraz Katılıyorum', 'Katılıyorum', 'Kesinlikle Katılıyorum'];
+                                                
+                                                const newSecenekler = Array.from({length: v}).map((_, i) => ({
+                                                  id: Math.random().toString(36).substr(2, 9),
+                                                  metin: soru.secenekler?.[i]?.metin || defaultOptions[i] || `Seçenek ${i+1}`
+                                                }));
+                                                
+                                                updateSoru(anketIdx, soru.id, { likert_olcek: v, secenekler: newSecenekler });
+                                              }}
+                                              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${soru.likert_olcek === v ? 'bg-[#8b1ce8] text-white shadow-sm' : 'bg-white text-slate-600 border border-slate-200 hover:border-purple-300 hover:text-purple-600'}`}
+                                            >
+                                              {v}'li Likert
+                                            </button>
+                                          ))}
+                                        </div>
+                                      </div>
+
+                                      <div className="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                                        <div className="overflow-x-auto">
+                                          <table className="w-full text-left min-w-max border-collapse">
+                                            <thead>
+                                              <tr>
+                                                <th className="p-4 bg-white min-w-[280px] border-b border-r border-slate-100">
+                                                  <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                                    Satırlar (İfadeler) <Info className="w-4 h-4 text-slate-400" />
+                                                  </div>
+                                                </th>
+                                                <th className="p-4 bg-white border-b border-slate-100" colSpan={soru.secenekler?.length || 1}>
+                                                  <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                                      Seçenekler <Info className="w-4 h-4 text-slate-400" />
+                                                    </div>
+                                                    <button 
+                                                      onClick={() => {
+                                                        const newSecenekler = [...(soru.secenekler || []), { id: Math.random().toString(36).substr(2, 9), metin: 'Yeni Seçenek' }];
+                                                        updateSoru(anketIdx, soru.id, { secenekler: newSecenekler, likert_olcek: newSecenekler.length });
+                                                      }}
+                                                      className="flex items-center gap-1.5 text-xs font-bold text-[#8b1ce8] hover:text-purple-700 transition-colors"
+                                                    >
+                                                      <PlusCircle className="w-4 h-4" /> Seçenek Ekle
+                                                    </button>
+                                                  </div>
+                                                </th>
+                                                <th className="p-4 bg-white border-b border-slate-100 w-12"></th>
+                                              </tr>
+                                              <tr>
+                                                <td className="p-3 border-r border-slate-100 border-b border-slate-100 bg-white"></td>
+                                                {soru.secenekler?.map((sec, sIdx) => (
+                                                  <td key={sec.id} className="p-3 min-w-[130px] border-r border-slate-100 border-b border-slate-100 bg-white">
+                                                    <div className="relative group/opt flex items-center bg-white border border-slate-200 rounded-lg px-2 py-2 focus-within:border-[#8b1ce8] focus-within:ring-1 focus-within:ring-[#8b1ce8] transition-all">
+                                                      <input 
+                                                        type="text"
+                                                        value={sec.metin}
+                                                        onChange={(e) => {
+                                                          const newSecenekler = [...(soru.secenekler || [])];
+                                                          newSecenekler[sIdx].metin = e.target.value;
+                                                          updateSoru(anketIdx, soru.id, { secenekler: newSecenekler });
+                                                        }}
+                                                        className="w-full text-xs font-medium text-slate-700 text-center focus:outline-none bg-transparent"
+                                                      />
+                                                      <Pencil className="w-3 h-3 text-slate-300 absolute right-2 opacity-0 group-hover/opt:opacity-100 transition-opacity pointer-events-none" />
+                                                    </div>
+                                                  </td>
+                                                ))}
+                                                <td className="border-b border-slate-100 bg-white"></td>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {(soru.birimler || ['İfade 1']).map((ifade, iIdx) => (
+                                                <tr key={iIdx} className="hover:bg-slate-50/50 transition-colors group/row">
+                                                  <td className="p-3 border-r border-b border-slate-100">
+                                                    <div className="flex items-center gap-3">
+                                                      <GripVertical className="w-4 h-4 text-slate-300 cursor-grab" />
+                                                      <span className="w-6 h-6 flex items-center justify-center bg-slate-50 text-slate-600 font-bold text-xs rounded border border-slate-100">
+                                                        {iIdx + 1}
+                                                      </span>
+                                                      <div className="relative flex-1 group/input flex items-center bg-white border border-slate-200 rounded-lg px-3 py-2 focus-within:border-[#8b1ce8] focus-within:ring-1 focus-within:ring-[#8b1ce8] transition-all">
+                                                        <input 
+                                                          type="text"
+                                                          value={ifade}
+                                                          onChange={(e) => {
+                                                            const newBirimler = [...(soru.birimler || [])];
+                                                            newBirimler[iIdx] = e.target.value;
+                                                            updateSoru(anketIdx, soru.id, { birimler: newBirimler });
+                                                          }}
+                                                          className="w-full text-xs font-medium text-slate-700 focus:outline-none bg-transparent"
+                                                          placeholder="İfade yazın..."
+                                                        />
+                                                        <Pencil className="w-3.5 h-3.5 text-slate-300 absolute right-2 opacity-0 group-hover/input:opacity-100 transition-opacity pointer-events-none" />
+                                                      </div>
+                                                    </div>
+                                                  </td>
+                                                  {soru.secenekler?.map(sec => (
+                                                    <td key={sec.id} className="p-3 text-center border-r border-b border-slate-100">
+                                                      <div className="w-4 h-4 rounded-full border-2 border-slate-300 mx-auto group-hover/row:border-[#8b1ce8] transition-colors"></div>
+                                                    </td>
+                                                  ))}
+                                                  <td className="p-3 text-center border-b border-slate-100">
+                                                    <button 
+                                                      onClick={() => {
+                                                        const newBirimler = (soru.birimler || []).filter((_, idx) => idx !== iIdx);
+                                                        updateSoru(anketIdx, soru.id, { birimler: newBirimler });
+                                                      }}
+                                                      className="text-slate-300 hover:text-red-500 transition-colors p-1"
+                                                    >
+                                                      <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                  </td>
+                                                </tr>
+                                              ))}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                        <div className="p-4 bg-white border-t border-slate-100">
                                           <button 
-                                            key={v}
-                                            onClick={() => updateSoru(anketIdx, soru.id, { likert_olcek: v })}
-                                            className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${soru.likert_olcek === v ? 'bg-purple-600 text-white' : 'bg-white text-slate-500 border border-slate-200 hover:border-purple-300'}`}
+                                            onClick={() => {
+                                              const newBirimler = [...(soru.birimler || []), `İfade ${(soru.birimler?.length || 0) + 1}`];
+                                              updateSoru(anketIdx, soru.id, { birimler: newBirimler });
+                                            }}
+                                            className="flex items-center gap-1.5 text-xs font-bold text-[#8b1ce8] hover:text-purple-700 transition-colors"
                                           >
-                                            {v}'li Likert
+                                            <PlusCircle className="w-4 h-4" /> Satır Ekle
                                           </button>
-                                        ))}
+                                        </div>
                                       </div>
                                     </div>
                                   )}
@@ -806,7 +930,7 @@ export default function AnketYonetimiClient() {
                           onClick={() => deleteYayinlananAnket(anketId, anket.baslik)}
                           className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
                         >
-                          <Trash2 className="w-3.5 h-3.5" /> {t('remove_survey') || 'Anketi Kaldır'}
+                          <Trash2 className="w-3.5 h-3.5" /> Anketi Kaldır
                         </button>
                       </div>
                     </div>
@@ -827,7 +951,7 @@ export default function AnketYonetimiClient() {
                   <div className="p-6">
                     {yanitSayisi === 0 ? (
                       <div className="text-center py-8 text-slate-600 font-bold text-sm bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                        {t('no_responses') || 'Henüz hiç yanıt alınmamış.'}
+                        Henüz hiç yanıt alınmamış.
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -851,27 +975,72 @@ export default function AnketYonetimiClient() {
                               deger: frequency[sec.id] || 0
                             }));
                           } else if (soru.tip === 'likert') {
-                            // Likert tablo olduğu için her satırın ortalamasını gösterebiliriz veya basit bir özet
-                            chartData = []; // Likert için detaylı tablo görünümü gerekebilir, şimdilik boş
+                            chartData = []; // Likert verisi tablo olarak basılacak
                           }
 
+                          const isTextResponse = soru.tip === 'kisa_yanit' || soru.tip === 'uzun_yanit';
+                          const isLikert = soru.tip === 'likert';
+
                           return (
-                            <div key={`chart_${soru.id}`} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col h-[280px]">
+                            <div key={`chart_${soru.id}`} className={`bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col ${isTextResponse || isLikert ? 'h-auto max-h-[400px]' : 'h-[280px]'}`}>
                               <h4 className="font-semibold text-slate-700 mb-4 text-xs text-center line-clamp-2" title={soru.soru}>{soru.soru}</h4>
-                              <div className="flex-1 w-full">
-                                <ResponsiveContainer width="100%" height="100%">
-                                  <BarChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
-                                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                                    <XAxis dataKey="name" tick={{fontSize: 10, fill: '#64748B'}} axisLine={false} tickLine={false} />
-                                    <YAxis allowDecimals={false} tick={{fontSize: 10, fill: '#64748B'}} axisLine={false} tickLine={false} />
-                                    <RechartsTooltip formatter={(value: any) => [`${value} Yanıt`, 'Miktar']} cursor={{fill: '#F1F5F9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />
-                                    <Bar dataKey="deger" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={30}>
-                                      {chartData.map((_, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                      ))}
-                                    </Bar>
-                                  </BarChart>
-                                </ResponsiveContainer>
+                              <div className="flex-1 w-full overflow-y-auto">
+                                {isTextResponse ? (
+                                  <div className="space-y-2 pr-2">
+                                    {soruOzetleri.filter(c => c && typeof c === 'string' && c.trim() !== '').length > 0 ? (
+                                      soruOzetleri.filter(c => c && typeof c === 'string' && c.trim() !== '').map((cevap, cIdx) => (
+                                        <div key={cIdx} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-sm text-slate-700 break-words flex gap-3 shadow-sm mb-2">
+                                          <span className="font-bold text-slate-400 select-none min-w-[20px]">{cIdx + 1}.</span>
+                                          <span className="flex-1 leading-relaxed">{cevap}</span>
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="text-center text-slate-400 text-xs py-4">Yanıt yok.</div>
+                                    )}
+                                  </div>
+                                ) : isLikert ? (
+                                  <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                                    <table className="w-full text-xs text-left min-w-max">
+                                      <thead className="bg-slate-50 border-b border-slate-200">
+                                        <tr>
+                                          <th className="p-2 text-slate-500 font-bold border-r border-slate-200">İfade</th>
+                                          {(soru.secenekler || []).map(sec => (
+                                            <th key={sec.id} className="p-2 text-center text-slate-500 font-bold border-r border-slate-200 last:border-0">{sec.metin}</th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {(soru.birimler || []).map((ifade, iIdx) => {
+                                          const safeRowId = `row_${iIdx}`;
+                                          return (
+                                            <tr key={iIdx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                                              <td className="p-2 font-medium text-slate-700 border-r border-slate-200">{ifade}</td>
+                                              {(soru.secenekler || []).map(sec => {
+                                                const val = sec.id || sec.metin;
+                                                const count = soruOzetleri.filter(c => c && typeof c === 'object' && c[safeRowId] === val).length;
+                                                return <td key={sec.id} className="p-2 text-center text-slate-600 border-r border-slate-200 last:border-0 font-bold">{count}</td>;
+                                              })}
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                ) : (
+                                  <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={chartData} margin={{ top: 10, right: 10, bottom: 0, left: -20 }}>
+                                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                      <XAxis dataKey="name" tick={{fontSize: 10, fill: '#64748B'}} axisLine={false} tickLine={false} />
+                                      <YAxis allowDecimals={false} tick={{fontSize: 10, fill: '#64748B'}} axisLine={false} tickLine={false} />
+                                      <RechartsTooltip formatter={(value: any) => [`${value} Yanıt`, 'Miktar']} cursor={{fill: '#F1F5F9'}} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: '12px' }} />
+                                      <Bar dataKey="deger" fill="#8b5cf6" radius={[4, 4, 0, 0]} barSize={30}>
+                                        {chartData.map((_, index) => (
+                                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                        ))}
+                                      </Bar>
+                                    </BarChart>
+                                  </ResponsiveContainer>
+                                )}
                               </div>
                             </div>
                           );
@@ -911,11 +1080,16 @@ export default function AnketYonetimiClient() {
                   </div>
                   <div className="space-y-6">
                     {previewAnket.sorular.map((soru, index) => (
-                      <div key={soru.id} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-200">
+                      <div key={soru.id} className={`bg-white p-8 rounded-2xl shadow-sm border transition-all ${soru.tip === 'bilgi_kutusu' ? 'border-amber-200 bg-amber-50/20' : soru.tip === 'bolum_basligi' ? 'border-none bg-gradient-to-r from-purple-50 to-blue-50 shadow-inner' : 'border-slate-200'}`}>
                         {soru.tip === 'bilgi_kutusu' ? (
                           <div className="prose prose-slate max-w-none">
                             <h3 className="text-xl font-bold text-slate-900 border-b pb-2 mb-4">{soru.soru}</h3>
                             <div dangerouslySetInnerHTML={{ __html: soru.aciklama || '' }} />
+                          </div>
+                        ) : soru.tip === 'bolum_basligi' ? (
+                          <div className="py-4 border-b-2 border-purple-500 pb-4">
+                            <h2 className="text-2xl font-black text-slate-800 tracking-tight">{soru.soru}</h2>
+                            {soru.aciklama && <p className="text-sm text-slate-500 mt-2 font-medium">{soru.aciklama}</p>}
                           </div>
                         ) : (
                           <>

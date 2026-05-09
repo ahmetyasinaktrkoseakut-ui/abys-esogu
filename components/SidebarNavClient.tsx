@@ -124,16 +124,22 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
                 <Bell className="w-5 h-5 flex-shrink-0" />
                 {t('notifications')}
               </Link>
-              <Link href="/takvim" className={getLinkClass('/takvim')}>
-                <Calendar className="w-5 h-5 flex-shrink-0" />
-                {t('calendar')}
-              </Link>
-              {(isAdmin || isCoordinator) && (
+              {isAdmin && (
+                <Link href="/takvim" className={getLinkClass('/takvim')}>
+                  <Calendar className="w-5 h-5 flex-shrink-0" />
+                  {t('calendar')}
+                </Link>
+              )}
+              {(isAdmin) && (
                 <>
                   <Link href="/kalite-el-kitabi" className={getLinkClass('/kalite-el-kitabi')}>
                     <BookOpen className="w-5 h-5 flex-shrink-0" />
                     {tQM('title')}
                   </Link>
+                </>
+              )}
+              {(isAdmin || isCoordinator) && (
+                <>
                   <Link href="/anket-yonetimi" className={getLinkClass('/anket-yonetimi')}>
                     <Activity className="w-5 h-5 flex-shrink-0" />
                     {t('survey_management')}

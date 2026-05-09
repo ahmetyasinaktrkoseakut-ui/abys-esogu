@@ -13,6 +13,8 @@ export default function OlcutlerPage() {
   const { selectedPeriod } = usePeriod();
   const [olcutler, setOlcutler] = useState<any[]>([]);
   const [anaBasliklar, setAnaBasliklar] = useState<any[]>([]);
+  const [coordinatorAssignments, setCoordinatorAssignments] = useState<any[]>([]);
+  const [userRole, setUserRole] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const locale = useLocale();
@@ -36,12 +38,33 @@ export default function OlcutlerPage() {
         if (!user) return;
 
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
-        const role = profile?.rol?.toLowerCase() || '';
+        const role = (profile?.rol || '').toLowerCase();
+        setUserRole(role);
+        
         const isAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+        const isCoordinator = !isAdmin && (role.includes('koordinatör') || role.includes('koordinator'));
 
         if (isAdmin) {
           const { data } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
           setOlcutler(data || []);
+        } else if (isCoordinator) {
+          // Koordinatörün atandığı ana başlıkları çek
+          const { data: assignments } = await supabase
+            .from('baslik_koordinatorleri')
+            .select('ana_baslik_id, ana_basliklar(kod)')
+            .eq('kullanici_id', user.id);
+          
+          setCoordinatorAssignments(assignments || []);
+
+          if (assignments && assignments.length > 0) {
+            const assignedBaslikIds = assignments.map(a => a.ana_baslik_id);
+            const { data } = await supabase
+              .from('alt_olcutler')
+              .select('*')
+              .in('ana_baslik_id', assignedBaslikIds)
+              .order('id', { ascending: true });
+            setOlcutler(data || []);
+          }
         } else {
           const { data } = await supabase
             .from('kullanici_olcut_atamalari')
@@ -93,6 +116,12 @@ export default function OlcutlerPage() {
             }, {} as Record<string, any[]>)
           )
           .sort(([k1], [k2]) => k1.localeCompare(k2))
+          .filter(([harf]) => {
+            const isCoord = userRole.includes('koordinatör') || userRole.includes('koordinator');
+            if (!isCoord) return true;
+            // Koordinatörse sadece atandığı başlıkları göster
+            return coordinatorAssignments.some(a => a.ana_basliklar?.kod === harf);
+          })
           .map(([harf, items]) => {
             const baslikObj = anaBasliklar.find(b => b.kod === harf || (b.baslik_adi && b.baslik_adi.startsWith(harf + '.')));
             const displayTitle = getLocalizedField(baslikObj, 'baslik_adi', locale) || t('group', { harf });

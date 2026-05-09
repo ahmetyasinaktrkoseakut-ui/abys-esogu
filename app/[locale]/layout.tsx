@@ -36,10 +36,20 @@ export default async function RootLayout({
       dir={dir}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-slate-50">
         <NextIntlClientProvider messages={messages}>
           <Providers>
-            {children}
+            <div className="flex-1 flex flex-col">
+              {children}
+            </div>
+            <footer className="mt-auto py-6 border-t border-slate-200 bg-slate-50/50 backdrop-blur-sm relative z-50">
+              <div className="max-w-7xl mx-auto px-4 text-center">
+                <p className="text-xs sm:text-sm font-medium text-blue-900/60 leading-relaxed">
+                  Akreditasyon Yönetim Bilgi Sistemi Ahmet Yasin Aktürk Tarafından Esogü İlahiyat Fakültesinin Hizmetine Sunulmak Amacıyla Yapılmıştır. <br className="hidden sm:block" />
+                  Tüm Hakları Kültür Bakanlığı Tarafından Tescilli ve Saklıdır. -2026-
+                </p>
+              </div>
+            </footer>
           </Providers>
         </NextIntlClientProvider>
       </body>

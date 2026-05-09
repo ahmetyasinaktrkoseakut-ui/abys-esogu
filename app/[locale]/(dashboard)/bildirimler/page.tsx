@@ -1,4 +1,5 @@
 'use client';
+// DEFINITIVE SCHEMA FIX: 2026-05-09 19:04
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
@@ -27,7 +28,7 @@ export default function BildirimlerPage() {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = (profile?.rol || '').toLowerCase().trim();
         
-        const isUserAdmin = role.includes('yonetici') || role.includes('admin');
+        const isUserAdmin = role.includes('yonetici') || role.includes('admin') || role.includes('yönetici');
         const isUserCoordinator = !isUserAdmin && (role.includes('koordinatör') || role.includes('koordinator') || role.includes('koord'));
         
         setIsAdmin(isUserAdmin || isUserCoordinator); 
@@ -44,7 +45,7 @@ export default function BildirimlerPage() {
           const { data: coordData } = await supabase.from('baslik_koordinatorleri').select('baslik').eq('kullanici_id', user.id);
           
           if (!coordData || coordData.length === 0) {
-            setErrorStatus('Koordinatör kaydı veritabanında bulunamadı!');
+            setErrorStatus('Koordinatör kaydınız bulunamadı!');
           } else {
             let assignedLetter = '';
             const rawTitle = (coordData[0]?.baslik || '').toLowerCase();
@@ -73,7 +74,7 @@ export default function BildirimlerPage() {
           }
         }
       } catch (err) {
-        console.error(err);
+        console.error("Notifications error:", err);
       } finally {
         setIsLoading(false);
       }
@@ -84,7 +85,7 @@ export default function BildirimlerPage() {
   if (isLoading) return <div className="h-[60vh] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-indigo-600" /></div>;
 
   return (
-    <div className="p-8 max-w-[1400px] mx-auto">
+    <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
       <h2 className="text-2xl font-bold text-slate-800 mb-6">{t('title')}</h2>
       {errorStatus && (
         <div className="mb-6 p-6 bg-red-600 text-white rounded-2xl flex items-center gap-3">

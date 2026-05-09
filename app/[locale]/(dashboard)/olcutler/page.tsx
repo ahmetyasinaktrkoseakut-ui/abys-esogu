@@ -1,9 +1,10 @@
 'use client';
+// DEFINITIVE SCHEMA FIX: 2026-05-09 19:04
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { FileText, Loader2, ChevronRight, AlertCircle, Database, ShieldAlert } from 'lucide-react';
+import { FileText, Loader2, ChevronRight, AlertCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
@@ -13,10 +14,9 @@ export default function OlcutlerPage() {
   const { selectedPeriod } = usePeriod();
   const [olcutler, setOlcutler] = useState<any[]>([]);
   const [anaBasliklar, setAnaBasliklar] = useState<any[]>([]);
-  const [userRole, setUserRole] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const [errorStatus, setErrorStatus] = useState<{ msg: string; type: 'NONE' | 'FETCH' | 'MATCH' | 'ROLE' }>({ msg: '', type: 'NONE' });
+  const [errorStatus, setErrorStatus] = useState<string | null>(null);
   const locale = useLocale();
 
   const toggleGroup = (groupKey: string) => {
@@ -28,36 +28,32 @@ export default function OlcutlerPage() {
       if (!selectedPeriod) { setIsLoading(false); return; }
       try {
         setIsLoading(true);
-        setErrorStatus({ msg: '', type: 'NONE' });
+        setErrorStatus(null);
         
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        // 1. Profil ve Rol Kontrolü
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = (profile?.rol || '').toLowerCase().trim();
-        setUserRole(role);
         
-        const isAdmin = role.includes('yonetici') || role.includes('admin');
+        const isAdmin = role.includes('yonetici') || role.includes('admin') || role.includes('yönetici');
         const isCoordinator = !isAdmin && (role.includes('koordinatör') || role.includes('koordinator') || role.includes('koord'));
 
         if (isAdmin) {
           const { data } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
           setOlcutler(data || []);
         } else if (isCoordinator) {
-          // 2. Koordinatör Başlığı Sorgulama
-          const { data: coordData, error: coordError } = await supabase
+          const { data: coordData } = await supabase
             .from('baslik_koordinatorleri')
             .select('baslik')
             .eq('kullanici_id', user.id);
 
           if (!coordData || coordData.length === 0) {
-            setErrorStatus({ msg: 'Veritabanında koordinatör kaydı bulunamadı!', type: 'FETCH' });
+            setErrorStatus('HATA: baslik_koordinatorleri tablosunda kaydınız bulunamadı!');
           } else {
             const rawTitle = (coordData[0]?.baslik || '').toLowerCase();
             let assignedLetter = '';
             
-            // Kesin Eşleşme Mantığı (Senin gönderdiğin "Kalite Güvencesi" dahil)
             if (rawTitle.includes('kalite')) assignedLetter = 'A';
             else if (rawTitle.includes('eğitim') || rawTitle.includes('öğretim')) assignedLetter = 'B';
             else if (rawTitle.includes('araştırma')) assignedLetter = 'C';
@@ -65,32 +61,29 @@ export default function OlcutlerPage() {
             else if (rawTitle.includes('yönetim')) assignedLetter = 'E';
 
             if (!assignedLetter) {
-              setErrorStatus({ msg: `Başlık eşleşmedi: ${coordData[0].baslik}`, type: 'MATCH' });
+              setErrorStatus(`HATA: '${coordData[0].baslik}' başlığı sistem harfleriyle (A-E) eşleşmedi!`);
             } else {
-              const { data: allAlt } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
-              if (allAlt) {
-                const filtered = allAlt.filter(o => o.kod && o.kod.startsWith(assignedLetter));
-                setOlcutler(filtered);
-                // Grubu otomatik aç
+              const { data: filteredAlt } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
+              if (filteredAlt) {
+                const finalFiltered = filteredAlt.filter(o => o.kod && o.kod.startsWith(assignedLetter));
+                setOlcutler(finalFiltered);
                 setOpenGroups({ [assignedLetter]: true });
               }
             }
           }
         } else {
-          // Birim Kullanıcısı
           const { data } = await supabase
             .from('kullanici_olcut_atamalari')
-            .select('alt_olcutler(*)')
+            .select('alt_olcut_id, alt_olcutler(*)')
             .eq('user_id', user.id)
             .eq('donem_id', selectedPeriod.id);
           if (data) setOlcutler(data.map(i => i.alt_olcutler).filter(Boolean));
-          if (!profile) setErrorStatus({ msg: 'Rol tanımlı değil!', type: 'ROLE' });
         }
         
         const { data: baslikData } = await supabase.from('ana_basliklar').select('*');
         if (baslikData) setAnaBasliklar(baslikData);
       } catch (err) {
-        console.error(err);
+        console.error("Dashboard error:", err);
       } finally {
         setIsLoading(false);
       }
@@ -104,11 +97,10 @@ export default function OlcutlerPage() {
     <div className="p-8 max-w-7xl mx-auto animate-in fade-in duration-500">
       <h2 className="text-3xl font-black text-slate-900 mb-8 border-b pb-4">{t('title')}</h2>
 
-      {errorStatus.type !== 'NONE' && (
-        <div className="mb-8 p-8 bg-red-600 text-white rounded-3xl shadow-xl flex flex-col items-center text-center gap-3">
-          <AlertCircle className="w-12 h-12" />
-          <h3 className="text-xl font-bold uppercase">{errorStatus.msg}</h3>
-          <p className="text-sm opacity-80">UID: {userRole}</p>
+      {errorStatus && (
+        <div className="mb-8 p-6 bg-red-600 text-white rounded-2xl flex items-center gap-3 shadow-lg">
+          <AlertCircle className="w-8 h-8 flex-shrink-0" />
+          <h3 className="font-bold text-lg">{errorStatus}</h3>
         </div>
       )}
 

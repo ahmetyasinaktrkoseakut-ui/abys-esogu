@@ -114,7 +114,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       if (!localUserIsAdmin) {
         // Normal kullanıcılar için kısıtlar:
         if (selectedPeriod?.is_active === false) finalReadOnly = true;
-        if (raporData?.onay_durumu === 'onaylandi') finalReadOnly = true;
+        // if (raporData?.onay_durumu === 'onaylandi') finalReadOnly = true; // BU SATIR SİLİNDİ: Onaylansa bile düzenlenebilecek
         if (accessLocked) finalReadOnly = true;
       } else {
         // Admin/Koordinatör her zaman düzenleyebilir (Overwrite yetkisi)
@@ -298,23 +298,21 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         if (err) throw err;
       }
 
-      // Rapor kaydedildiğinde durumu 'bekliyor'a çek (eğer onaylanmış veya reddedilmişse tekrar değerlendirmeye girsin)
-      if (!isAdmin && (onayDurumu === 'reddedildi' || onayDurumu === 'onaylandi')) {
-        const { data: currentRecord } = await supabase
-          .from('ozdegerlendirme_raporlari')
-          .select('id')
-          .eq('alt_olcut_id', String(resolvedParams.id))
-          .eq('donem_id', String(selectedPeriod?.id))
-          .single();
+      // Rapor her kaydedildiğinde durumu 'bekliyor'a çek (Onaylanmış olsa bile tekrar onaya düşer)
+      const { data: currentRecord } = await supabase
+        .from('ozdegerlendirme_raporlari')
+        .select('id')
+        .eq('alt_olcut_id', String(resolvedParams.id))
+        .eq('donem_id', String(selectedPeriod?.id))
+        .single();
 
-        if (currentRecord) {
-          await supabase
-            .from('ozdegerlendirme_raporlari')
-            .update({ onay_durumu: 'bekliyor', red_nedeni: null })
-            .eq('id', currentRecord.id);
-          setOnayDurumu('bekliyor');
-          setRedNedeni(null);
-        }
+      if (currentRecord) {
+        await supabase
+          .from('ozdegerlendirme_raporlari')
+          .update({ onay_durumu: 'bekliyor', red_nedeni: null })
+          .eq('id', currentRecord.id);
+        setOnayDurumu('bekliyor');
+        setRedNedeni(null);
       }
 
       alert(t('save_success'));

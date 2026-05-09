@@ -12,6 +12,7 @@ export default function BildirimlerPage() {
   const { selectedPeriod } = usePeriod();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState('');
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
@@ -29,7 +30,8 @@ export default function BildirimlerPage() {
           .eq('id', user.id)
           .single();
 
-        const role = profile?.rol?.toLowerCase() || '';
+        const role = (profile?.rol || '').toLowerCase();
+        setUserRole(role);
         const isUserAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
         const isUserCoordinator = !isUserAdmin && (role.includes('koordinatör') || role.includes('koordinator'));
         
@@ -50,7 +52,6 @@ export default function BildirimlerPage() {
             setNotifications([]);
           }
         } else if (isUserCoordinator) {
-          // Koordinatörün atandığı başlık metnini çek
           const { data: coordData } = await supabase
             .from('baslik_koordinatorleri')
             .select('baslik')
@@ -58,37 +59,35 @@ export default function BildirimlerPage() {
             .single();
 
           if (coordData?.baslik) {
-            // Baslik haritasi: koordinatorler sayfasindaki ile aynı
-            const baslikMap: Record<string, string[]> = {
-              'Kalite Güvencesi': ['A'],
-              'Eğitim-Öğretim': ['B'],
-              'Araştırma ve Geliştirme': ['C'],
-              'Toplumsal Katkı': ['D'],
-              'Yönetim Sistemi': ['E']
-            };
-            const prefixes = baslikMap[coordData.baslik] || [];
+            const b = coordData.baslik;
+            let targetLetter = '';
+            if (b.includes('Kalite')) targetLetter = 'A';
+            else if (b.includes('Eğitim') || b.includes('Öğretim')) targetLetter = 'B';
+            else if (b.includes('Araştırma')) targetLetter = 'C';
+            else if (b.includes('Toplumsal')) targetLetter = 'D';
+            else if (b.includes('Yönetim')) targetLetter = 'E';
 
-            // Bu başlığa ait TÜM alt_olcutleri bul (kod prefix ile)
-            const { data: tumOlcutler } = await supabase
-              .from('alt_olcutler')
-              .select('id, kod');
+            if (targetLetter) {
+              const { data: tumOlcutler } = await supabase.from('alt_olcutler').select('id, kod');
+              const allowedAltOlcutIds = (tumOlcutler || [])
+                .filter(o => o.kod && o.kod.startsWith(targetLetter))
+                .map(o => o.id);
 
-            const allowedAltOlcutIds = (tumOlcutler || [])
-              .filter(o => o.kod && prefixes.some(p => o.kod.startsWith(p)))
-              .map(o => o.id);
+              if (allowedAltOlcutIds.length > 0) {
+                const { data } = await supabase
+                  .from('puko_degerlendirmeleri')
+                  .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
+                  .in('alt_olcut_id', allowedAltOlcutIds)
+                  .eq('durum', 'Beklemede')
+                  .eq('donem_id', selectedPeriod.id)
+                  .order('olusturulma_tarihi', { ascending: false });
 
-            if (allowedAltOlcutIds.length > 0) {
-              const { data } = await supabase
-                .from('puko_degerlendirmeleri')
-                .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
-                .in('alt_olcut_id', allowedAltOlcutIds)
-                .eq('durum', 'Beklemede')
-                .eq('donem_id', selectedPeriod.id)
-                .order('olusturulma_tarihi', { ascending: false });
-
-              if (data) {
-                const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
-                setNotifications(uniqueData);
+                if (data) {
+                  const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
+                  setNotifications(uniqueData);
+                } else {
+                  setNotifications([]);
+                }
               } else {
                 setNotifications([]);
               }
@@ -134,6 +133,8 @@ export default function BildirimlerPage() {
     fetchData();
   }, [selectedPeriod]);
 
+  const isCoord = userRole.includes('koordinatör') || userRole.includes('koordinator');
+
   if (isLoading) {
     return <div className="h-[calc(100vh-100px)] flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-blue-600" /></div>;
   }
@@ -146,6 +147,12 @@ export default function BildirimlerPage() {
           {isAdmin ? t('description_admin') : t('description_user')}
         </p>
       </div>
+
+      {isCoord && notifications.length === 0 && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 p-6 rounded-2xl text-amber-800 text-center font-bold">
+            Yetkili olduğunuz başlık bulunamadı veya onay bekleyen bir bildirim yok.
+          </div>
+      )}
       
       <BildirimlerTableClient initialData={notifications} isApprover={isAdmin} />
     </div>

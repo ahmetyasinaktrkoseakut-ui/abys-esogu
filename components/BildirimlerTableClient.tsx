@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Presentation, Activity, Calendar, Info, Hash, Upload, X, Loader2 } from 'lucide-react';
+import { Presentation, Activity, Calendar, Info, Hash, Upload, X, Loader2, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from '@/i18n/routing';
 import { useLocale, useTranslations } from 'next-intl';
@@ -23,7 +23,7 @@ const getAsamaSlug = (asama: string) => {
   return map[lower] || lower;
 };
 
-export default function BildirimlerTableClient({ initialData }: { initialData: any[] }) {
+export default function BildirimlerTableClient({ initialData, isApprover = false }: { initialData: any[], isApprover?: boolean }) {
   const t = useTranslations('Notifications');
   const [data, setData] = useState(initialData);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -31,6 +31,10 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
   const [file, setFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
   const router = useRouter();
   const locale = useLocale();
 
@@ -78,6 +82,46 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
   };
 
   const currentData = data || [];
+
+  const handleApprove = async (id: string) => {
+    setActionLoadingId(id);
+    try {
+      const { error } = await supabase
+        .from('puko_degerlendirmeleri')
+        .update({ durum: 'Onaylandı' })
+        .eq('id', id);
+      if (error) throw error;
+      setData(prev => prev.filter(item => item.id !== id));
+    } catch (err: any) {
+      alert('Onay sırasında hata: ' + err.message);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const openRejectModal = (id: string) => {
+    setRejectReason('');
+    setRejectingId(id);
+    setIsRejectModalOpen(true);
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectingId || !rejectReason.trim()) { alert('Red nedeni giriniz.'); return; }
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('puko_degerlendirmeleri')
+        .update({ durum: 'Reddedildi', red_nedeni: rejectReason })
+        .eq('id', rejectingId);
+      if (error) throw error;
+      setData(prev => prev.filter(item => item.id !== rejectingId));
+      setIsRejectModalOpen(false);
+    } catch (err: any) {
+      alert('Red işlemi sırasında hata: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleOpenRevize = (row: any) => {
     setSelectedRow(row);
@@ -209,7 +253,26 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                       {getStatusBadge(row.durum)}
                     </td>
                     <td className="px-6 py-4">
-                      {(row.durum || '').toLowerCase() === 'reddedildi' ? (
+                      {isApprover ? (
+                        // Onaylayıcı (Admin veya Koordinatör): Onayla / Reddet butonları
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => handleApprove(row.id)}
+                            disabled={actionLoadingId === row.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 border border-green-200 rounded-lg text-xs font-bold hover:bg-green-100 transition-all disabled:opacity-50"
+                          >
+                            {actionLoadingId === row.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                            Onayla
+                          </button>
+                          <button
+                            onClick={() => openRejectModal(row.id)}
+                            disabled={actionLoadingId === row.id}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-700 border border-red-200 rounded-lg text-xs font-bold hover:bg-red-100 transition-all disabled:opacity-50"
+                          >
+                            <X className="w-3.5 h-3.5" /> Reddet
+                          </button>
+                        </div>
+                      ) : (row.durum || '').toLowerCase() === 'reddedildi' ? (
                         <div className="flex flex-col gap-3">
                           {row.red_nedeni && (
                             <div className="flex items-start gap-2 bg-red-50 p-3 rounded-xl border border-red-100">
@@ -309,6 +372,49 @@ export default function BildirimlerTableClient({ initialData }: { initialData: a
                   {isSubmitting ? t('modal.submitting') : t('modal.submit')}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Koordinatör/Admin Red Modalı */}
+      {isRejectModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-slate-100 flex items-center justify-between">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2">
+                <X className="w-5 h-5 text-red-500" /> Kaydı Reddet
+              </h3>
+              <button onClick={() => setIsRejectModalOpen(false)} className="text-slate-400 hover:text-slate-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-500">Bu PUKÖ değerlendirmesini reddetmek üzeresiniz. Red nedenini giriniz.</p>
+              <textarea
+                value={rejectReason}
+                onChange={(e) => setRejectReason(e.target.value)}
+                placeholder="Örn: Yüklenen kanıt eksik veya kriterle uyumsuz..."
+                rows={4}
+                className="w-full bg-slate-50 border border-slate-200 text-slate-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all text-sm resize-none"
+              />
+            </div>
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3">
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                disabled={isSubmitting}
+                className="px-5 py-2 text-sm font-medium text-slate-600 bg-white border border-slate-200 rounded-xl hover:bg-slate-100 transition-colors"
+              >
+                İptal
+              </button>
+              <button
+                onClick={handleRejectSubmit}
+                disabled={isSubmitting || !rejectReason.trim()}
+                className="flex items-center gap-2 px-5 py-2 text-sm font-medium text-white bg-red-600 border border-red-600 rounded-xl hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50"
+              >
+                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                Onayla &amp; Reddet
+              </button>
             </div>
           </div>
         </div>

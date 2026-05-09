@@ -48,22 +48,54 @@ export default function OlcutlerPage() {
           const { data } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
           setOlcutler(data || []);
         } else if (isCoordinator) {
-          // Koordinatörün atandığı ana başlıkları çek
-          const { data: assignments } = await supabase
+          // Koordinatörün atandığı başlık metnini çek
+          const { data: coordData } = await supabase
             .from('baslik_koordinatorleri')
-            .select('ana_baslik_id, ana_basliklar(kod)')
-            .eq('kullanici_id', user.id);
-          
-          setCoordinatorAssignments(assignments || []);
+            .select('baslik')
+            .eq('kullanici_id', user.id)
+            .single();
 
-          if (assignments && assignments.length > 0) {
-            const assignedBaslikIds = assignments.map(a => a.ana_baslik_id);
-            const { data } = await supabase
+          if (coordData?.baslik) {
+            // baslik_koordinatorleri'ndeki metin ile ana_basliklar'daki baslik_adi'ni eşleştir
+            const { data: anaBaslikData } = await supabase
+              .from('ana_basliklar')
+              .select('id, kod, baslik_adi');
+
+            // "ŞEKLİ EĞTİM" veya tam eşleşme için basit ilike filtresi
+            const matchedBaslik = (anaBaslikData || []).find(b =>
+              b.baslik_adi?.toLowerCase().includes(coordData.baslik.toLowerCase()) ||
+              coordData.baslik.toLowerCase().includes((b.baslik_adi || '').toLowerCase().substring(0, 10))
+            );
+
+            // Tüm alt_olcutleri çek - kod prefix'i ile filtrele
+            const { data: tumOlcutler } = await supabase
               .from('alt_olcutler')
               .select('*')
-              .in('ana_baslik_id', assignedBaslikIds)
               .order('id', { ascending: true });
-            setOlcutler(data || []);
+
+            if (matchedBaslik?.kod && tumOlcutler) {
+              // Koordinatörün başlığına ait ölçütler: kod, matchedBaslik.kod ile başlayan
+              const filtered = tumOlcutler.filter(o => o.kod && o.kod.startsWith(matchedBaslik.kod));
+              setOlcutler(filtered.length > 0 ? filtered : tumOlcutler); // fallback: hepsini göster
+            } else if (tumOlcutler) {
+              // Kod eşleşmesi yoksa çeşitli stratejiler dene
+              // Birim-Atamalari'ndaki gibi baslik haritasini kullan
+              const baslikMap: Record<string, string[]> = {
+                'Kalite Güvencesi': ['A'],
+                'Eğitim-Öğretim': ['B'],
+                'Araştırma ve Geliştirme': ['C'],
+                'Toplumsal Katkı': ['D'],
+                'Yönetim Sistemi': ['E']
+              };
+              const prefixes = baslikMap[coordData.baslik] || [];
+              const filtered = prefixes.length > 0
+                ? tumOlcutler.filter(o => o.kod && prefixes.some(p => o.kod.startsWith(p)))
+                : tumOlcutler;
+              setOlcutler(filtered);
+            }
+            
+            // coordinatorAssignments'a baslik bilgisini de kaydet (filtre için)
+            setCoordinatorAssignments([{ baslik: coordData.baslik }]);
           }
         } else {
           const { data } = await supabase
@@ -116,12 +148,6 @@ export default function OlcutlerPage() {
             }, {} as Record<string, any[]>)
           )
           .sort(([k1], [k2]) => k1.localeCompare(k2))
-          .filter(([harf]) => {
-            const isCoord = userRole.includes('koordinatör') || userRole.includes('koordinator');
-            if (!isCoord) return true;
-            // Koordinatörse sadece atandığı başlıkları göster
-            return coordinatorAssignments.some(a => a.ana_basliklar?.kod === harf);
-          })
           .map(([harf, items]) => {
             const baslikObj = anaBasliklar.find(b => b.kod === harf || (b.baslik_adi && b.baslik_adi.startsWith(harf + '.')));
             const displayTitle = getLocalizedField(baslikObj, 'baslik_adi', locale) || t('group', { harf });

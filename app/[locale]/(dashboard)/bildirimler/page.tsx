@@ -50,34 +50,48 @@ export default function BildirimlerPage() {
             setNotifications([]);
           }
         } else if (isUserCoordinator) {
-          // Koordinatörün atandığı ana başlıkları çek
-          const { data: assignments } = await supabase
+          // Koordinatörün atandığı başlık metnini çek
+          const { data: coordData } = await supabase
             .from('baslik_koordinatorleri')
-            .select('ana_baslik_id')
-            .eq('kullanici_id', user.id);
+            .select('baslik')
+            .eq('kullanici_id', user.id)
+            .single();
 
-          if (assignments && assignments.length > 0) {
-            const assignedBaslikIds = assignments.map(a => a.ana_baslik_id);
-            
-            // Bu başlıklar altındaki TÜM alt ölçütleri bul
-            const { data: olcutler } = await supabase
+          if (coordData?.baslik) {
+            // Baslik haritasi: koordinatorler sayfasindaki ile aynı
+            const baslikMap: Record<string, string[]> = {
+              'Kalite Güvencesi': ['A'],
+              'Eğitim-Öğretim': ['B'],
+              'Araştırma ve Geliştirme': ['C'],
+              'Toplumsal Katkı': ['D'],
+              'Yönetim Sistemi': ['E']
+            };
+            const prefixes = baslikMap[coordData.baslik] || [];
+
+            // Bu başlığa ait TÜM alt_olcutleri bul (kod prefix ile)
+            const { data: tumOlcutler } = await supabase
               .from('alt_olcutler')
-              .select('id')
-              .in('ana_baslik_id', assignedBaslikIds);
-            
-            const allowedAltOlcutIds = olcutler?.map(o => o.id) || [];
+              .select('id, kod');
 
-            const { data } = await supabase
-              .from('puko_degerlendirmeleri')
-              .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
-              .in('alt_olcut_id', allowedAltOlcutIds)
-              .eq('durum', 'Beklemede')
-              .eq('donem_id', selectedPeriod.id)
-              .order('olusturulma_tarihi', { ascending: false });
+            const allowedAltOlcutIds = (tumOlcutler || [])
+              .filter(o => o.kod && prefixes.some(p => o.kod.startsWith(p)))
+              .map(o => o.id);
 
-            if (data) {
-              const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
-              setNotifications(uniqueData);
+            if (allowedAltOlcutIds.length > 0) {
+              const { data } = await supabase
+                .from('puko_degerlendirmeleri')
+                .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
+                .in('alt_olcut_id', allowedAltOlcutIds)
+                .eq('durum', 'Beklemede')
+                .eq('donem_id', selectedPeriod.id)
+                .order('olusturulma_tarihi', { ascending: false });
+
+              if (data) {
+                const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
+                setNotifications(uniqueData);
+              } else {
+                setNotifications([]);
+              }
             } else {
               setNotifications([]);
             }
@@ -133,7 +147,7 @@ export default function BildirimlerPage() {
         </p>
       </div>
       
-      <BildirimlerTableClient initialData={notifications} />
+      <BildirimlerTableClient initialData={notifications} isApprover={isAdmin} />
     </div>
   );
 }

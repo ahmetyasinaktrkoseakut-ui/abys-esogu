@@ -5,14 +5,14 @@ import { supabase } from '@/lib/supabase/client';
 import BildirimlerTableClient from '@/components/BildirimlerTableClient';
 import { useTranslations } from 'next-intl';
 import { usePeriod } from '@/contexts/PeriodContext';
-import { Loader2, AlertTriangle } from 'lucide-react';
+import { Loader2, AlertCircle, Database } from 'lucide-react';
 
 export default function BildirimlerPage() {
   const t = useTranslations('Notifications');
   const { selectedPeriod } = usePeriod();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<{ rawTitle: string; errorType: 'NONE' | 'MATCH' | 'FETCH' }>({ rawTitle: '', errorType: 'NONE' });
   const [notifications, setNotifications] = useState<any[]>([]);
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function BildirimlerPage() {
       if (!selectedPeriod) return;
       
       setIsLoading(true);
-      setErrorStatus(null);
+      setDebugInfo({ rawTitle: '', errorType: 'NONE' });
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
@@ -35,7 +35,7 @@ export default function BildirimlerPage() {
         const isUserAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
         const isUserCoordinator = !isUserAdmin && (role.includes('koordinatör') || role.includes('koordinator'));
         
-        // Zorunlu (force) true for coordinator/admin
+        // 4. Onay Butonlarını Force Et
         setIsAdmin(isUserAdmin || isUserCoordinator); 
 
         if (isUserAdmin) {
@@ -53,60 +53,55 @@ export default function BildirimlerPage() {
             setNotifications([]);
           }
         } else if (isUserCoordinator) {
-          // 1. Manuel Yetki Haritası
-          const authorityMap: Record<string, string> = { 
-            'kalite': 'A', 
-            'eğitim': 'B', 
-            'öğretim': 'B', 
-            'araştırma': 'C', 
-            'toplumsal': 'D', 
-            'yönetim': 'E' 
-          };
-
-          const { data: coordData } = await supabase
+          // 1. Ham Veriyi Konsola Bas (DEBUG)
+          const { data: coordData, error: coordError } = await supabase
             .from('baslik_koordinatorleri')
             .select('baslik')
-            .eq('kullanici_id', user.id)
-            .single();
+            .eq('kullanici_id', user.id);
+          
+          console.log('DEBUG_COORD_NOTIF:', { currentUser: user.id, data: coordData, error: coordError });
 
-          let foundLetter = '';
-          if (coordData?.baslik) {
-            const b = coordData.baslik.toLowerCase();
-            for (const key in authorityMap) {
-              if (b.includes(key)) {
-                foundLetter = authorityMap[key];
-                break;
-              }
-            }
-          }
-
-          if (!foundLetter) {
-            setErrorStatus('Hata: Yetkili Olduğunuz Başlık Tespit Edilemedi');
+          if (!coordData || coordData.length === 0) {
+            setDebugInfo({ rawTitle: '', errorType: 'FETCH' });
             setNotifications([]);
           } else {
-            // 3. Bildirimler Zorunlu Filtreleme
-            const { data: tumOlcutler } = await supabase.from('alt_olcutler').select('id, kod');
-            const allowedAltOlcutIds = (tumOlcutler || [])
-              .filter(o => o.kod && o.kod.startsWith(foundLetter))
-              .map(o => o.id);
+            // 2. Veriyi Kod Seviyesinde Kilitle
+            let assignedLetter = '';
+            const rawTitle = (coordData[0]?.baslik || '').toLowerCase();
+            
+            if (rawTitle.includes('kalite')) assignedLetter = 'A';
+            else if (rawTitle.includes('eğitim') || rawTitle.includes('öğretim')) assignedLetter = 'B';
+            else if (rawTitle.includes('araştırma')) assignedLetter = 'C';
+            else if (rawTitle.includes('toplumsal')) assignedLetter = 'D';
+            else if (rawTitle.includes('yönetim')) assignedLetter = 'E';
 
-            if (allowedAltOlcutIds.length > 0) {
-              const { data } = await supabase
-                .from('puko_degerlendirmeleri')
-                .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
-                .in('alt_olcut_id', allowedAltOlcutIds)
-                .eq('durum', 'Beklemede')
-                .eq('donem_id', selectedPeriod.id)
-                .order('olusturulma_tarihi', { ascending: false });
+            if (!assignedLetter) {
+              setDebugInfo({ rawTitle: coordData[0]?.baslik || 'BOŞ', errorType: 'MATCH' });
+              setNotifications([]);
+            } else {
+              const { data: tumOlcutler } = await supabase.from('alt_olcutler').select('id, kod');
+              const allowedAltOlcutIds = (tumOlcutler || [])
+                .filter(o => o.kod && o.kod.startsWith(assignedLetter))
+                .map(o => o.id);
 
-              if (data) {
-                const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
-                setNotifications(uniqueData);
+              if (allowedAltOlcutIds.length > 0) {
+                const { data } = await supabase
+                  .from('puko_degerlendirmeleri')
+                  .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
+                  .in('alt_olcut_id', allowedAltOlcutIds)
+                  .eq('durum', 'Beklemede')
+                  .eq('donem_id', selectedPeriod.id)
+                  .order('olusturulma_tarihi', { ascending: false });
+
+                if (data) {
+                  const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
+                  setNotifications(uniqueData);
+                } else {
+                  setNotifications([]);
+                }
               } else {
                 setNotifications([]);
               }
-            } else {
-              setNotifications([]);
             }
           }
         } else {
@@ -159,10 +154,19 @@ export default function BildirimlerPage() {
         </p>
       </div>
 
-      {errorStatus && (
-        <div className="mb-8 p-6 bg-red-50 border-2 border-red-200 rounded-3xl flex items-center gap-4 animate-bounce">
-          <AlertTriangle className="w-8 h-8 text-red-600 animate-pulse" />
-          <h3 className="text-xl font-black text-red-700 uppercase tracking-tighter">{errorStatus}</h3>
+      {/* 3. UI'da Görünür Hata Mesajları */}
+      {debugInfo.errorType === 'FETCH' && (
+        <div className="mb-8 p-10 bg-red-600 text-white rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-4 text-center">
+          <Database className="w-16 h-16 animate-pulse" />
+          <h3 className="text-3xl font-black uppercase tracking-tighter">HATA: Veritabanından koordinatör kaydı çekilemedi!</h3>
+          <p className="font-bold opacity-80">Giriş yaptığınız kullanıcının 'baslik_koordinatorleri' tablosunda bir ataması olduğundan emin olun.</p>
+        </div>
+      )}
+
+      {debugInfo.errorType === 'MATCH' && (
+        <div className="mb-8 p-10 bg-orange-600 text-white rounded-[2.5rem] shadow-2xl flex flex-col items-center gap-4 text-center">
+          <AlertCircle className="w-16 h-16 animate-bounce" />
+          <h3 className="text-3xl font-black uppercase tracking-tighter">HATA: Koordinatör başlığı ( {debugInfo.rawTitle} ) ile sistem eşleşemedi!</h3>
         </div>
       )}
       

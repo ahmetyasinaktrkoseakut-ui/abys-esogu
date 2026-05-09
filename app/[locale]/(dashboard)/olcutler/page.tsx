@@ -16,7 +16,6 @@ export default function OlcutlerPage() {
   const [userRole, setUserRole] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-  const [coordLetter, setCoordLetter] = useState<string>('');
   const locale = useLocale();
 
   const toggleGroup = (groupKey: string) => {
@@ -48,32 +47,30 @@ export default function OlcutlerPage() {
           const { data } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
           setOlcutler(data || []);
         } else if (isCoordinator) {
+          // Hard-coded Brute Force Mapping
           const { data: coordData } = await supabase
             .from('baslik_koordinatorleri')
             .select('baslik')
             .eq('kullanici_id', user.id)
             .single();
 
+          let targetLetter = '';
           if (coordData?.baslik) {
-            const b = coordData.baslik;
-            let targetLetter = '';
-            if (b.includes('Kalite')) targetLetter = 'A';
-            else if (b.includes('Eğitim') || b.includes('Öğretim')) targetLetter = 'B';
-            else if (b.includes('Araştırma')) targetLetter = 'C';
-            else if (b.includes('Toplumsal')) targetLetter = 'D';
-            else if (b.includes('Yönetim')) targetLetter = 'E';
+            const b = coordData.baslik.toLowerCase();
+            if (b.includes('kalite')) targetLetter = 'A';
+            else if (b.includes('eğitim') || b.includes('öğretim')) targetLetter = 'B';
+            else if (b.includes('araştırma')) targetLetter = 'C';
+            else if (b.includes('toplumsal')) targetLetter = 'D';
+            else if (b.includes('yönetim')) targetLetter = 'E';
+          }
 
-            setCoordLetter(targetLetter);
-
-            const { data: allAlt } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
-            if (allAlt && targetLetter) {
-              const filtered = allAlt.filter(o => o.kod && o.kod.startsWith(targetLetter));
-              setOlcutler(filtered);
-            } else {
-              setOlcutler([]);
-            }
+          const { data: allAlt } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
+          
+          if (targetLetter && allAlt) {
+            const filtered = allAlt.filter(o => o.kod && o.kod.startsWith(targetLetter));
+            setOlcutler(filtered);
           } else {
-            setCoordLetter('NONE');
+            console.error('Coordinator title not matched or no criteria found for:', coordData?.baslik);
             setOlcutler([]);
           }
         } else {
@@ -96,7 +93,7 @@ export default function OlcutlerPage() {
           setAnaBasliklar(baslikData);
         }
       } catch (error) {
-        console.error(error);
+        console.error('Dashboard fetch error:', error);
       } finally {
         setIsLoading(false);
       }

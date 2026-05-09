@@ -35,7 +35,7 @@ export default function BildirimlerPage() {
         const isUserAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
         const isUserCoordinator = !isUserAdmin && (role.includes('koordinatör') || role.includes('koordinator'));
         
-        setIsAdmin(isUserAdmin || isUserCoordinator); // Both roles see the approval view
+        setIsAdmin(isUserAdmin || isUserCoordinator); // Both roles see approval buttons
 
         if (isUserAdmin) {
           const { data } = await supabase
@@ -52,42 +52,41 @@ export default function BildirimlerPage() {
             setNotifications([]);
           }
         } else if (isUserCoordinator) {
+          // Hard-coded Brute Force Mapping for Notifications
           const { data: coordData } = await supabase
             .from('baslik_koordinatorleri')
             .select('baslik')
             .eq('kullanici_id', user.id)
             .single();
 
+          let targetLetter = '';
           if (coordData?.baslik) {
-            const b = coordData.baslik;
-            let targetLetter = '';
-            if (b.includes('Kalite')) targetLetter = 'A';
-            else if (b.includes('Eğitim') || b.includes('Öğretim')) targetLetter = 'B';
-            else if (b.includes('Araştırma')) targetLetter = 'C';
-            else if (b.includes('Toplumsal')) targetLetter = 'D';
-            else if (b.includes('Yönetim')) targetLetter = 'E';
+            const b = coordData.baslik.toLowerCase();
+            if (b.includes('kalite')) targetLetter = 'A';
+            else if (b.includes('eğitim') || b.includes('öğretim')) targetLetter = 'B';
+            else if (b.includes('araştırma')) targetLetter = 'C';
+            else if (b.includes('toplumsal')) targetLetter = 'D';
+            else if (b.includes('yönetim')) targetLetter = 'E';
+          }
 
-            if (targetLetter) {
-              const { data: tumOlcutler } = await supabase.from('alt_olcutler').select('id, kod');
-              const allowedAltOlcutIds = (tumOlcutler || [])
-                .filter(o => o.kod && o.kod.startsWith(targetLetter))
-                .map(o => o.id);
+          if (targetLetter) {
+            const { data: tumOlcutler } = await supabase.from('alt_olcutler').select('id, kod');
+            const allowedAltOlcutIds = (tumOlcutler || [])
+              .filter(o => o.kod && o.kod.startsWith(targetLetter))
+              .map(o => o.id);
 
-              if (allowedAltOlcutIds.length > 0) {
-                const { data } = await supabase
-                  .from('puko_degerlendirmeleri')
-                  .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
-                  .in('alt_olcut_id', allowedAltOlcutIds)
-                  .eq('durum', 'Beklemede')
-                  .eq('donem_id', selectedPeriod.id)
-                  .order('olusturulma_tarihi', { ascending: false });
+            if (allowedAltOlcutIds.length > 0) {
+              const { data } = await supabase
+                .from('puko_degerlendirmeleri')
+                .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
+                .in('alt_olcut_id', allowedAltOlcutIds)
+                .eq('durum', 'Beklemede')
+                .eq('donem_id', selectedPeriod.id)
+                .order('olusturulma_tarihi', { ascending: false });
 
-                if (data) {
-                  const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
-                  setNotifications(uniqueData);
-                } else {
-                  setNotifications([]);
-                }
+              if (data) {
+                const uniqueData = Array.from(new Map(data.map(item => [item.alt_olcut_id, item])).values());
+                setNotifications(uniqueData);
               } else {
                 setNotifications([]);
               }
@@ -95,6 +94,7 @@ export default function BildirimlerPage() {
               setNotifications([]);
             }
           } else {
+            console.error('Coordinator title not matched for notifications:', coordData?.baslik);
             setNotifications([]);
           }
         } else {
@@ -124,7 +124,7 @@ export default function BildirimlerPage() {
           }
         }
       } catch (error) {
-        console.error("Bildirimler yüklenemedi:", error);
+        console.error("Bildirimler fetch error:", error);
       } finally {
         setIsLoading(false);
       }

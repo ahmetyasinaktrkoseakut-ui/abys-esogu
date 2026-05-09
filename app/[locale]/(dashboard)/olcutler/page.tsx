@@ -1,10 +1,10 @@
 'use client';
-// DEFINITIVE BYPASS: 2026-05-09 19:26
+// DEFINITIVE FIX: 2026-05-09 19:29 - Role & UUID Alignment Fix
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { FileText, Loader2, ChevronRight, AlertCircle } from 'lucide-react';
+import { Loader2, ChevronRight, AlertCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
@@ -33,39 +33,46 @@ export default function OlcutlerPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
+        // 1. Profil ve Rolü Al
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
         const role = (profile?.rol || '').toLowerCase().trim();
-        
-        // ROL KONTROLÜ
         const isAdmin = role.includes('yonetici') || role.includes('admin') || role.includes('yönetici');
-        const isCoordinator = !isAdmin && (role.includes('koordinatör') || role.includes('koordinator') || role.includes('koord'));
+
+        // 2. Koordinatörlük Tablosunu Kontrol Et (Rolden bağımsız - kesin çözüm)
+        const { data: coordData } = await supabase
+          .from('baslik_koordinatorleri')
+          .select('baslik')
+          .eq('kullanici_id', user.id);
+
+        const hasCoordinatorRecord = coordData && coordData.length > 0;
 
         if (isAdmin) {
           const { data } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
           setOlcutler(data || []);
-        } else if (isCoordinator) {
-          // KOORDİNATÖR İÇİN ZORUNLU YETKİ (Tabloya bakmadan 'Kalite' ata)
-          let assignedLetter = 'A'; // Varsayılan: Kalite Güvencesi
-
-          const { data: coordData } = await supabase.from('baslik_koordinatorleri').select('baslik').eq('kullanici_id', user.id);
+        } else if (hasCoordinatorRecord) {
+          // KOORDİNATÖR AKIŞI (Rol 'BirimSorumlusu' olsa bile buraya girecek)
+          const rawTitle = (coordData[0]?.baslik || '').toLowerCase();
+          let assignedLetter = '';
           
-          if (coordData && coordData.length > 0) {
-            const rawTitle = coordData[0].baslik.toLowerCase();
-            if (rawTitle.includes('eğitim') || rawTitle.includes('öğretim')) assignedLetter = 'B';
-            else if (rawTitle.includes('araştırma')) assignedLetter = 'C';
-            else if (rawTitle.includes('toplumsal')) assignedLetter = 'D';
-            else if (rawTitle.includes('yönetim')) assignedLetter = 'E';
-          }
+          if (rawTitle.includes('kalite')) assignedLetter = 'A';
+          else if (rawTitle.includes('eğitim') || rawTitle.includes('öğretim')) assignedLetter = 'B';
+          else if (rawTitle.includes('araştırma')) assignedLetter = 'C';
+          else if (rawTitle.includes('toplumsal')) assignedLetter = 'D';
+          else if (rawTitle.includes('yönetim')) assignedLetter = 'E';
 
-          // Veriyi çek ve filtrele
-          const { data: allAlt } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
-          if (allAlt) {
-            const finalFiltered = allAlt.filter(o => o.kod && o.kod.startsWith(assignedLetter));
-            setOlcutler(finalFiltered);
-            setOpenGroups({ [assignedLetter]: true });
+          if (!assignedLetter) {
+            // Eşleşme yoksa bile boş sayfa gelmesin, hata verelim
+            setErrorStatus(`HATA: '${coordData[0].baslik}' başlığı sistem harfleriyle (A-E) eşleşmedi!`);
+          } else {
+            const { data: allAlt } = await supabase.from('alt_olcutler').select('*').order('id', { ascending: true });
+            if (allAlt) {
+              const finalFiltered = allAlt.filter(o => o.kod && o.kod.startsWith(assignedLetter));
+              setOlcutler(finalFiltered);
+              setOpenGroups({ [assignedLetter]: true });
+            }
           }
         } else {
-          // Birim Kullanıcısı
+          // BİRİM KULLANICISI AKIŞI
           const { data } = await supabase
             .from('kullanici_olcut_atamalari')
             .select('alt_olcutler(*)')
@@ -90,7 +97,14 @@ export default function OlcutlerPage() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <h2 className="text-3xl font-black text-slate-900 mb-8 border-b pb-4">{t('title')}</h2>
-      
+
+      {errorStatus && (
+        <div className="mb-8 p-6 bg-red-600 text-white rounded-2xl flex items-center gap-3">
+          <AlertCircle className="w-8 h-8 flex-shrink-0" />
+          <h3 className="font-bold">{errorStatus}</h3>
+        </div>
+      )}
+
       {olcutler.length === 0 && !errorStatus && (
         <div className="p-10 bg-amber-50 border border-amber-200 rounded-3xl text-center">
           <p className="text-amber-800 font-bold text-lg italic">Şu an için atanmış bir ölçütünüz bulunmuyor.</p>

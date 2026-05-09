@@ -112,7 +112,7 @@ export default function OlcutlerPage() {
             acc[k].push(o);
             return acc;
           }, {} as Record<string, any[]>)
-        ).sort().map(([harf, items]) => {
+        ).sort().map(([harf, items_raw]) => { const items = items_raw as any[];
           const b = anaBasliklar.find(x => x.kod === harf);
           const title = getLocalizedField(b, 'baslik_adi', locale) || harf;
           return (

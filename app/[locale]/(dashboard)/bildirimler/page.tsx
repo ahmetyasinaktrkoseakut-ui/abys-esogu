@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase/client';
 import BildirimlerTableClient from '@/components/BildirimlerTableClient';
 import { useTranslations } from 'next-intl';
 import { usePeriod } from '@/contexts/PeriodContext';
-import { usePeriod } from '@/contexts/PeriodContext';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { getAssignedLetter } from '@/lib/utils';
 

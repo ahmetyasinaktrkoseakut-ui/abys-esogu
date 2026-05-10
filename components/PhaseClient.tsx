@@ -161,6 +161,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         if (updateErr) throw updateErr;
         
         await logAction({
+          supabase,
           islemTipi: 'UPDATE',
           tabloAdi: 'puko_degerlendirmeleri',
           kayitId: existingRecord.id,
@@ -175,6 +176,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         if (insertErr) throw insertErr;
 
         await logAction({
+          supabase,
           islemTipi: 'INSERT',
           tabloAdi: 'puko_degerlendirmeleri',
           kayitId: newRec?.id,
@@ -292,6 +294,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
 
         // 3. Audit Log
         await logAction({
+          supabase,
           islemTipi: 'DELETE',
           tabloAdi: 'dokumanlar (puko_kanit)',
           kayitId: pukoId || undefined,

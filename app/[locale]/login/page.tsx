@@ -1,16 +1,15 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/i18n/routing'
 import { supabase } from '@/lib/supabase/client'
 import { Lock, Mail, User, Loader2, Eye, EyeOff, LayoutDashboard } from 'lucide-react'
-import { useTranslations, useLocale } from 'next-intl'
+import { useTranslations } from 'next-intl'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 export default function LoginPage() {
   const router = useRouter()
   const t = useTranslations('Auth')
-  const locale = useLocale()
   
   const [isLogin, setIsLogin] = useState(true)
   const [adSoyad, setAdSoyad] = useState('')
@@ -33,7 +32,7 @@ export default function LoginPage() {
           password,
         })
         if (error) throw error
-        router.push(`/${locale}/olcutler`)
+        router.push('/olcutler')
         router.refresh()
       } else {
         // SIGN UP
@@ -235,7 +234,7 @@ export default function LoginPage() {
           <div className="max-w-lg space-y-8">
             <div className="w-24 h-2 w-px bg-white/20 mx-auto mb-8"></div>
             <h4 className="text-4xl lg:text-5xl font-black text-white leading-tight tracking-tighter drop-shadow-2xl">
-              "{t('quote')}"
+              {t('quote')}
             </h4>
             <div className="flex items-center justify-center gap-4 pt-8">
               <div className="h-px w-12 bg-white/30"></div>

@@ -91,12 +91,16 @@ export default function AtamalarPage() {
   };
 
   const fetchHocaAtamalari = async (userId: string) => {
+    if (!selectedPeriod) {
+      setSelectedOlcutIds([]);
+      return;
+    }
     try {
       const { data, error } = await supabase
         .from('kullanici_olcut_atamalari')
         .select('alt_olcut_id')
         .eq('user_id', userId)
-        .eq('donem_id', selectedPeriod?.id);
+        .eq('donem_id', selectedPeriod.id);
 
       if (error) throw error;
       
@@ -169,15 +173,10 @@ export default function AtamalarPage() {
       }
 
       // 3. Alt ölçütlerin erişim tarihlerini güncelle
-      // Perform updates for each modified criterion (simpler than a complex upsert for few items)
-      for (const olcut of olcutler) {
+      if (olcutler.length > 0) {
         const { error: dateError } = await supabase
           .from('alt_olcutler')
-          .update({
-            erisim_baslangic: olcut.erisim_baslangic,
-            erisim_bitis: olcut.erisim_bitis
-          })
-          .eq('id', olcut.id);
+          .upsert(olcutler);
         
         if (dateError) throw dateError;
       }

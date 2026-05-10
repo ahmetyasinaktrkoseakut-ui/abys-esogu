@@ -17,6 +17,8 @@ import {
 import { usePeriod } from '@/contexts/PeriodContext';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { getAssignedLetter } from '@/lib/utils';
+import DOMPurify from 'dompurify';
 
 export default function VeriOnayiPage() {
   const { selectedPeriod } = usePeriod();
@@ -65,25 +67,19 @@ export default function VeriOnayiPage() {
       
       setCoordinatorTopic(coordData.baslik);
 
-      // 2. Ana başlığın ID'sini bul (Sabit eşleştirme)
+      // 2. Ana başlığın ID'sini bul (Ortak utility ile eşleştirme)
       const { data: allBasliklar } = await supabase.from('ana_basliklar').select('id, baslik_adi, kod');
       
-      const baslikMap: Record<string, string> = {
-        'Kalite Güvencesi': 'KALİTE GÜVENCESİ SİSTEMİ',
-        'Eğitim-Öğretim': 'EĞİTİM VE ÖĞRETİM',
-        'Araştırma ve Geliştirme': 'ARAŞTIRMA VE GELİŞTİRME',
-        'Toplumsal Katkı': 'TOPLUMSAL KATKI',
-        'Yönetim Sistemi': 'YÖNETİM SİSTEMİ'
-      };
-
-      const expectedDbBaslik = baslikMap[coordData.baslik];
-      const anaBaslikData = allBasliklar?.find(b => b.baslik_adi === expectedDbBaslik);
+      const assignedLetter = getAssignedLetter(coordData.baslik);
+      const anaBaslikData = allBasliklar?.find(b => b.kod === assignedLetter || (b.baslik_adi && b.baslik_adi.startsWith(assignedLetter + '.')));
 
       if (!anaBaslikData) {
         console.log("Eşleşme sağlanamadı. Aranan:", coordData.baslik);
         console.log("Mevcut Başlıklar:", allBasliklar?.map(b => b.baslik_adi));
-        throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla (örn: ${allBasliklar?.[0]?.baslik_adi}) eşleşmedi.`);
+        throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla eşleşmedi.`);
       }
+
+      const expectedDbBaslik = anaBaslikData.baslik_adi;
 
       // 3. O başlığa ait alt ölçütleri bul (JS ile filtrele)
       const { data: allAltOlcutlerData } = await supabase
@@ -334,7 +330,7 @@ export default function VeriOnayiPage() {
               {expandedReport === report.id && (
                 <div className="px-5 pb-5 pt-2 border-t border-slate-100 animate-in slide-in-from-top-2 duration-300">
                   <div className="bg-slate-50 p-4 rounded-xl prose prose-sm max-w-none text-slate-700" 
-                       dangerouslySetInnerHTML={{ __html: report.icerik || '<p class="text-slate-400 italic">İçerik boş.</p>' }} 
+                       dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(report.icerik || '<p class="text-slate-400 italic">İçerik boş.</p>') }} 
                   />
                   {report.kanitlar && report.kanitlar.length > 0 && (
                     <div className="mt-4">

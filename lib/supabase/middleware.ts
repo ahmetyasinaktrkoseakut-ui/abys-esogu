@@ -32,15 +32,6 @@ export async function updateSession(request: NextRequest) {
         },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          supabaseResponse = handleI18nRouting(request)
-          if (supabaseResponse.status >= 300 && supabaseResponse.status < 400) {
-            const location = supabaseResponse.headers.get('location');
-            if (location && (location.includes('localhost') || location.includes(':8080'))) {
-              const url = new URL(location, publicBaseUrl);
-              url.port = '';
-              supabaseResponse.headers.set('location', url.toString());
-            }
-          }
           cookiesToSet.forEach(({ name, value, options }) =>
             supabaseResponse.cookies.set(name, value, options)
           )
@@ -57,8 +48,12 @@ export async function updateSession(request: NextRequest) {
   const pathWithoutLocale = pathname.replace(/^\/(tr|en|ar)/, '') || '/';
   const isLoginPage = pathWithoutLocale.startsWith('/login')
 
-  const redirectWithHost = (targetPath: string) => {
-    const url = new URL(targetPath, publicBaseUrl);
+  const redirectWithLocale = (targetPath: string) => {
+    const localeMatch = pathname.match(/^\/(tr|en|ar)/);
+    const currentLocale = localeMatch ? localeMatch[1] : 'tr';
+    const finalPath = `/${currentLocale}${targetPath}`;
+    
+    const url = new URL(finalPath, publicBaseUrl);
     url.port = '';
     return NextResponse.redirect(url);
   };
@@ -71,7 +66,7 @@ export async function updateSession(request: NextRequest) {
     !pathname.startsWith('/favicon.ico') &&
     !pathname.startsWith('/public')
   ) {
-    return redirectWithHost('/login');
+    return redirectWithLocale('/login');
   }
 
   if (user) {
@@ -82,12 +77,12 @@ export async function updateSession(request: NextRequest) {
       .single()
 
     if (isLoginPage) {
-      return redirectWithHost('/olcutler');
+      return redirectWithLocale('/olcutler');
     }
 
     const oldPaths = ['/', '/puko', '/birimler'];
     if (oldPaths.some(p => pathWithoutLocale === p || pathWithoutLocale.startsWith('/birimler'))) {
-      return redirectWithHost('/olcutler');
+      return redirectWithLocale('/olcutler');
     }
   }
 

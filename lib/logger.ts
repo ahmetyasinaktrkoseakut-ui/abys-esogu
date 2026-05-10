@@ -1,8 +1,9 @@
-import { supabase } from './supabase/client';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export type LogType = 'INSERT' | 'UPDATE' | 'DELETE' | 'SEAL';
 
 interface LogParams {
+  supabase: SupabaseClient<any, any, any>;
   userId?: string;
   islemTipi: LogType;
   tabloAdi: string;
@@ -12,6 +13,7 @@ interface LogParams {
 }
 
 export async function logAction({
+  supabase,
   userId,
   islemTipi,
   tabloAdi,

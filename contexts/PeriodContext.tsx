@@ -42,14 +42,18 @@ export function PeriodProvider({ children }: { children: ReactNode }) {
       
       // Select the active period by default if not already set
       if (!selectedPeriod && data && data.length > 0) {
-        const active = data.find(p => p.is_active) || data[0];
-        setSelectedPeriod(active);
-        
-        // Save to localStorage to persist user selection
         const savedPeriodId = localStorage.getItem('selectedPeriodId');
+        let periodToSelect = null;
         if (savedPeriodId) {
-          const saved = data.find(p => p.id === savedPeriodId);
-          if (saved) setSelectedPeriod(saved);
+          periodToSelect = data.find(p => p.id === savedPeriodId);
+        }
+        
+        if (!periodToSelect) {
+          periodToSelect = data.find(p => p.is_active) || data[0];
+        }
+        
+        if (periodToSelect) {
+          setSelectedPeriod(periodToSelect);
         }
       }
     } finally {

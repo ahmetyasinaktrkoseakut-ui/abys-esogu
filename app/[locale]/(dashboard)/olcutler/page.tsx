@@ -8,6 +8,7 @@ import { Loader2, ChevronRight, AlertCircle } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
+import { getAssignedLetter } from '@/lib/utils';
 
 export default function OlcutlerPage() {
   const t = useTranslations('Criteria');
@@ -51,14 +52,7 @@ export default function OlcutlerPage() {
           setOlcutler(data || []);
         } else if (hasCoordinatorRecord) {
           // KOORDİNATÖR AKIŞI (Rol 'BirimSorumlusu' olsa bile buraya girecek)
-          const rawTitle = (coordData[0]?.baslik || '').toLowerCase();
-          let assignedLetter = '';
-          
-          if (rawTitle.includes('kalite')) assignedLetter = 'A';
-          else if (rawTitle.includes('eğitim') || rawTitle.includes('öğretim')) assignedLetter = 'B';
-          else if (rawTitle.includes('araştırma')) assignedLetter = 'C';
-          else if (rawTitle.includes('toplumsal')) assignedLetter = 'D';
-          else if (rawTitle.includes('yönetim')) assignedLetter = 'E';
+          const assignedLetter = getAssignedLetter(coordData[0]?.baslik);
 
           if (!assignedLetter) {
             // Eşleşme yoksa bile boş sayfa gelmesin, hata verelim

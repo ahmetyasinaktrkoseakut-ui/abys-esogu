@@ -6,7 +6,9 @@ import { supabase } from '@/lib/supabase/client';
 import BildirimlerTableClient from '@/components/BildirimlerTableClient';
 import { useTranslations } from 'next-intl';
 import { usePeriod } from '@/contexts/PeriodContext';
+import { usePeriod } from '@/contexts/PeriodContext';
 import { Loader2, AlertCircle } from 'lucide-react';
+import { getAssignedLetter } from '@/lib/utils';
 
 export default function BildirimlerPage() {
   const t = useTranslations('Notifications');
@@ -47,14 +49,7 @@ export default function BildirimlerPage() {
           if (!coordData || coordData.length === 0) {
             setErrorStatus('Koordinatör kaydınız bulunamadı!');
           } else {
-            let assignedLetter = '';
-            const rawTitle = (coordData[0]?.baslik || '').toLowerCase();
-            if (rawTitle.includes('kalite')) assignedLetter = 'A';
-            else if (rawTitle.includes('eğitim') || rawTitle.includes('öğretim')) assignedLetter = 'B';
-            else if (rawTitle.includes('araştırma')) assignedLetter = 'C';
-            else if (rawTitle.includes('toplumsal')) assignedLetter = 'D';
-            else if (rawTitle.includes('yönetim')) assignedLetter = 'E';
-
+            const assignedLetter = getAssignedLetter(coordData[0]?.baslik);
             if (!assignedLetter) {
               setErrorStatus(`Başlık eşleşmedi: ${coordData[0].baslik}`);
             } else {

@@ -144,6 +144,7 @@ export default function PeriodManagementPage() {
 
       // 2. Audit Log
       await logAction({
+        supabase,
         islemTipi: 'SEAL',
         tabloAdi: 'donemler',
         kayitId: period.id,

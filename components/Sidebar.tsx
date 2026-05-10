@@ -13,7 +13,7 @@ export default async function Sidebar() {
       .from('profiller')
       .select('rol')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
       
     if (profile) {
       role = profile.rol;

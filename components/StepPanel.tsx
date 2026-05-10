@@ -125,14 +125,16 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
 
           if (step.id === 'rapor') {
             // 7. Buton Kontrolü
-            const hasContent = raporData?.icerik && raporData.icerik.length > 50;
+            const cleanedContent = raporData?.icerik ? raporData.icerik.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim() : '';
+            const hasContent = cleanedContent.length > 2;
             const hasEvidences = raporData?.kanitlar && Array.isArray(raporData.kanitlar) && raporData.kanitlar.length > 0;
             if (hasContent || hasEvidences) progress = 100;
           } else {
             // 1-6. Buton Kontrolü
             const row = pukoData?.find(r => r.puko_asamasi === step.id);
             if (row) {
-              const hasText = row.aciklama && row.aciklama.replace(/<[^>]*>/g, '').trim().length > 10;
+              const cleanedText = row.aciklama ? row.aciklama.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim() : '';
+              const hasText = cleanedText.length > 2;
               const hasDoc = row.kanit_dosyalari && Array.isArray(row.kanit_dosyalari) && row.kanit_dosyalari.length > 0;
               if (hasText || hasDoc) progress = 100;
             }

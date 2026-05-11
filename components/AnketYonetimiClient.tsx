@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
+import DOMPurify from 'dompurify';
 import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, ChevronDown, ChevronUp, BarChart2, Pencil, Info, GripVertical, PlusCircle } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useLocale, useTranslations } from 'next-intl';
@@ -1086,7 +1087,7 @@ export default function AnketYonetimiClient() {
                         {soru.tip === 'bilgi_kutusu' ? (
                           <div className="prose prose-slate max-w-none">
                             <h3 className="text-xl font-bold text-slate-900 border-b pb-2 mb-4">{soru.soru}</h3>
-                            <div dangerouslySetInnerHTML={{ __html: soru.aciklama || '' }} />
+                            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(soru.aciklama || '') }} />
                           </div>
                         ) : soru.tip === 'bolum_basligi' ? (
                           <div className="py-4 border-b-2 border-purple-500 pb-4">

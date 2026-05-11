@@ -8,6 +8,7 @@ import RichTextEditor from '@/components/RichTextEditor';
 import { useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
+import DOMPurify from 'dompurify';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from 'recharts';
 import {
   DndContext,
@@ -480,7 +481,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
             <h3 className="text-lg font-bold text-white">Yönetimden Gelen Anket Analizi</h3>
           </div>
           <div className="p-8 prose prose-slate max-w-none text-sm md:text-base">
-            <div dangerouslySetInnerHTML={{ __html: yoneticiAnalizi }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(yoneticiAnalizi) }} />
           </div>
         </div>
       )}
@@ -919,7 +920,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                         {soru.tip === 'bilgi_kutusu' ? (
                           <div className="prose prose-slate max-w-none">
                             <h3 className="text-xl font-bold text-slate-900 border-b pb-2 mb-4">{soru.soru}</h3>
-                            <div dangerouslySetInnerHTML={{ __html: soru.aciklama || '' }} />
+                            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(soru.aciklama || '') }} />
                           </div>
                         ) : (
                           <>

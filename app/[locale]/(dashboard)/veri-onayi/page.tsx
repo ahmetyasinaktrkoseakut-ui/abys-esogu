@@ -74,8 +74,7 @@ export default function VeriOnayiPage() {
       const anaBaslikData = allBasliklar?.find(b => b.kod === assignedLetter || (b.baslik_adi && b.baslik_adi.startsWith(assignedLetter + '.')));
 
       if (!anaBaslikData) {
-        console.log("Eşleşme sağlanamadı. Aranan:", coordData.baslik);
-        console.log("Mevcut Başlıklar:", allBasliklar?.map(b => b.baslik_adi));
+
         throw new Error(`Sorumlu olduğunuz '${coordData.baslik}' başlığı sistemdeki başlıklarla eşleşmedi.`);
       }
 

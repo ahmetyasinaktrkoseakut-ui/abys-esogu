@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import { Loader2, LineChart, FileText, Printer, Building2, CheckCircle2, Download, BookOpen } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
+import DOMPurify from 'dompurify';
 import { usePeriod } from '@/contexts/PeriodContext';
 
 interface AnaBaslik {
@@ -95,7 +96,7 @@ export default function RaporlarClient() {
         .eq('donem_id', String(selectedPeriod?.id))
         .order('olusturulma_tarihi', { ascending: false });
 
-      console.log('Fetched Ozdegerlendirme:', ozdegerlendirmeVerileri);
+
 
       const sortedAnaBasliklar = [...(anaBasliklar || [])].sort((a, b) => a.kod.localeCompare(b.kod, undefined, { numeric: true, sensitivity: 'base' }));
       const sortedAltOlcutler = [...(altOlcutler || [])].sort((a, b) => a.kod.localeCompare(b.kod, undefined, { numeric: true, sensitivity: 'base' }));
@@ -560,7 +561,7 @@ export default function RaporlarClient() {
                                 <div className="bg-slate-50 p-6 rounded-xl border border-slate-200">
                                   <div 
                                     className="prose prose-sm max-w-none prose-slate"
-                                    dangerouslySetInnerHTML={{ __html: combinedText }}
+                                    dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(combinedText) }}
                                   />
                                 </div>
                                 

@@ -35,7 +35,7 @@ export default function OlcutlerPage() {
         if (!user) return;
 
         // 1. Profil ve Rolü Al
-        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = (profile?.rol || '').toLowerCase().trim();
         const isAdmin = role.includes('yonetici') || role.includes('admin') || role.includes('yönetici');
 

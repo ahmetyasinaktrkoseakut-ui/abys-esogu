@@ -56,7 +56,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       const { data: { user } } = await supabase.auth.getUser();
       let localUserIsAdmin = false;
       if (user) {
-        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = profile?.rol?.toLowerCase() || '';
         localUserIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
         setIsAdmin(localUserIsAdmin);
@@ -67,7 +67,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         }
       }
 
-      const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).single();
+      const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).maybeSingle();
       if (olcut) setOlcutDetay(olcut);
       
       const { data: raporData } = await supabase
@@ -304,7 +304,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .select('id')
         .eq('alt_olcut_id', String(resolvedParams.id))
         .eq('donem_id', String(selectedPeriod?.id))
-        .single();
+        .maybeSingle();
 
       if (currentRecord) {
         await supabase
@@ -344,7 +344,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .select('id')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('donem_id', selectedPeriod?.id)
-        .single();
+        .maybeSingle();
 
       if (currentRecord) {
         const { error } = await supabase
@@ -383,7 +383,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .select('id')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('donem_id', selectedPeriod?.id)
-        .single();
+        .maybeSingle();
 
       if (currentRecord) {
         const { error } = await supabase

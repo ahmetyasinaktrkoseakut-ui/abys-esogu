@@ -56,14 +56,14 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = profile?.rol?.toLowerCase() || '';
         if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false || selectedPeriod?.is_sealed === true) {
           setIsReadOnly(true);
         }
       }
       
-      const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).single();
+      const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).maybeSingle();
       if (olcut) setOlcutDetay(olcut);
 
       const { data: pukoData } = await supabase
@@ -199,7 +199,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           .from('puko_degerlendirmeleri')
           .insert(upsertData)
           .select('id')
-          .single();
+          .maybeSingle();
         if (insertErr) throw insertErr;
         
         savedRecordId = newRec?.id;

@@ -18,7 +18,7 @@ export default async function AyarlarPage() {
     .from('profiller')
     .select('rol')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   let roleLabel = 'Kullanıcı';
   if (profile?.rol) {

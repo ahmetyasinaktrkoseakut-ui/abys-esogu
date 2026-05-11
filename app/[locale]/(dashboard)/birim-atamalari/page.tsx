@@ -49,7 +49,7 @@ export default function BirimAtamalariPage() {
       if (!user) throw new Error("Kullanıcı oturumu bulunamadı.");
 
       // Admin kontrolü
-      const { data: userProfile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+      const { data: userProfile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
       const role = userProfile?.rol?.toLowerCase() || '';
       const isUserAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
       setIsAdmin(isUserAdmin);
@@ -62,7 +62,7 @@ export default function BirimAtamalariPage() {
           .from('baslik_koordinatorleri')
           .select('baslik')
           .eq('kullanici_id', user.id)
-          .single();
+          .maybeSingle();
 
         if (coordError || !coordData) {
           throw new Error("Bu sayfaya erişim yetkiniz yok veya atanmış bir başlığınız bulunmuyor.");

@@ -10,14 +10,14 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
   const { kod } = await params;
   const supabase = await createClient();
 
-  const { data: ders } = await supabase.from('dersler').select('*').eq('kod', kod).single();
+  const { data: ders } = await supabase.from('dersler').select('*').eq('kod', kod).maybeSingle();
   if (!ders) notFound();
 
   const { data: izlence } = await supabase
     .from('ders_izlenceleri')
     .select('*')
     .eq('ders_id', kod)
-    .single();
+    .maybeSingle();
 
   if (!izlence || !izlence.icerik) {
     return (

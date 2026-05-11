@@ -14,7 +14,7 @@ export default async function DuyurularPage() {
     .from('profiller')
     .select('rol')
     .eq('id', user.id)
-    .single();
+    .maybeSingle();
 
   const isAdmin = profile?.rol?.toLowerCase().includes('yonetici') || profile?.rol?.toLowerCase().includes('yönetici') || profile?.rol?.toLowerCase().includes('admin');
 

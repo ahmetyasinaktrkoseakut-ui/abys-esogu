@@ -50,7 +50,7 @@ export default function PeriodManagementPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+      const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
       const role = profile?.rol?.toLowerCase() || '';
       const isUserAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
       setIsAdmin(isUserAdmin);

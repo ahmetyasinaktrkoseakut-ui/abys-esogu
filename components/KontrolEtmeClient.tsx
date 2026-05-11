@@ -171,14 +171,14 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
       
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = profile?.rol?.toLowerCase() || '';
         if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false) {
           setIsReadOnly(true);
         }
       }
       
-      const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).single();
+      const { data: olcut } = await supabase.from('alt_olcutler').select('*').eq('id', resolvedParams.id).maybeSingle();
       if (olcut) setOlcutDetay(olcut);
 
       // Fetch PUKO
@@ -190,7 +190,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         .eq('donem_id', selectedPeriod?.id)
         .order('id', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (pukoData) {
         setPukoId(pukoData.id.toString());
@@ -304,7 +304,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
           .eq('id', pukoId)
           .eq('donem_id', selectedPeriod?.id);
       } else {
-        const { data: newPuko } = await supabase.from('puko_degerlendirmeleri').insert(upsertPuko).select('id').single();
+        const { data: newPuko } = await supabase.from('puko_degerlendirmeleri').insert(upsertPuko).select('id').maybeSingle();
         if (newPuko) setPukoId(newPuko.id.toString());
       }
 
@@ -346,7 +346,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
           const { data: newRapor } = await supabase.from('ozdegerlendirme_raporlari')
             .insert(upsertRapor)
             .select('id')
-            .single();
+            .maybeSingle();
           if (newRapor) setOzdegerlendirmeRaporuId(newRapor.id.toString());
         }
       }

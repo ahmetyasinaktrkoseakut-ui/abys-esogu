@@ -31,7 +31,7 @@ export default function PublicAnketClient({ params }: PublicAnketClientProps) {
           .from('anketler')
           .select('*')
           .eq('id', resolvedParams.id)
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
         setAnket(data);

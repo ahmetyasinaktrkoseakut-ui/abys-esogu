@@ -21,7 +21,7 @@ export default async function IzlenceTakipPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return <div className="p-8 text-center font-bold text-slate-500">Giriş yapmalısınız.</div>;
 
-  const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+  const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
   const role = profile?.rol?.toLowerCase() || '';
   const isAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
 

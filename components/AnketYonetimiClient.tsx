@@ -236,14 +236,14 @@ export default function AnketYonetimiClient() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = profile?.rol?.toLowerCase() || '';
         const userIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
         setIsAdmin(userIsAdmin);
 
         let expectedDbBaslik: string | null = null;
         if (!userIsAdmin) {
-          const { data: coordData } = await supabase.from('baslik_koordinatorleri').select('baslik').eq('kullanici_id', user.id).single();
+          const { data: coordData } = await supabase.from('baslik_koordinatorleri').select('baslik').eq('kullanici_id', user.id).maybeSingle();
           if (coordData) {
             setIsCoordinator(true);
             const baslikMap: Record<string, string> = {

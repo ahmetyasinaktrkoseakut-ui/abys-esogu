@@ -49,7 +49,7 @@ export default function OnerilenlerClient() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
-          const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+          const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
           const role = profile?.rol?.toLowerCase() || '';
           if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin')) {
             setIsAdmin(true);

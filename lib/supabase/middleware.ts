@@ -74,7 +74,7 @@ export async function updateSession(request: NextRequest) {
       .from('profiller')
       .select('rol')
       .eq('id', user.id)
-      .single()
+      .maybeSingle()
 
     if (isLoginPage) {
       return redirectWithLocale('/olcutler');

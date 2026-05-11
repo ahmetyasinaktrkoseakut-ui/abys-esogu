@@ -26,7 +26,7 @@ export default function BildirimlerPage() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = (profile?.rol || '').toLowerCase().trim();
         
         const isUserAdmin = role.includes('yonetici') || role.includes('admin') || role.includes('yönetici');

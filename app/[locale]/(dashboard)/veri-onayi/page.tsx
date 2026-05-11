@@ -59,7 +59,7 @@ export default function VeriOnayiPage() {
         .from('baslik_koordinatorleri')
         .select('baslik')
         .eq('kullanici_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (coordError || !coordData) {
         throw new Error("Bu sayfaya erişim yetkiniz yok veya atanmış bir başlığınız bulunmuyor.");
@@ -148,7 +148,7 @@ export default function VeriOnayiPage() {
       setIsSubmitting(true);
       
       // 1. Raporu al (alt_olcut_id ve donem_id'ye ulaşmak için)
-      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('alt_olcut_id, donem_id').eq('id', id).single();
+      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('alt_olcut_id, donem_id').eq('id', id).maybeSingle();
 
       // 2. Raporu onayla
       const { error: reportError } = await supabase
@@ -185,7 +185,7 @@ export default function VeriOnayiPage() {
       setIsSubmitting(true);
       
       // 1. Raporu al
-      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('alt_olcut_id, donem_id').eq('id', selectedReportId).single();
+      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('alt_olcut_id, donem_id').eq('id', selectedReportId).maybeSingle();
 
       // 2. Raporu reddet
       const { error: reportError } = await supabase

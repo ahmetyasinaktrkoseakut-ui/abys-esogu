@@ -41,6 +41,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   const [uploadingDoc, setUploadingDoc] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [ustBirimOnerileri, setUstBirimOnerileri] = useState<any[]>([]);
+  const [deletedDocs, setDeletedDocs] = useState<any[]>([]); // To hold docs that need physical deletion
   const t = useTranslations('Phase');
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
@@ -73,7 +74,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         .eq('donem_id', selectedPeriod?.id)
         .order('id', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (pukoData) {
         setPukoId(pukoData.id);
@@ -127,6 +128,25 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
     setEylemler(newEylemler);
   };
 
+  const handleRemoveEylem = async (index: number) => {
+    if (confirm('Bu eylem planını silmek istediğinize emin misiniz?')) {
+      const eylemToRemove = eylemler[index];
+      
+      if (eylemToRemove.id) {
+        try {
+          await supabase.from('eylem_planlari').delete().eq('id', eylemToRemove.id);
+        } catch (error) {
+          console.error('Eylem silme hatası:', error);
+          alert('Eylem silinirken hata oluştu.');
+          return;
+        }
+      }
+      
+      const newEylemler = eylemler.filter((_, i) => i !== index);
+      setEylemler(newEylemler.length > 0 ? newEylemler : [{ iyilestirme_alani: '', bulgular: '', eylem_faaliyet: '', sorumlu: '', takvim: '', basari_gostergesi: '', izleme_durumu: '', riskler: '' }]);
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -141,6 +161,11 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         kanit_dosyalari: dokumanlar
       };
 
+      if (!isReadOnly) {
+        upsertData.durum = 'Beklemede';
+        upsertData.red_nedeni = null;
+      }
+
       if (phaseId === 'onlem') {
         upsertData.ust_birim_onerileri = ustBirimOnerileri;
       }
@@ -152,6 +177,8 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         .eq('puko_asamasi', phaseId)
         .eq('donem_id', selectedPeriod?.id)
         .maybeSingle();
+
+      let savedRecordId = existingRecord?.id;
 
       if (existingRecord?.id) {
         const { error: updateErr } = await supabase
@@ -174,6 +201,8 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           .select('id')
           .single();
         if (insertErr) throw insertErr;
+        
+        savedRecordId = newRec?.id;
 
         await logAction({
           supabase,
@@ -221,6 +250,26 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           const { error: eUpdErr } = await supabase.from('eylem_planlari').update(updatePayload).eq('id', id);
           if (eUpdErr) throw eUpdErr;
         }
+      }
+
+      // Handle physical deletion of removed docs
+      if (deletedDocs.length > 0) {
+        for (const doc of deletedDocs) {
+          if (doc.url) {
+            const urlParts = doc.url.split('/');
+            const fileName = urlParts[urlParts.length - 1];
+            await supabase.storage.from('dokumanlar').remove([fileName]);
+            
+            await logAction({
+              supabase,
+              islemTipi: 'DELETE',
+              tabloAdi: 'dokumanlar (puko_kanit)',
+              kayitId: savedRecordId || pukoId || undefined,
+              eskiVeri: doc
+            });
+          }
+        }
+        setDeletedDocs([]);
       }
 
       alert(t('save_success'));
@@ -280,30 +329,10 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
     if (confirm(t('delete_confirm'))) {
       const docToRemove = dokumanlar[index];
       
-      try {
-        // 1. Storage'dan Fiziksel Silme
-        if (docToRemove.url) {
-          const urlParts = docToRemove.url.split('/');
-          const fileName = urlParts[urlParts.length - 1];
-          await supabase.storage.from('dokumanlar').remove([fileName]);
-        }
-
-        // 2. State'den Kaldırma
-        const newDocs = dokumanlar.filter((_, i) => i !== index);
-        setDokumanlar(newDocs);
-
-        // 3. Audit Log
-        await logAction({
-          supabase,
-          islemTipi: 'DELETE',
-          tabloAdi: 'dokumanlar (puko_kanit)',
-          kayitId: pukoId || undefined,
-          eskiVeri: docToRemove
-        });
-
-      } catch (error) {
-        console.error('Evidence Removal Error:', error);
-      }
+      setDeletedDocs(prev => [...prev, docToRemove]);
+      
+      const newDocs = dokumanlar.filter((_, i) => i !== index);
+      setDokumanlar(newDocs);
     }
   };
 
@@ -527,7 +556,8 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                     <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '8%'}}>{t('headers.takvim')}</th>
                     <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '13%'}}>{t('headers.basari_gostergesi')}</th>
                     <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '13%'}}>Riskler</th>
-                    <th className="px-4 py-3 border-b border-slate-200" style={{width: '13%'}}>{t('headers.izleme')}</th>
+                    <th className="px-4 py-3 border-b border-r border-slate-200" style={{width: '13%'}}>{t('headers.izleme')}</th>
+                    <th className="px-4 py-3 border-b border-slate-200" style={{width: '5%'}}>İşlem</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white">
@@ -540,7 +570,14 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                       <td className="p-2 border-r border-slate-100"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.takvim} onChange={(e) => handleEylemChange(index, 'takvim', e.target.value)} /></td>
                       <td className="p-2 border-r border-slate-100"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.basari_gostergesi} onChange={(e) => handleEylemChange(index, 'basari_gostergesi', e.target.value)} /></td>
                       <td className="p-2 border-r border-slate-100"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.riskler} onChange={(e) => handleEylemChange(index, 'riskler', e.target.value)} /></td>
-                      <td className="p-2"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.izleme_durumu} onChange={(e) => handleEylemChange(index, 'izleme_durumu', e.target.value)} /></td>
+                      <td className="p-2 border-r border-slate-100"><textarea disabled={isReadOnly} className="w-full h-full min-h-[60px] p-2 text-xs border-transparent rounded resize-none focus:ring-1 focus:ring-blue-500 disabled:bg-transparent disabled:opacity-80" value={eylem.izleme_durumu} onChange={(e) => handleEylemChange(index, 'izleme_durumu', e.target.value)} /></td>
+                      <td className="p-2 text-center">
+                        {!isReadOnly && (
+                          <button onClick={() => handleRemoveEylem(index)} className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors" title="Eylemi Sil">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

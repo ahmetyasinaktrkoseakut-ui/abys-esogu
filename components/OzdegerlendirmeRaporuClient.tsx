@@ -311,6 +311,16 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           .from('ozdegerlendirme_raporlari')
           .update({ onay_durumu: 'bekliyor', red_nedeni: null })
           .eq('id', currentRecord.id);
+
+        if (!isAdmin) {
+          // BİLDİRİM SENKRONİZASYONU: Kullanıcı raporu güncellediğinde, puko durumlarını 'Beklemede'ye çek.
+          await supabase
+            .from('puko_degerlendirmeleri')
+            .update({ durum: 'Beklemede', red_nedeni: null })
+            .eq('alt_olcut_id', String(resolvedParams.id))
+            .eq('donem_id', String(selectedPeriod?.id));
+        }
+
         setOnayDurumu('bekliyor');
         setRedNedeni(null);
       }

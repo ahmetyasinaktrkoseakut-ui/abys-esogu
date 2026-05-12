@@ -44,10 +44,7 @@ export default function VeriOnayiPage() {
   }, [selectedPeriod]);
 
   const fetchInitialData = async () => {
-    if (!selectedPeriod) {
-      setIsLoading(false);
-      return;
-    }
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
       

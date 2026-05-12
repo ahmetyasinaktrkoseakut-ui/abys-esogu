@@ -234,6 +234,7 @@ export default function AnketYonetimiClient() {
 
   useEffect(() => {
     async function init() {
+      if (!selectedPeriod) return;
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;

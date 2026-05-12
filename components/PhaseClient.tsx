@@ -52,6 +52,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   const [onayDurumu, setOnayDurumu] = useState<string>('');
 
   const fetchData = async () => {
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
       

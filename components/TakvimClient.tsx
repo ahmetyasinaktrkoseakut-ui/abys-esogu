@@ -35,10 +35,7 @@ export default function TakvimClient() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!selectedPeriod) {
-        setIsLoading(false);
-        return;
-      }
+      if (!selectedPeriod) return;
       setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();

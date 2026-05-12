@@ -28,10 +28,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
   const { selectedPeriod } = usePeriod();
 
   const fetchData = async () => {
-    if (!selectedPeriod) {
-      setIsLoading(false);
-      return;
-    }
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
       const { data: { user } } = await supabase.auth.getUser();

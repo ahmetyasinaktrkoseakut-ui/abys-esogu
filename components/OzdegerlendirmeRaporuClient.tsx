@@ -47,10 +47,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const editorRef = useRef<RichTextEditorRef>(null);
 
   const fetchData = async () => {
-    if (!selectedPeriod) {
-      setIsLoading(false);
-      return;
-    }
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
 

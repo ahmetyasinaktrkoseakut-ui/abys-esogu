@@ -26,7 +26,7 @@ export default function OlcutlerPage() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!selectedPeriod) { setIsLoading(false); return; }
+      if (!selectedPeriod) return; 
       try {
         setIsLoading(true);
         setErrorStatus(null);

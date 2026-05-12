@@ -165,10 +165,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
   const tCommon = useTranslations('Common');
 
   const fetchData = async () => {
-    if (!selectedPeriod) {
-      setIsLoading(false);
-      return;
-    }
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
       

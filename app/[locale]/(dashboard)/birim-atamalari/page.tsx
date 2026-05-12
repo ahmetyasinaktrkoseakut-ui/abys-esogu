@@ -38,10 +38,7 @@ export default function BirimAtamalariPage() {
   }, [selectedHoca, allAtamalar]);
 
   const fetchInitialData = async () => {
-    if (!selectedPeriod) {
-      setIsLoading(false);
-      return;
-    }
+    if (!selectedPeriod) return;
     try {
       setIsLoading(true);
       

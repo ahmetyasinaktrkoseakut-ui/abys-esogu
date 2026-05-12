@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import DOMPurify from 'dompurify';
 import { Loader2, CheckCircle2, ClipboardList, Send } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
+import { logSystemAction } from '@/lib/logger';
 
 interface PublicAnketClientProps {
   params: Promise<{ id: string }>;
@@ -80,6 +81,17 @@ export default function PublicAnketClient({ params }: PublicAnketClientProps) {
 
       if (error) throw error;
       
+      
+      // Anket gönderim logunu at (asenkron, hatayı yutacak)
+      await logSystemAction({
+        supabase,
+        islemTipi: 'INSERT',
+        tabloAdi: 'anket_cevaplari',
+        kayitId: anket.id,
+        yeniVeri: cevaplar,
+        detay: `Public Anket Cevaplandı: ${anket.baslik}`
+      });
+
       setIsSuccess(true);
     } catch (err: any) {
       console.error(err);

@@ -396,6 +396,7 @@
   "Surveys": {
     "title": "Survey Management and Distribution",
     "desc": "Create advanced surveys and distribute them to the \"Checking\" pages of selected criteria.",
+    "question_form": "Question Form",
     "target_criteria": "Target Sub-Criteria (Multiple Selection)",
     "select_all": "Select All",
     "deselect_all": "Clear Selection",

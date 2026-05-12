@@ -45,15 +45,17 @@ export default function BildirimlerTableClient({ initialData, isApprover = false
   useEffect(() => {
     const channel = supabase
       .channel('public:puko_degerlendirmeleri_table')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'puko_degerlendirmeleri' }, () => {
-        router.refresh();
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'puko_degerlendirmeleri' }, (payload) => {
+        // We do NOT call router.refresh() here because it fetches cached Server Component state
+        // and overwrites optimistic UI updates. 
+        // If real-time sync is strictly needed, we should manually fetch the updated row here.
       })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [router]);
+  }, []);
 
   const getPukoBadgeColor = (asama: string) => {
     const lower = (asama || '').toLowerCase();

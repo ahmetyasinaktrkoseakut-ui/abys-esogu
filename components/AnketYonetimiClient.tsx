@@ -959,7 +959,7 @@ export default function AnketYonetimiClient() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {anket.sorular.filter(s => s.tip !== 'kisa_yanit').map((soru) => {
+                        {anket.sorular.filter(s => s.tip !== 'bilgi_kutusu' && s.tip !== 'bolum_basligi' && s.tip !== 'header' && s.tip !== 'info' && s.tip !== 'section').map((soru) => {
                           const soruOzetleri = cevapOzetleri[anketId]?.find(co => co.soru_id === soru.id)?.cevaplar || [];
                           let chartData: any[] = [];
                           

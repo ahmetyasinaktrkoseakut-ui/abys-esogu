@@ -339,7 +339,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       // ozdegerlendirme_raporlari tablosunu güncelle
       const { data: currentRecord } = await supabase
         .from('ozdegerlendirme_raporlari')
-        .select('id')
+        .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('donem_id', selectedPeriod?.id)
         .maybeSingle();
@@ -358,6 +358,24 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           .eq('alt_olcut_id', resolvedParams.id)
           .eq('donem_id', selectedPeriod?.id)
           .eq('durum', 'Beklemede');
+
+        // Bildirim Ekleme İşlemi
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const targetUserId = currentRecord.olusturan_id || currentRecord.kullanici_id || currentRecord.user_id || null;
+        
+        if (currentUser) {
+          try {
+            await supabase.from('bildirimler').insert({
+              gonderen_id: currentUser.id,
+              alici_id: targetUserId,
+              mesaj: `Özdeğerlendirme Raporunuz ONAYLANDI.`,
+              tip: 'onay',
+              ilgili_kayit_id: resolvedParams.id
+            });
+          } catch (e) {
+            console.warn("Bildirim tablosu henüz oluşturulmamış olabilir.", e);
+          }
+        }
 
         setOnayDurumu('onaylandi');
       }
@@ -378,7 +396,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     try {
       const { data: currentRecord } = await supabase
         .from('ozdegerlendirme_raporlari')
-        .select('id')
+        .select('*')
         .eq('alt_olcut_id', resolvedParams.id)
         .eq('donem_id', selectedPeriod?.id)
         .maybeSingle();
@@ -397,6 +415,24 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           .eq('alt_olcut_id', resolvedParams.id)
           .eq('donem_id', selectedPeriod?.id)
           .eq('durum', 'Beklemede');
+
+        // Bildirim Ekleme İşlemi
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const targetUserId = currentRecord.olusturan_id || currentRecord.kullanici_id || currentRecord.user_id || null;
+        
+        if (currentUser) {
+          try {
+            await supabase.from('bildirimler').insert({
+              gonderen_id: currentUser.id,
+              alici_id: targetUserId,
+              mesaj: `Özdeğerlendirme Raporunuz REDDEDİLDİ. Neden: ${rejectReason.trim()}`,
+              tip: 'red',
+              ilgili_kayit_id: resolvedParams.id
+            });
+          } catch (e) {
+            console.warn("Bildirim tablosu henüz oluşturulmamış olabilir.", e);
+          }
+        }
 
         setOnayDurumu('reddedildi');
         setRedNedeni(rejectReason);

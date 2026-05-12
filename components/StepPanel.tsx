@@ -108,14 +108,14 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
         // PUKO verilerini çek (1-6. adımlar için)
         const { data: pukoData } = await supabase
           .from('puko_degerlendirmeleri')
-          .select('puko_asamasi, aciklama, kanit_dosyalari')
+          .select('puko_asamasi, aciklama, kanit_dosyalari, durum')
           .eq('alt_olcut_id', altOlcutId)
           .eq('donem_id', selectedPeriod?.id);
 
         // ÖDR verisini çek (7. adım için)
         const { data: raporData } = await supabase
           .from('ozdegerlendirme_raporlari')
-          .select('icerik, kanitlar')
+          .select('icerik, kanitlar, onay_durumu')
           .eq('alt_olcut_id', altOlcutId)
           .eq('donem_id', selectedPeriod?.id)
           .maybeSingle();
@@ -129,6 +129,11 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
             const hasContent = cleanedContent.length > 2;
             const hasEvidences = raporData?.kanitlar && Array.isArray(raporData.kanitlar) && raporData.kanitlar.length > 0;
             if (hasContent || hasEvidences) progress = 100;
+            
+            // ONAY DURUMU OVERRIDE
+            if (raporData?.onay_durumu?.toLowerCase() === 'onaylandi' || raporData?.onay_durumu?.toLowerCase() === 'onaylandı') {
+              progress = 100;
+            }
           } else {
             // 1-6. Buton Kontrolü
             const row = pukoData?.find(r => r.puko_asamasi === step.id);
@@ -137,6 +142,11 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
               const hasText = cleanedText.length > 2;
               const hasDoc = row.kanit_dosyalari && Array.isArray(row.kanit_dosyalari) && row.kanit_dosyalari.length > 0;
               if (hasText || hasDoc) progress = 100;
+              
+              // ONAY DURUMU OVERRIDE
+              if (row.durum?.toLowerCase() === 'onaylandi' || row.durum?.toLowerCase() === 'onaylandı') {
+                progress = 100;
+              }
             }
           }
 

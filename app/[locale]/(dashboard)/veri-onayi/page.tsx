@@ -143,8 +143,8 @@ export default function VeriOnayiPage() {
     try {
       setIsSubmitting(true);
       
-      // 1. Raporu al (alt_olcut_id ve donem_id'ye ulaşmak için)
-      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('alt_olcut_id, donem_id').eq('id', id).maybeSingle();
+      // 1. Raporu al (alt_olcut_id, donem_id ve olusturan kisiye ulaşmak için)
+      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('*').eq('id', id).maybeSingle();
 
       // 2. Raporu onayla
       const { error: reportError } = await supabase
@@ -153,6 +153,27 @@ export default function VeriOnayiPage() {
         .eq('id', id);
 
       if (reportError) throw reportError;
+
+      // Bildirim Ekleme İşlemi
+      if (report) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const targetUserId = report.olusturan_id || report.kullanici_id || report.user_id || null;
+        
+        if (currentUser) {
+          // Tablo yoksa hata fırlatmaması için try/catch içinde yapıyoruz
+          try {
+            await supabase.from('bildirimler').insert({
+              gonderen_id: currentUser.id,
+              alici_id: targetUserId,
+              mesaj: `Özdeğerlendirme Raporunuz ONAYLANDI.`,
+              tip: 'onay',
+              ilgili_kayit_id: report.alt_olcut_id
+            });
+          } catch (e) {
+            console.warn("Bildirim tablosu henüz oluşturulmamış olabilir.", e);
+          }
+        }
+      }
 
       // 3. PUKÖ Tablosundaki ilgili tüm bildirimleri 'Onaylandı' yap (Yönetici panelinde de böyle gözükecek)
       if (report) {
@@ -165,7 +186,8 @@ export default function VeriOnayiPage() {
       }
 
       setMessage({ type: 'success', text: 'Rapor ve ilgili PUKÖ kayıtları başarıyla onaylandı.' });
-      setReports(prev => prev.filter(r => r.id !== id));
+      await fetchData(); // En güncel veriyi çekerek onaylananların listeden düşmesini sağla
+
     } catch (error: any) {
       console.error("Onay hatası:", error);
       setMessage({ type: 'error', text: 'Onaylanırken hata oluştu.' });
@@ -181,7 +203,7 @@ export default function VeriOnayiPage() {
       setIsSubmitting(true);
       
       // 1. Raporu al
-      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('alt_olcut_id, donem_id').eq('id', selectedReportId).maybeSingle();
+      const { data: report } = await supabase.from('ozdegerlendirme_raporlari').select('*').eq('id', selectedReportId).maybeSingle();
 
       // 2. Raporu reddet
       const { error: reportError } = await supabase
@@ -194,6 +216,26 @@ export default function VeriOnayiPage() {
 
       if (reportError) throw reportError;
 
+      // Bildirim Ekleme İşlemi
+      if (report) {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+        const targetUserId = report.olusturan_id || report.kullanici_id || report.user_id || null;
+        
+        if (currentUser) {
+          try {
+            await supabase.from('bildirimler').insert({
+              gonderen_id: currentUser.id,
+              alici_id: targetUserId,
+              mesaj: `Özdeğerlendirme Raporunuz REDDEDİLDİ. Neden: ${rejectReason.trim()}`,
+              tip: 'red',
+              ilgili_kayit_id: report.alt_olcut_id
+            });
+          } catch (e) {
+            console.warn("Bildirim tablosu henüz oluşturulmamış olabilir.", e);
+          }
+        }
+      }
+
       // 3. PUKÖ Tablosunu güncelle
       if (report) {
         await supabase
@@ -205,7 +247,7 @@ export default function VeriOnayiPage() {
       }
 
       setMessage({ type: 'success', text: 'Rapor reddedildi ve bildirimler güncellendi.' });
-      setReports(prev => prev.filter(r => r.id !== selectedReportId));
+      await fetchData(); // En güncel veriyi çekerek reddedilenlerin listeden düşmesini sağla
       setIsRejectModalOpen(false);
       setSelectedReportId(null);
       setRejectReason('');

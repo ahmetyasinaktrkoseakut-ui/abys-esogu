@@ -396,6 +396,7 @@
   "Surveys": {
     "title": "Anket Yönetimi ve Dağıtımı",
     "desc": "Gelişmiş anketler oluşturun ve seçtiğiniz ölçütlerin \"Kontrol Et\" sayfalarına dağıtın.",
+    "question_form": "Soru Formu",
     "target_criteria": "Hedef Alt Ölçütler (Çoklu Seçim)",
     "select_all": "Tümünü Seç",
     "deselect_all": "Seçimi Temizle",

@@ -271,6 +271,7 @@ export default function AnketYonetimiClient() {
             return (ao.kod && ana.kod && ao.kod.startsWith(ana.kod));
           });
           return {
+            ...ana,
             baslik: ana.baslik_adi,
             kod: ana.kod,
             id: ana.id,
@@ -473,7 +474,7 @@ export default function AnketYonetimiClient() {
         <div className="max-h-[300px] overflow-y-auto border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-4">
           {olcutler.map(ana => (
             <div key={ana.id} className="space-y-2">
-              <h3 className="font-bold text-slate-700 text-sm border-b pb-1">{ana.kod} - {getLocalizedField(ana, 'baslik', locale) || ana.baslik}</h3>
+              <h3 className="font-bold text-slate-700 text-sm border-b pb-1">{ana.kod} - {getLocalizedField(ana, 'baslik_adi', locale) || getLocalizedField(ana, 'baslik', locale) || ana.baslik}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-2">
                 {ana.altOlcutler.map((ao: any) => {
                   const idStr = ao.id.toString();

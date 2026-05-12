@@ -75,7 +75,7 @@ export default function DokumanlarPage() {
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input 
             type="text" 
-            placeholder="Doküman veya ölçüt ara..." 
+            placeholder={t('search_placeholder') || "Doküman veya ölçüt ara..."} 
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm w-full md:w-64 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
@@ -105,7 +105,7 @@ export default function DokumanlarPage() {
                   <tr>
                     <td colSpan={5} className="py-16 text-center text-slate-500">
                       <File className="w-12 h-12 mx-auto text-slate-300 mb-3" />
-                      Sistemde kayıtlı doküman bulunamadı.
+                      {t('no_document_found') || 'Sistemde kayıtlı doküman bulunamadı.'}
                     </td>
                   </tr>
                 ) : (
@@ -144,7 +144,7 @@ export default function DokumanlarPage() {
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 font-medium text-xs hover:bg-blue-100 rounded-lg transition-colors cursor-pointer"
                         >
-                          <ExternalLink className="w-3.5 h-3.5" /> Görüntüle
+                          <ExternalLink className="w-3.5 h-3.5" /> {t('view') || 'Görüntüle'}
                         </a>
                       </td>
                     </tr>

@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, BookOpen, Search, Info, FileText } from 'lucide-react';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
 export default function KaliteElKitabiRaporClient() {
@@ -11,6 +11,8 @@ export default function KaliteElKitabiRaporClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const locale = useLocale();
+  const t = useTranslations('QualityManualReport');
+  const tKalite = useTranslations('KaliteElKitabi');
 
   useEffect(() => {
     fetchData();
@@ -38,7 +40,7 @@ export default function KaliteElKitabiRaporClient() {
     
     let htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>Kurumsal Kalite El Kitabı</title>
+      <head><meta charset='utf-8'><title>${t('title')}</title>
       <style>
         body { font-family: 'Calibri', 'Arial', sans-serif; padding: 20px; color: #334155; }
         h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 20px; color: #1e40af; font-size: 22px; }
@@ -51,7 +53,7 @@ export default function KaliteElKitabiRaporClient() {
       </style>
       </head>
       <body>
-        <h1>KURUMSAL KALİTE EL KİTABI</h1>
+        <h1>${t('title').toUpperCase()}</h1>
         <p style='text-align:center; color: #64748b; margin-bottom: 30px;'>Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</p>
     `;
 
@@ -61,24 +63,24 @@ export default function KaliteElKitabiRaporClient() {
         <div style="margin-top: 30px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #1e40af;">
           ${index + 1}. ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}
         </div>
-        ${data.aciklama_metni ? `<div class="description-box"><strong>KALİTE EL KİTABI AÇIKLAMASI:</strong><br/>${data.aciklama_metni}</div>` : ''}
+        ${data.aciklama_metni ? `<div class="description-box"><strong>${tKalite('description_label')}:</strong><br/>${data.aciklama_metni}</div>` : ''}
         <table>
           <thead>
             <tr>
-              <th colspan="2">Tablo ${index + 1}. ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</th>
+              <th colspan="2">${t('table_prefix')} ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</th>
             </tr>
           </thead>
           <tbody>
-            <tr><td class="label">Sorumlu Birim</td><td class="data">${data.sorumlu_birim || '-'}</td></tr>
-            <tr><td class="label">İlk Planlama Tarihi</td><td class="data">${data.ilk_planlama_tarihi || '-'}</td></tr>
-            <tr><td class="label">İç Paydaşlar</td><td class="data">${data.ic_paydaslar || '-'}</td></tr>
-            <tr><td class="label">Dış Paydaşlar</td><td class="data">${data.dis_paydaslar || '-'}</td></tr>
-            <tr><td class="label">Uluslararası Paydaşlar</td><td class="data">${data.uluslararasi_paydaslar || '-'}</td></tr>
-            <tr><td class="label">Uygulama Alanları</td><td class="data">${data.uygulama_alanlari || '-'}</td></tr>
-            <tr><td class="label">İzleme Mekanizmaları</td><td class="data">${data.izleme_mekanizmalari || '-'}</td></tr>
-            <tr><td class="label">Performans Göstergeleri</td><td class="data">${data.performans_gostergeleri || '-'}</td></tr>
-            <tr><td class="label">Değerlendirme ve İyileştirme Tarihi</td><td class="data">${data.degerlendirme_iyilestirme_tarihi || '-'}</td></tr>
-            <tr><td class="label">Alt Ölçütün Bilgi Yönetim Sistemindeki Yeri</td><td class="data">${data.bgs_yeri || '-'}</td></tr>
+            <tr><td class="label">${tKalite('responsible_unit')}</td><td class="data">${data.sorumlu_birim || t('empty_data')}</td></tr>
+            <tr><td class="label">${tKalite('first_planning_date')}</td><td class="data">${data.ilk_planlama_tarihi || t('empty_data')}</td></tr>
+            <tr><td class="label">${tKalite('internal_stakeholders')}</td><td class="data">${data.ic_paydaslar || t('empty_data')}</td></tr>
+            <tr><td class="label">${tKalite('external_stakeholders')}</td><td class="data">${data.dis_paydaslar || t('empty_data')}</td></tr>
+            <tr><td class="label">${tKalite('international_stakeholders')}</td><td class="data">${data.uluslararasi_paydaslar || t('empty_data')}</td></tr>
+            <tr><td class="label">${tKalite('application_areas')}</td><td class="data">${data.uygulama_alanlari || t('empty_data')}</td></tr>
+            <tr><td class="label">${tKalite('tracking_mechanisms')}</td><td class="data">${data.izleme_mekanizmalari || t('empty_data')}</td></tr>
+            <tr><td class="label">${tKalite('performance_indicators')}</td><td class="data">${data.performans_gostergeleri || t('empty_data')}</td></tr>
+            <tr><td class="label">${tKalite('eval_improvement_date')}</td><td class="data">${data.degerlendirme_iyilestirme_tarihi || t('empty_data')}</td></tr>
+            <tr><td class="label">${tKalite('bgs_location')}</td><td class="data">${data.bgs_yeri || t('empty_data')}</td></tr>
           </tbody>
         </table>
       `;
@@ -104,15 +106,15 @@ export default function KaliteElKitabiRaporClient() {
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
             <BookOpen className="w-8 h-8 text-indigo-600" />
-            Kurumsal Kalite El Kitabı
+            {t('title')}
           </h2>
-          <p className="text-slate-500 mt-2">Sistemdeki tüm kalite el kitabı verilerinin toplu görünümü ve raporlanması.</p>
+          <p className="text-slate-500 mt-2">{t('description')}</p>
         </div>
         <button 
           onClick={handleExportWord}
           className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center gap-2"
         >
-          <BookOpen className="w-5 h-5" /> Raporu İndir (.doc)
+          <BookOpen className="w-5 h-5" /> {t('download_btn')}
         </button>
       </div>
 
@@ -132,7 +134,7 @@ export default function KaliteElKitabiRaporClient() {
               <div key={olcut.id} className="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${index * 50}ms` }}>
                 <div className="bg-indigo-600 p-5 text-white flex items-center justify-between">
                   <h3 className="text-lg font-black tracking-tight flex items-center gap-2">
-                    <span className="bg-white/20 px-2 py-0.5 rounded text-sm">Tablo {index + 1}</span>
+                    <span className="bg-white/20 px-2 py-0.5 rounded text-sm">{t('table_prefix')} {index + 1}</span>
                     {olcut.kod} - {getLocalizedField(olcut, 'olcut_adi', locale)}
                   </h3>
                   <Info className="w-5 h-5 text-indigo-200" />
@@ -141,7 +143,7 @@ export default function KaliteElKitabiRaporClient() {
                 {data.aciklama_metni && (
                   <div className="p-8 bg-slate-50 border-b border-slate-100">
                     <h4 className="text-xs font-black text-indigo-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                      <FileText className="w-4 h-4" /> KALİTE EL KİTABI AÇIKLAMASI
+                      <FileText className="w-4 h-4" /> {tKalite('description_label')}
                     </h4>
                     <div className="text-sm text-slate-700 leading-relaxed font-medium whitespace-pre-wrap bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                       {data.aciklama_metni}
@@ -151,16 +153,16 @@ export default function KaliteElKitabiRaporClient() {
                 <table className="w-full border-collapse">
                   <tbody className="divide-y divide-slate-100">
                     {[
-                      ['Sorumlu Birim', data.sorumlu_birim],
-                      ['İlk Planlama Tarihi', data.ilk_planlama_tarihi],
-                      ['İç Paydaşlar', data.ic_paydaslar],
-                      ['Dış Paydaşlar', data.dis_paydaslar],
-                      ['Uluslararası Paydaşlar', data.uluslararasi_paydaslar],
-                      ['Uygulama Alanları', data.uygulama_alanlari],
-                      ['İzleme Mekanizmaları', data.izleme_mekanizmalari],
-                      ['Performans Göstergeleri', data.performans_gostergeleri],
-                      ['Değerlendirme ve İyileştirme Tarihi', data.degerlendirme_iyilestirme_tarihi],
-                      ['Bilgi Yönetim Sistemindeki Yeri', data.bgs_yeri]
+                      [tKalite('responsible_unit'), data.sorumlu_birim],
+                      [tKalite('first_planning_date'), data.ilk_planlama_tarihi],
+                      [tKalite('internal_stakeholders'), data.ic_paydaslar],
+                      [tKalite('external_stakeholders'), data.dis_paydaslar],
+                      [tKalite('international_stakeholders'), data.uluslararasi_paydaslar],
+                      [tKalite('application_areas'), data.uygulama_alanlari],
+                      [tKalite('tracking_mechanisms'), data.izleme_mekanizmalari],
+                      [tKalite('performance_indicators'), data.performans_gostergeleri],
+                      [tKalite('eval_improvement_date'), data.degerlendirme_iyilestirme_tarihi],
+                      [tKalite('bgs_location'), data.bgs_yeri]
                     ].map(([label, value], i) => (
                       <tr key={i} className="hover:bg-slate-50/50 transition-colors">
                         <td className="w-1/3 p-4 bg-indigo-50/30 text-indigo-900 font-bold text-sm border-r border-indigo-50/50">{label}</td>

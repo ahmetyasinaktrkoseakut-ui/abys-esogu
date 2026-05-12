@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Save, Users, AlertCircle, CheckCircle2, Search, Trash2 } from 'lucide-react';
+import { useLocale, useTranslations } from 'next-intl';
 
 const TOPICS = [
   'Kalite Güvencesi',
@@ -24,6 +24,9 @@ export default function KoordinatorlerPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
+  const t = useTranslations('Coordinators');
+  const tCommon = useTranslations('Common');
+  
   useEffect(() => {
     fetchData();
   }, []);
@@ -51,7 +54,7 @@ export default function KoordinatorlerPage() {
       console.error('Error fetching data:', error);
       setMessage({ 
         type: 'error', 
-        text: `Veriler yüklenirken bir hata oluştu: ${error.message || 'Bilinmeyen hata'}` 
+        text: `${t('fetch_error') || 'Veriler yüklenirken bir hata oluştu:'} ${error.message || tCommon('unknown_error') || 'Bilinmeyen hata'}` 
       });
     } finally {
       setIsLoading(false);
@@ -60,7 +63,7 @@ export default function KoordinatorlerPage() {
 
   const handleAssign = async () => {
     if (!selectedUser || !selectedTopic) {
-      setMessage({ type: 'error', text: 'Lütfen kullanıcı ve başlık seçiniz.' });
+      setMessage({ type: 'error', text: t('select_user_topic_error') || 'Lütfen kullanıcı ve başlık seçiniz.' });
       return;
     }
 
@@ -88,26 +91,26 @@ export default function KoordinatorlerPage() {
 
       if (error) throw error;
 
-      setMessage({ type: 'success', text: 'Koordinatör başarıyla atandı.' });
+      setMessage({ type: 'success', text: t('assign_success') || 'Koordinatör başarıyla atandı.' });
       setSelectedUser('');
       setSelectedTopic('');
       fetchData(); // Listeyi yenile
     } catch (error: any) {
       console.error('Save error:', error);
-      setMessage({ type: 'error', text: 'Atama kaydedilirken hata oluştu: ' + error.message });
+      setMessage({ type: 'error', text: `${t('assign_error') || 'Atama kaydedilirken hata oluştu:'} ${error.message}` });
     } finally {
       setIsSaving(false);
     }
   };
 
   const getFullName = (u: any) => {
-    if (!u) return 'Bilinmeyen Kullanıcı';
-    const name = u.ad_soyad || (u.ad && u.soyad ? `${u.ad} ${u.soyad}` : (u.ad || u.name || 'İsimsiz'));
+    if (!u) return tCommon('unknown_user') || 'Bilinmeyen Kullanıcı';
+    const name = u.ad_soyad || (u.ad && u.soyad ? `${u.ad} ${u.soyad}` : (u.ad || u.name || tCommon('unnamed') || 'İsimsiz'));
     return `${u.unvan ? u.unvan + ' ' : ''}${name}`;
   };
 
   const handleRemove = async (kullanici_id: string, baslik: string) => {
-    if (!window.confirm(`${baslik} koordinatörlüğünü silmek istediğinize emin misiniz?`)) return;
+    if (!window.confirm(t('delete_confirm', { baslik }) || `${baslik} koordinatörlüğünü silmek istediğinize emin misiniz?`)) return;
     
     try {
       const { error } = await supabase
@@ -118,10 +121,10 @@ export default function KoordinatorlerPage() {
         
       if (error) throw error;
       
-      setMessage({ type: 'success', text: 'Atama silindi.' });
+      setMessage({ type: 'success', text: tCommon('delete_success') || 'Atama silindi.' });
       fetchData();
     } catch (error: any) {
-      setMessage({ type: 'error', text: 'Silinirken hata oluştu.' });
+      setMessage({ type: 'error', text: tCommon('delete_error') || 'Silinirken hata oluştu.' });
     }
   };
 
@@ -140,10 +143,10 @@ export default function KoordinatorlerPage() {
         <div>
           <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
             <Users className="w-8 h-8 text-indigo-600" />
-            Başlık Koordinatörleri
+            {t('title') || 'Başlık Koordinatörleri'}
           </h2>
           <p className="text-slate-500 mt-2 font-medium max-w-2xl text-sm leading-relaxed">
-            Bu ekrandan 5 ana başlık için koordinatör ataması yapabilirsiniz. Koordinatörler, kendi başlıkları altındaki ölçütleri birimlere dağıtabilir ve gelen veri girişlerini onaylayıp reddedebilir.
+            {t('description') || 'Bu ekrandan 5 ana başlık için koordinatör ataması yapabilirsiniz. Koordinatörler, kendi başlıkları altındaki ölçütleri birimlere dağıtabilir ve gelen veri girişlerini onaylayıp reddedebilir.'}
           </p>
         </div>
       </div>
@@ -164,16 +167,16 @@ export default function KoordinatorlerPage() {
         
         {/* Atama Formu */}
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200/60 transition-all hover:shadow-md">
-          <h3 className="text-lg font-extrabold text-slate-900 mb-6 border-b border-slate-100 pb-4">Yeni Atama Yap</h3>
+          <h3 className="text-lg font-extrabold text-slate-900 mb-6 border-b border-slate-100 pb-4">{t('new_assignment') || 'Yeni Atama Yap'}</h3>
           
           <div className="space-y-4">
             <div>
-              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">Kullanıcı Arama</label>
+              <label className="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-2">{t('user_search') || 'Kullanıcı Arama'}</label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input 
                   type="text" 
-                  placeholder="İsim veya E-posta..."
+                  placeholder={t('search_placeholder') || "İsim veya E-posta..."}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 outline-none transition-all"
@@ -182,13 +185,13 @@ export default function KoordinatorlerPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Kullanıcı Seçin</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('select_user') || 'Kullanıcı Seçin'}</label>
               <select 
                 value={selectedUser} 
                 onChange={(e) => setSelectedUser(e.target.value)}
                 className="w-full p-2 border rounded-lg text-sm bg-slate-50"
               >
-                <option value="">-- Kullanıcı Seç --</option>
+                <option value="">{t('select_user_placeholder') || '-- Kullanıcı Seç --'}</option>
                 {filteredUsers.slice(0, 100).map(u => (
                   <option key={u.id} value={u.id}>{getFullName(u)} ({u.email})</option>
                 ))}
@@ -196,13 +199,13 @@ export default function KoordinatorlerPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Sorumlu Olacağı Başlık</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{t('assigned_topic') || 'Sorumlu Olacağı Başlık'}</label>
               <select 
                 value={selectedTopic} 
                 onChange={(e) => setSelectedTopic(e.target.value)}
                 className="w-full p-2 border rounded-lg text-sm bg-slate-50"
               >
-                <option value="">-- Başlık Seç --</option>
+                <option value="">{t('select_topic_placeholder') || '-- Başlık Seç --'}</option>
                 {TOPICS.map(topic => (
                   <option key={topic} value={topic}>{topic}</option>
                 ))}
@@ -215,21 +218,21 @@ export default function KoordinatorlerPage() {
               className="w-full mt-6 flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              Atamayı Kaydet
+              {t('save_assignment') || 'Atamayı Kaydet'}
             </button>
           </div>
         </div>
 
         {/* Mevcut Atamalar Listesi */}
         <div className="bg-white p-8 rounded-3xl shadow-sm border border-slate-200/60 flex flex-col h-full min-h-[400px] transition-all hover:shadow-md">
-          <h3 className="text-lg font-extrabold text-slate-900 mb-6 border-b border-slate-100 pb-4">Mevcut Koordinatörler</h3>
+          <h3 className="text-lg font-extrabold text-slate-900 mb-6 border-b border-slate-100 pb-4">{t('current_coordinators') || 'Mevcut Koordinatörler'}</h3>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-3">
             {isLoading ? (
               <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
             ) : coordinators.length === 0 ? (
               <div className="text-center py-12 text-sm text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                Henüz atanmış bir koordinatör yok.
+                {t('no_coordinators') || 'Henüz atanmış bir koordinatör yok.'}
               </div>
             ) : (
               coordinators.map(coord => {
@@ -240,7 +243,7 @@ export default function KoordinatorlerPage() {
                       <div className="font-extrabold text-sm text-slate-900 group-hover:text-indigo-700 transition-colors">
                         {getFullName(user)}
                       </div>
-                      <div className="text-xs text-slate-500 font-medium mt-0.5">{user?.email || 'E-posta bulunamadı'}</div>
+                      <div className="text-xs text-slate-500 font-medium mt-0.5">{user?.email || t('email_not_found') || 'E-posta bulunamadı'}</div>
                       <div className="inline-flex mt-4 px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">
                         {coord.baslik}
                       </div>
@@ -248,7 +251,7 @@ export default function KoordinatorlerPage() {
                     <button 
                       onClick={() => handleRemove(coord.kullanici_id, coord.baslik)}
                       className="p-3 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                      title="Atamayı Sil"
+                      title={t('remove_assignment') || "Atamayı Sil"}
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>

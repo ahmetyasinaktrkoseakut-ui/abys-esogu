@@ -41,6 +41,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const t = useTranslations('SelfEvaluation');
+  const tPhase = useTranslations('Phase');
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
   const editorRef = useRef<RichTextEditorRef>(null);
@@ -525,10 +526,10 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                 onayDurumu === 'reddedildi' ? 'bg-red-50 text-red-700 border-red-200' :
                 'bg-amber-50 text-amber-700 border-amber-200'
               }`}>
-                DURUM: {
-                  onayDurumu === 'onaylandi' ? 'Onaylandı' : 
-                  onayDurumu === 'reddedildi' ? 'Reddedildi' : 
-                  'Bekliyor'
+                {
+                  onayDurumu === 'onaylandi' ? tPhase('status_approved') : 
+                  onayDurumu === 'reddedildi' ? tPhase('status_rejected') : 
+                  tPhase('status_pending')
                 }
               </div>
               {onayDurumu === 'reddedildi' && redNedeni && (

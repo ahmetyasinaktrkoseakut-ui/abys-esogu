@@ -43,6 +43,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   const [ustBirimOnerileri, setUstBirimOnerileri] = useState<any[]>([]);
   const [deletedDocs, setDeletedDocs] = useState<any[]>([]); // To hold docs that need physical deletion
   const t = useTranslations('Phase');
+  const tStepPanel = useTranslations('StepPanel');
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
   
@@ -358,7 +359,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               </h2>
               <Info className="w-4 h-4 text-slate-400 cursor-pointer" />
             </div>
-            <p className="text-sm text-slate-500">{t('process_management_desc', { phaseTitle })}</p>
+            <p className="text-sm text-slate-500">{t('process_management_desc', { phaseTitle: tStepPanel(`${phaseId}_title`) })}</p>
           </div>
           
           {/* Eski Onay/Ret butonları ve durum rozeti Stage 7'ye taşındı */}
@@ -372,7 +373,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           <div className="col-span-2 p-6 lg:border-r border-slate-200">
             <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-4 text-sm">
               <Settings className="w-4 h-4 text-blue-600" />
-              {phaseTitle} {t('process_description')}
+              {tStepPanel(`${phaseId}_title`)} {t('process_description')}
               {isReadOnly && <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200">{t('readOnly')}</span>}
             </h3>
             <div className="w-full">
@@ -386,13 +387,13 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               <div className="mt-8 border-t border-slate-200 pt-6">
                 <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-4 text-sm">
                   <Info className="w-4 h-4 text-amber-500" />
-                  Risk Analizi
+                  {t('headers.risk_analysis') || 'Risk Analizi'}
                 </h3>
                 <textarea 
                   value={riskAnalizi} 
                   onChange={(e) => setRiskAnalizi(e.target.value)} 
                   disabled={isReadOnly}
-                  placeholder="Bu planlama aşamasında öngörülen riskleri ve alınacak tedbirleri belirtiniz..."
+                  placeholder={t('risk_analysis_placeholder') || 'Bu planlama aşamasında öngörülen riskleri ve alınacak tedbirleri belirtiniz...'}
                   className="w-full bg-slate-50 border border-slate-200 rounded-lg p-4 text-sm text-slate-700 min-h-[120px] resize-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 outline-none disabled:opacity-80"
                 />
               </div>

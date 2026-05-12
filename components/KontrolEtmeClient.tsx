@@ -161,6 +161,8 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
 
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
+  const t = useTranslations('KontrolEtme');
+  const tCommon = useTranslations('Common');
 
   const fetchData = async () => {
     if (!selectedPeriod) {
@@ -505,10 +507,10 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                   <div className="flex flex-col">
                     <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                       {anket.baslik}
-                      {isManagementSurvey && <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] uppercase font-black tracking-widest rounded-full border border-purple-200">Yönetim Anketi</span>}
+                      {isManagementSurvey && <span className="px-2 py-0.5 bg-purple-100 text-purple-700 text-[10px] uppercase font-black tracking-widest rounded-full border border-purple-200">{t('admin_analysis')}</span>}
                     </h3>
                   </div>
-                  {isSurveyReadOnly && !isManagementSurvey && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded border border-amber-200">Salt Okunur</span>}
+                  {isSurveyReadOnly && !isManagementSurvey && <span className="px-2 py-0.5 bg-amber-100 text-amber-700 text-xs rounded border border-amber-200">{tCommon('readOnly')}</span>}
                 </div>
                 <div className="flex items-center gap-3" onClick={e => e.stopPropagation()}>
                   {anket.id && !anket.id.startsWith('temp_') && (
@@ -550,7 +552,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                 <div className="p-8 border-b border-slate-100 bg-[#FAFAFA]">
                   <div className="flex items-center justify-between mb-6">
                     <h3 className="flex items-center gap-2 font-bold text-slate-700 text-lg">
-                      <Edit3 className="w-5 h-5 text-purple-600" /> Soru Formu
+                      <Edit3 className="w-5 h-5 text-purple-600" /> {t('question_form')}
                     </h3>
                     {!isSurveyReadOnly && (
                       <div className="flex items-center gap-2">
@@ -869,9 +871,9 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
       <div className="mb-8 p-8 bg-white border border-slate-200 rounded-2xl shadow-sm">
         <h3 className="flex items-center gap-2 font-bold text-slate-800 mb-3 text-xl">
           <Edit3 className="w-6 h-6 text-blue-600" />
-          Kontrol Aşaması Genel Değerlendirmesi
+          {t('general_evaluation')}
         </h3>
-        <p className="text-slate-500 mb-6 text-sm">Yukarıdaki anket sonuçlarına ve izleme verilerine dayanarak elde ettiğiniz bulguları buraya yazın.</p>
+        <p className="text-slate-500 mb-6 text-sm">{t('evaluation_placeholder')}</p>
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
           <RichTextEditor 
             content={birimDegerlendirmesi} 

@@ -91,7 +91,10 @@
     "reject_success": "Süreç reddedildi.",
     "upload_error": "Dosya yüklenemedi",
     "delete_confirm": "Bu dokümanı silmek istediğinize emin misiniz? (Kaydet butonuna bastığınızda veritabanında güncellenecektir)",
-    "reject_empty": "Lütfen red nedeni giriniz."
+    "reject_empty": "Lütfen red nedeni giriniz.",
+    "status_pending": "DURUM: BEKLİYOR",
+    "status_approved": "DURUM: ONAYLANDI",
+    "status_rejected": "DURUM: REDDEDİLDİ"
   },
   "Criteria": {
     "title": "Ölçütler",
@@ -442,5 +445,60 @@
   "Syllabi": {
     "title": "Ders İzlenceleri (Syllabus)",
     "description": "Bölümdeki tüm derslerin içeriklerini, haftalık planlarını ve değerlendirme yöntemlerini yönetin."
+  },
+  "KaliteElKitabi": {
+    "title": "Kalite El Kitabı Veri Girişi",
+    "description_label": "KALİTE EL KİTABI AÇIKLAMASI",
+    "placeholder": "Bu ölçüte dair detaylı açıklama metnini veya raporu buraya giriniz...",
+    "table_title": "Tablo 1.",
+    "responsible_unit": "Sorumlu Birim",
+    "first_planning_date": "İlk Planlama Tarihi",
+    "internal_stakeholders": "İç Paydaşlar",
+    "external_stakeholders": "Dış Paydaşlar",
+    "international_stakeholders": "Uluslararası Paydaşlar",
+    "application_areas": "Uygulama Alanları",
+    "tracking_mechanisms": "İzleme Mekanizmaları",
+    "performance_indicators": "Performans Göstergeleri",
+    "eval_improvement_date": "Değerlendirme ve İyileştirme Tarihi",
+    "bgs_location": "Alt Ölçütün BYS'deki Yeri",
+    "placeholder_unit": "Birim adını giriniz...",
+    "placeholder_internal": "İç paydaşları listeleyiniz...",
+    "placeholder_external": "Dış paydaşları listeleyiniz...",
+    "placeholder_international": "Uluslararası paydaşları listeleyiniz...",
+    "placeholder_areas": "Uygulama alanlarını belirtiniz...",
+    "placeholder_tracking": "İzleme süreçlerini açıklayınız...",
+    "placeholder_indicators": "Ölçülebilir göstergeleri giriniz...",
+    "placeholder_bgs": "BYS üzerindeki konumunu belirtiniz...",
+    "save": "KALİTE EL KİTABINI KAYDET",
+    "saving": "KAYDEDİLİYOR...",
+    "save_success": "Kalite El Kitabı başarıyla kaydedildi.",
+    "save_error": "Kaydetme hatası: "
+  },
+  "KontrolEtme": {
+    "evaluation_survey": "Değerlendirme Anketi",
+    "question_form": "Soru Formu",
+    "general_evaluation": "Kontrol Aşaması Genel Değerlendirmesi",
+    "evaluation_placeholder": "Yukarıdaki anket sonuçlarına ve izleme verilerine dayanarak elde ettiğiniz bulguları buraya yazın.",
+    "admin_analysis": "Yönetimden Gelen Anket Analizi"
+  },
+  "QualityManualReport": {
+    "title": "Kurumsal Kalite El Kitabı",
+    "description": "Sistemdeki tüm kalite el kitabı verilerinin toplu görünümü ve raporlanması.",
+    "download_btn": "Raporu İndir (.doc)",
+    "table_prefix": "Tablo 1."
+  },
+  "Coordinators": {
+    "title": "Başlık Koordinatörleri",
+    "description": "Bu ekrandan 5 ana başlık için koordinatör ataması yapabilirsiniz. Koordinatörler, kendi başlıkları altındaki ölçütleri birimlere dağıtabilir ve gelen veri girişlerini onaylayıp reddedebilir.",
+    "new_assignment": "Yeni Atama Yap",
+    "user_search": "KULLANICI ARAMA",
+    "search_placeholder": "İsim veya E-posta...",
+    "select_user": "Kullanıcı Seçin",
+    "select_user_placeholder": "-- Kullanıcı Seç --",
+    "assigned_topic": "Sorumlu Olacağı Başlık",
+    "select_topic_placeholder": "-- Başlık Seç --",
+    "save_assignment": "Atamayı Kaydet",
+    "current_coordinators": "Mevcut Koordinatörler",
+    "no_coordinators": "Henüz atanmış bir koordinatör yok."
   }
 }

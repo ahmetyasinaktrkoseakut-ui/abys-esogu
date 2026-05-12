@@ -91,7 +91,10 @@
     "reject_success": "Process rejected.",
     "upload_error": "File could not be uploaded",
     "delete_confirm": "Are you sure you want to delete this document? (It will be updated in the database when you click Save)",
-    "reject_empty": "Please enter a reason for rejection."
+    "reject_empty": "Please enter a reason for rejection.",
+    "status_pending": "STATUS: PENDING",
+    "status_approved": "STATUS: APPROVED",
+    "status_rejected": "STATUS: REJECTED"
   },
   "Criteria": {
     "title": "Criteria",
@@ -442,5 +445,60 @@
   "Syllabi": {
     "title": "Course Syllabi (Syllabus)",
     "description": "Manage the contents, weekly plans, and evaluation methods of all courses in the department."
+  },
+  "KaliteElKitabi": {
+    "title": "Quality Manual Data Entry",
+    "description_label": "QUALITY MANUAL DESCRIPTION",
+    "placeholder": "Enter detailed explanation text or report regarding this criterion here...",
+    "table_title": "Table 1.",
+    "responsible_unit": "Responsible Unit",
+    "first_planning_date": "First Planning Date",
+    "internal_stakeholders": "Internal Stakeholders",
+    "external_stakeholders": "External Stakeholders",
+    "international_stakeholders": "International Stakeholders",
+    "application_areas": "Application Areas",
+    "tracking_mechanisms": "Tracking Mechanisms",
+    "performance_indicators": "Performance Indicators",
+    "eval_improvement_date": "Evaluation and Improvement Date",
+    "bgs_location": "Location in IT System",
+    "placeholder_unit": "Enter unit name...",
+    "placeholder_internal": "List internal stakeholders...",
+    "placeholder_external": "List external stakeholders...",
+    "placeholder_international": "List international stakeholders...",
+    "placeholder_areas": "Specify application areas...",
+    "placeholder_tracking": "Explain tracking processes...",
+    "placeholder_indicators": "Enter measurable indicators...",
+    "placeholder_bgs": "Specify its location on IT System...",
+    "save": "SAVE QUALITY MANUAL",
+    "saving": "SAVING...",
+    "save_success": "Quality Manual successfully saved.",
+    "save_error": "Save error: "
+  },
+  "KontrolEtme": {
+    "evaluation_survey": "Evaluation Survey",
+    "question_form": "Question Form",
+    "general_evaluation": "Checking Phase General Evaluation",
+    "evaluation_placeholder": "Write your findings obtained based on the survey results and tracking data above here.",
+    "admin_analysis": "Survey Analysis from Management"
+  },
+  "QualityManualReport": {
+    "title": "Institutional Quality Manual",
+    "description": "Aggregate view and reporting of all quality manual data in the system.",
+    "download_btn": "Download Report (.doc)",
+    "table_prefix": "Table 1."
+  },
+  "Coordinators": {
+    "title": "Topic Coordinators",
+    "description": "You can assign coordinators for the 5 main topics from this screen. Coordinators can distribute criteria under their topics to units and approve/reject incoming data entries.",
+    "new_assignment": "Make New Assignment",
+    "user_search": "USER SEARCH",
+    "search_placeholder": "Name or Email...",
+    "select_user": "Select User",
+    "select_user_placeholder": "-- Select User --",
+    "assigned_topic": "Assigned Topic",
+    "select_topic_placeholder": "-- Select Topic --",
+    "save_assignment": "Save Assignment",
+    "current_coordinators": "Current Coordinators",
+    "no_coordinators": "No coordinator assigned yet."
   }
 }

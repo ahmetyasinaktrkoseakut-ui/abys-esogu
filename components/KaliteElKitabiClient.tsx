@@ -43,7 +43,8 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
-  const t = useTranslations('Phase');
+  const tPhase = useTranslations('Phase');
+  const t = useTranslations('KaliteElKitabi');
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
 
@@ -111,10 +112,10 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
         .eq('id', resolvedParams.id);
 
       if (error) throw error;
-      alert("Kalite El Kitabı başarıyla kaydedildi.");
+      alert(t('save_success'));
     } catch (error: any) {
       console.error('Save Error:', error);
-      alert(`Kaydetme hatası: ${error.message}`);
+      alert(`${t('save_error')}${error.message}`);
     } finally {
       setIsSaving(false);
     }
@@ -138,7 +139,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
           </div>
           <div className="flex items-center gap-2">
             <h2 className="text-2xl font-bold text-slate-800">
-              Kalite El Kitabı Veri Girişi
+              {t('title')}
             </h2>
             <Info className="w-4 h-4 text-slate-400" />
           </div>
@@ -150,7 +151,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
       <div className="mb-8">
         <label className="block text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
           <FileText className="w-5 h-5 text-indigo-600" />
-          KALİTE EL KİTABI AÇIKLAMASI
+          {t('description_label')}
         </label>
         <div className="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
           <textarea
@@ -159,7 +160,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
             disabled={isReadOnly}
             rows={12}
             className="w-full p-8 text-slate-700 bg-transparent border-none outline-none resize-y min-h-[300px] leading-relaxed font-medium placeholder:text-slate-300"
-            placeholder="Bu ölçüte dair detaylı açıklama metnini veya raporu buraya giriniz..."
+            placeholder={t('placeholder')}
           />
         </div>
       </div>
@@ -169,13 +170,13 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
           <thead>
             <tr>
               <th colSpan={2} className="bg-indigo-600 text-white p-6 text-2xl font-black text-left tracking-tight border-b border-indigo-500">
-                Tablo 1. {[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ')}
+                {t('table_title')} {[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ')}
               </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             <tr>
-              <td className={labelStyle} style={{width: '280px'}}>Sorumlu Birim</td>
+              <td className={labelStyle} style={{width: '280px'}}>{t('responsible_unit')}</td>
               <td className="p-0 align-stretch">
                 <input 
                   type="text" 
@@ -183,12 +184,12 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
                   onChange={(e) => handleInputChange('sorumlu_birim', e.target.value)}
                   disabled={isReadOnly}
                   className={inputStyle}
-                  placeholder="Birim adını giriniz..."
+                  placeholder={t('placeholder_unit')}
                 />
               </td>
             </tr>
             <tr>
-              <td className={labelStyle}>İlk Planlama Tarihi</td>
+              <td className={labelStyle}>{t('first_planning_date')}</td>
               <td className="p-0 align-stretch">
                 <input 
                   type="date" 
@@ -200,7 +201,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
               </td>
             </tr>
             <tr>
-              <td className={labelStyle}>İç Paydaşlar</td>
+              <td className={labelStyle}>{t('internal_stakeholders')}</td>
               <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.ic_paydaslar} 
@@ -208,12 +209,12 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
                   disabled={isReadOnly}
                   rows={4}
                   className={inputStyle}
-                  placeholder="İç paydaşları listeleyiniz..."
+                  placeholder={t('placeholder_internal')}
                 />
               </td>
             </tr>
             <tr>
-              <td className={labelStyle}>Dış Paydaşlar</td>
+              <td className={labelStyle}>{t('external_stakeholders')}</td>
               <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.dis_paydaslar} 
@@ -221,12 +222,12 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
                   disabled={isReadOnly}
                   rows={4}
                   className={inputStyle}
-                  placeholder="Dış paydaşları listeleyiniz..."
+                  placeholder={t('placeholder_external')}
                 />
               </td>
             </tr>
             <tr>
-              <td className={labelStyle}>Uluslararası Paydaşlar</td>
+              <td className={labelStyle}>{t('international_stakeholders')}</td>
               <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.uluslararasi_paydaslar} 
@@ -234,12 +235,12 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
                   disabled={isReadOnly}
                   rows={4}
                   className={inputStyle}
-                  placeholder="Uluslararası paydaşları listeleyiniz..."
+                  placeholder={t('placeholder_international')}
                 />
               </td>
             </tr>
             <tr>
-              <td className={labelStyle}>Uygulama Alanları</td>
+              <td className={labelStyle}>{t('application_areas')}</td>
               <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.uygulama_alanlari} 
@@ -247,12 +248,12 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
                   disabled={isReadOnly}
                   rows={4}
                   className={inputStyle}
-                  placeholder="Uygulama alanlarını belirtiniz..."
+                  placeholder={t('placeholder_areas')}
                 />
               </td>
             </tr>
             <tr>
-              <td className={labelStyle}>İzleme Mekanizmaları</td>
+              <td className={labelStyle}>{t('tracking_mechanisms')}</td>
               <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.izleme_mekanizmalari} 
@@ -260,12 +261,12 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
                   disabled={isReadOnly}
                   rows={4}
                   className={inputStyle}
-                  placeholder="İzleme süreçlerini açıklayınız..."
+                  placeholder={t('placeholder_tracking')}
                 />
               </td>
             </tr>
             <tr>
-              <td className={labelStyle}>Performans Göstergeleri</td>
+              <td className={labelStyle}>{t('performance_indicators')}</td>
               <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.performans_gostergeleri} 
@@ -273,12 +274,12 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
                   disabled={isReadOnly}
                   rows={4}
                   className={inputStyle}
-                  placeholder="Ölçülebilir göstergeleri giriniz..."
+                  placeholder={t('placeholder_indicators')}
                 />
               </td>
             </tr>
             <tr>
-              <td className={labelStyle}>Değerlendirme ve İyileştirme Tarihi</td>
+              <td className={labelStyle}>{t('eval_improvement_date')}</td>
               <td className="p-0 align-stretch">
                 <input 
                   type="date" 
@@ -290,7 +291,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
               </td>
             </tr>
             <tr>
-              <td className={labelStyle + " border-b-0"}>Alt Ölçütün BYS'deki Yeri</td>
+              <td className={labelStyle + " border-b-0"}>{t('bgs_location')}</td>
               <td className="p-0 align-stretch">
                 <textarea 
                   value={formData.bgs_yeri} 
@@ -298,7 +299,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
                   disabled={isReadOnly}
                   rows={4}
                   className={inputStyle + " border-b-0"}
-                  placeholder="BYS üzerindeki konumunu belirtiniz..."
+                  placeholder={t('placeholder_bgs')}
                 />
               </td>
             </tr>
@@ -314,7 +315,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
             className="flex items-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-5 rounded-3xl font-black transition-all shadow-xl hover:scale-105 active:scale-95 disabled:opacity-70"
           >
             {isSaving ? <Loader2 className="w-6 h-6 animate-spin" /> : <Save className="w-6 h-6" />}
-            {isSaving ? "KAYDEDİLİYOR..." : "KALİTE EL KİTABINI KAYDET"}
+            {isSaving ? t('saving') : t('save')}
           </button>
         </div>
       )}

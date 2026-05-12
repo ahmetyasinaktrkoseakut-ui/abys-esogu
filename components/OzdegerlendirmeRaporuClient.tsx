@@ -571,7 +571,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
             </div>
             <h3 className="text-2xl font-black text-slate-800 mb-3">{t('title')}</h3>
             <p className="text-slate-500 max-w-lg mb-8 leading-relaxed">
-              Özdeğerlendirme Raporunuzu oluşturmak için verileri birleştirin.
+              {t('merge_data_description') || 'Özdeğerlendirme Raporunuzu oluşturmak için verileri birleştirin.'}
             </p>
             <button 
               onClick={handleRaporOlustur}

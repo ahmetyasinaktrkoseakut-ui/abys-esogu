@@ -29,7 +29,8 @@
     "loading": "Loading...",
     "success": "Success",
     "error": "Error",
-    "readOnly": "Read Only"
+    "readOnly": "Read Only",
+    "read_only": "Read Only"
   },
   "Announcements": {
     "title": "Announcements",
@@ -264,7 +265,9 @@
       "atama_fetch_error": "User's current assignments could not be loaded.",
       "save_success": "Assignments saved successfully.",
       "save_error": "An error occurred while saving assignments"
-    }
+    },
+    "access_start": "Access Start",
+    "access_end": "Access End"
   },
   "Header": {
     "notifications": "Notifications",
@@ -344,7 +347,8 @@
     "error_reject": "Error during rejection: ",
     "report_saved_notification": "Criterion Self-Evaluation Report prepared. (Criterion {code})",
     "stage_header": "{stage} STAGE",
-    "maturity_score_header": "MATURITY LEVEL SCORE:"
+    "maturity_score_header": "MATURITY LEVEL SCORE:",
+    "merge_data_description": "Merge data to create your Institutional Self-Evaluation Report."
   },
   "Maturity": {
     "title": "Process Maturity Score",
@@ -429,7 +433,8 @@
       "success_title": "Your Response Has Been Recorded",
       "success_desc": "Thank you for participating in the survey. Your response has been successfully sent to the system.",
       "footer": "This content was created using the BKY System."
-    }
+    },
+    "survey_title": "SURVEY TITLE"
   },
   "Documents": {
     "title": "Document Management",

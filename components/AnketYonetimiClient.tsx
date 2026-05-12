@@ -6,6 +6,7 @@ import DOMPurify from 'dompurify';
 import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, ChevronDown, ChevronUp, BarChart2, Pencil, Info, GripVertical, PlusCircle } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useLocale, useTranslations } from 'next-intl';
+import { getLocalizedField } from '@/lib/i18n-utils';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from 'recharts';
 import {
   DndContext,
@@ -471,7 +472,7 @@ export default function AnketYonetimiClient() {
         <div className="max-h-[300px] overflow-y-auto border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-4">
           {olcutler.map(ana => (
             <div key={ana.id} className="space-y-2">
-              <h3 className="font-bold text-slate-700 text-sm border-b pb-1">{ana.kod} - {ana.baslik}</h3>
+              <h3 className="font-bold text-slate-700 text-sm border-b pb-1">{ana.kod} - {getLocalizedField(ana, 'baslik', locale) || ana.baslik}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-2">
                 {ana.altOlcutler.map((ao: any) => {
                   const idStr = ao.id.toString();
@@ -485,7 +486,7 @@ export default function AnketYonetimiClient() {
                         className="mt-1 w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500"
                       />
                       <span className="text-xs font-medium text-slate-700 leading-tight">
-                        <span className="font-bold">{ao.kod}</span> - {ao.olcut_adi || ao.ad || ao.baslik}
+                        <span className="font-bold">{ao.kod}</span> - {getLocalizedField(ao, 'olcut_adi', locale) || getLocalizedField(ao, 'ad', locale) || getLocalizedField(ao, 'baslik', locale) || ao.olcut_adi || ao.ad || ao.baslik}
                       </span>
                     </label>
                   );
@@ -550,9 +551,9 @@ export default function AnketYonetimiClient() {
                 {/* 2. Soru Oluşturucu */}
                   <div className="p-8 bg-[#FAFAFA]">
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="flex items-center gap-2 font-bold text-slate-700 text-lg">
-                        <Edit3 className="w-5 h-5 text-purple-600" /> {t('add_item')}
-                      </h3>
+                            <h4 className="text-sm font-bold text-slate-800 mb-6 flex items-center gap-2 border-b pb-2">
+                              <Edit3 className="w-4 h-4 text-purple-600" /> {t('question_form') || 'Question Form'}
+                            </h4>
                       <div className="flex items-center gap-2">
                         <button 
                           onClick={() => setPreviewAnket(anket)}

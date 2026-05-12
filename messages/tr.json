@@ -29,7 +29,8 @@
     "loading": "Yükleniyor...",
     "success": "Başarılı",
     "error": "Hata",
-    "readOnly": "Salt Okunur"
+    "readOnly": "Salt Okunur",
+    "read_only": "Sadece Okunur"
   },
   "Announcements": {
     "title": "Duyurular",
@@ -264,7 +265,9 @@
       "atama_fetch_error": "Kullanıcının mevcut atamaları yüklenemedi.",
       "save_success": "Atamalar başarıyla kaydedildi.",
       "save_error": "Atamalar kaydedilirken bir hata oluştu"
-    }
+    },
+    "access_start": "Erişim Başlangıç",
+    "access_end": "Erişim Bitiş"
   },
   "Header": {
     "notifications": "Bildirimler",
@@ -362,7 +365,8 @@
     "error_reject": "Red işlemi sırasında hata: ",
     "report_saved_notification": "Ölçüt Özdeğerlendirme Raporu hazırlandı. (Ölçüt {code})",
     "stage_header": "{stage} AŞAMASI",
-    "maturity_score_header": "OLGUNLUK DÜZEYİ PUANI:"
+    "maturity_score_header": "OLGUNLUK DÜZEYİ PUANI:",
+    "merge_data_description": "Özdeğerlendirme Raporunuzu oluşturmak için verileri birleştirin."
   },
   "Auth": {
     "login_title": "Hoş Geldiniz",
@@ -429,7 +433,8 @@
       "success_title": "Yanıtınız Kaydedildi",
       "success_desc": "Ankete katıldığınız için teşekkür ederiz. Yanıtınız başarıyla sisteme iletildi.",
       "footer": "Bu içerik BKY Sistemi kullanılarak oluşturulmuştur."
-    }
+    },
+    "survey_title": "ANKET BAŞLIĞI"
   },
   "Documents": {
     "title": "Döküman Yönetimi",

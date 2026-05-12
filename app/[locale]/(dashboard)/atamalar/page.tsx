@@ -418,7 +418,7 @@ export default function AtamalarPage() {
                                     {/* Tarih Seçiciler */}
                                     <div className="flex items-center gap-4 pl-7 border-t border-slate-100 pt-3">
                                       <div className="flex-1">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Erişim Başlangıç</label>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{t('access_start') || 'Erişim Başlangıç'}</label>
                                         <input 
                                           type="datetime-local"
                                           value={olcut.erisim_baslangic ? new Date(new Date(olcut.erisim_baslangic).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
@@ -427,7 +427,7 @@ export default function AtamalarPage() {
                                         />
                                       </div>
                                       <div className="flex-1">
-                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Erişim Bitiş</label>
+                                        <label className="text-[10px] font-bold text-slate-400 uppercase block mb-1">{t('access_end') || 'Erişim Bitiş'}</label>
                                         <input 
                                           type="datetime-local"
                                           value={olcut.erisim_bitis ? new Date(new Date(olcut.erisim_bitis).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}

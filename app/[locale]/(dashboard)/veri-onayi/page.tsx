@@ -186,7 +186,7 @@ export default function VeriOnayiPage() {
       }
 
       setMessage({ type: 'success', text: 'Rapor ve ilgili PUKÖ kayıtları başarıyla onaylandı.' });
-      await fetchData(); // En güncel veriyi çekerek onaylananların listeden düşmesini sağla
+      await fetchInitialData(); // En güncel veriyi çekerek onaylananların listeden düşmesini sağla
 
     } catch (error: any) {
       console.error("Onay hatası:", error);
@@ -247,7 +247,7 @@ export default function VeriOnayiPage() {
       }
 
       setMessage({ type: 'success', text: 'Rapor reddedildi ve bildirimler güncellendi.' });
-      await fetchData(); // En güncel veriyi çekerek reddedilenlerin listeden düşmesini sağla
+      await fetchInitialData(); // En güncel veriyi çekerek reddedilenlerin listeden düşmesini sağla
       setIsRejectModalOpen(false);
       setSelectedReportId(null);
       setRejectReason('');

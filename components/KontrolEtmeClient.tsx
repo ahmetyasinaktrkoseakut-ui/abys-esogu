@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase/client';
 import { Loader2, Save, Settings, Plus, Trash2, Link as LinkIcon, Edit3, BarChart2, ChevronDown, ChevronUp } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
 import RichTextEditor from '@/components/RichTextEditor';
-import { useLocale } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
 import DOMPurify from 'dompurify';

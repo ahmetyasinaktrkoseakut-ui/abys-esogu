@@ -5,10 +5,10 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseKey) {
-  console.error('HATA: .env.local dosyasında NEXT_PUBLIC_SUPABASE_URL veya NEXT_PUBLIC_SUPABASE_ANON_KEY bulunamadı.');
+  console.error('HATA: .env.local dosyasında NEXT_PUBLIC_SUPABASE_URL veya SUPABASE_SERVICE_ROLE_KEY bulunamadı.');
   process.exit(1);
 }
 
@@ -119,9 +119,56 @@ async function processAltOlcutler() {
   }
 }
 
+async function processOlcutler() {
+  console.log('--- olcutler tablosu işleniyor ---');
+  const { data, error } = await supabase.from('olcutler').select('*');
+
+  if (error) {
+    console.error('olcutler çekilemedi:', error);
+    return;
+  }
+
+  for (const row of data) {
+    if (!row.olcut_adi) continue;
+
+    let needsUpdate = false;
+    const updates = {};
+
+    if (!row.olcut_adi_en) {
+      console.log(`[EN] Çevriliyor: ${row.olcut_adi}`);
+      const enTrans = await translateText(row.olcut_adi, 'en');
+      if (enTrans) {
+        updates.olcut_adi_en = enTrans;
+        needsUpdate = true;
+      }
+    }
+
+    if (!row.olcut_adi_ar) {
+      console.log(`[AR] Çevriliyor: ${row.olcut_adi}`);
+      const arTrans = await translateText(row.olcut_adi, 'ar');
+      if (arTrans) {
+        updates.olcut_adi_ar = arTrans;
+        needsUpdate = true;
+      }
+    }
+
+    if (needsUpdate) {
+      const { error: updateErr } = await supabase.from('olcutler').update(updates).eq('id', row.id);
+      if (updateErr) {
+        console.error(`Güncelleme hatası (ID: ${row.id}):`, updateErr);
+      } else {
+        console.log(`Başarıyla güncellendi: ID ${row.id}`);
+      }
+    }
+
+    await new Promise(r => setTimeout(r, 500));
+  }
+}
+
 async function run() {
   console.log('Veritabanı otomatik çeviri işlemi başlatıldı...');
   await processAnaBasliklar();
+  await processOlcutler();
   await processAltOlcutler();
   console.log('İşlem tamamlandı!');
 }

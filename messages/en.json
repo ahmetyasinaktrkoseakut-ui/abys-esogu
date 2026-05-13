@@ -153,8 +153,10 @@
       "action_activity": "Action / Activity",
       "responsible": "Responsible Unit",
       "success_indicator": "Success Indicator",
-      "tracking": "Tracking"
+      "tracking": "Tracking",
+      "risk_analysis": "Risk Analysis"
     },
+    "risk_analysis_placeholder": "Enter potential risks and measures for the process here...",
     "unknown_code": "Unknown Code",
     "unknown_criterion": "Unknown Criterion",
     "no_criterion_name": "No Criterion Name",

@@ -73,8 +73,10 @@
       "sorumlu": "Sorumlu Birim",
       "takvim": "Takvim",
       "basari_gostergesi": "Başarı Göstergesi",
-      "izleme": "İzleme"
+      "izleme": "İzleme",
+      "risk_analysis": "Risk Analizi"
     },
+    "risk_analysis_placeholder": "Sürece dair olası riskleri ve önlemleri buraya giriniz...",
     "saving": "Kaydediliyor...",
     "save": "Kaydet",
     "reject_record": "Kaydı Reddet",

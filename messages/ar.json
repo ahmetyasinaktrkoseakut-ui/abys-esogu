@@ -73,8 +73,10 @@
       "sorumlu": "الوحدة المسؤولة",
       "takvim": "الجدول الزمني",
       "basari_gostergesi": "مؤشر النجاح",
-      "izleme": "تتبع"
+      "izleme": "تتبع",
+      "risk_analysis": "تحليل المخاطر"
     },
+    "risk_analysis_placeholder": "أدخل المخاطر والتدابير المحتملة للعملية هنا...",
     "saving": "جاري الحفظ...",
     "save": "حفظ",
     "reject_record": "رفض السجل",

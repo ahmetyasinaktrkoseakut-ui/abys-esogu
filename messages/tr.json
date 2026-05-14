@@ -30,7 +30,12 @@
     "success": "Başarılı",
     "error": "Hata",
     "readOnly": "Salt Okunur",
-    "read_only": "Sadece Okunur"
+    "read_only": "Sadece Okunur",
+    "unnamed": "İsimsiz",
+    "unknown_user": "Bilinmeyen Kullanıcı",
+    "unknown_error": "Bilinmeyen Hata",
+    "delete_success": "Başarıyla silindi",
+    "delete_error": "Silinirken hata oluştu"
   },
   "Announcements": {
     "title": "Duyurular",

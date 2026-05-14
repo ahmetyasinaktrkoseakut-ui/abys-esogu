@@ -9,6 +9,7 @@ import { usePeriod } from '@/contexts/PeriodContext';
 
 export default function AtamalarPage() {
   const t = useTranslations('Assignments');
+  const tCommon = useTranslations('Common');
   const { selectedPeriod } = usePeriod();
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [hocalar, setHocalar] = useState<any[]>([]);
@@ -233,7 +234,7 @@ export default function AtamalarPage() {
           )}
           <div className="flex-1">
             <h3 className={`text-sm font-semibold ${message.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
-              {message.type === 'success' ? t('Common.success') : t('Common.error')}
+              {message.type === 'success' ? tCommon('success') : tCommon('error')}
             </h3>
             <p className="text-sm mt-1 opacity-90">{message.text}</p>
           </div>

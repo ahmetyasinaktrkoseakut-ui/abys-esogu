@@ -30,7 +30,12 @@
     "success": "نجاح",
     "error": "خطأ",
     "readOnly": "للقراءة فقط",
-    "read_only": "قراءة فقط"
+    "read_only": "قراءة فقط",
+    "unnamed": "بدون اسم",
+    "unknown_user": "مستخدم غير معروف",
+    "unknown_error": "خطأ غير معروف",
+    "delete_success": "تم الحذف بنجاح",
+    "delete_error": "حدث خطأ أثناء الحذف"
   },
   "Announcements": {
     "title": "الإعلانات",

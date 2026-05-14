@@ -120,6 +120,13 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
           .eq('donem_id', selectedPeriod?.id)
           .maybeSingle();
           
+        // Kalite el kitabı verisini çek (1. adım için)
+        const { data: kaliteData } = await supabase
+          .from('alt_olcutler')
+          .select('kalite_el_kitabi')
+          .eq('id', altOlcutId)
+          .maybeSingle();
+          
         setSteps(prevSteps => prevSteps.map(step => {
           let progress = 0;
 
@@ -134,8 +141,15 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
             if (raporData?.onay_durumu?.toLowerCase() === 'onaylandi' || raporData?.onay_durumu?.toLowerCase() === 'onaylandı') {
               progress = 100;
             }
+          } else if (step.id === 'kalite_el_kitabi') {
+            // 1. Buton Kontrolü (Kalite El Kitabı)
+            if (kaliteData?.kalite_el_kitabi) {
+              const values = Object.values(kaliteData.kalite_el_kitabi);
+              const hasAnyContent = values.some((val: any) => val && typeof val === 'string' && val.trim().length > 0);
+              if (hasAnyContent) progress = 100;
+            }
           } else {
-            // 1-6. Buton Kontrolü
+            // 2-6. Buton Kontrolü
             const row = pukoData?.find(r => r.puko_asamasi === step.id);
             if (row) {
               const cleanedText = row.aciklama ? row.aciklama.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim() : '';

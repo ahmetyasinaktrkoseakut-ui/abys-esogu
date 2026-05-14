@@ -30,7 +30,12 @@
     "success": "Success",
     "error": "Error",
     "readOnly": "Read Only",
-    "read_only": "Read Only"
+    "read_only": "Read Only",
+    "unnamed": "Unnamed",
+    "unknown_user": "Unknown User",
+    "unknown_error": "Unknown Error",
+    "delete_success": "Deleted successfully",
+    "delete_error": "Error during deletion"
   },
   "Announcements": {
     "title": "Announcements",

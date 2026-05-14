@@ -81,6 +81,7 @@
       "izleme": "Tracking",
       "risk_analysis": "Risk Analysis"
     },
+    "risk_analysis_placeholder": "Define potential risks and mitigation strategies here...",
     "saving": "Saving...",
     "save": "Save",
     "reject_record": "Reject Record",

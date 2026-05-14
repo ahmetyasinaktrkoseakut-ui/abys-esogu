@@ -394,9 +394,12 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
     if (confirm(`"${anket.baslik}" anketini silmek istediğinize emin misiniz?`)) {
       if (anket.id && !anket.id.startsWith('temp_')) {
         try {
-          await supabase.from('anketler').delete().eq('id', anket.id);
-        } catch (err) {
+          const { error } = await supabase.from('anketler').delete().eq('id', anket.id);
+          if (error) throw error;
+        } catch (err: any) {
           console.error("Silme hatası:", err);
+          alert("Silme işlemi başarısız oldu: " + err.message);
+          return; // Hata varsa ekrandan silme!
         }
       }
       setAnketListesi(prev => prev.filter((_, i) => i !== idx));

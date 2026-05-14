@@ -136,8 +136,9 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       
       if (eylemToRemove.id) {
         try {
-          await supabase.from('eylem_planlari').delete().eq('id', eylemToRemove.id);
-        } catch (error) {
+          const { error } = await supabase.from('eylem_planlari').delete().eq('id', eylemToRemove.id);
+          if (error) throw error;
+        } catch (error: any) {
           console.error('Eylem silme hatası:', error);
           alert('Eylem silinirken hata oluştu.');
           return;
@@ -262,7 +263,11 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           if (doc.url) {
             const urlParts = doc.url.split('/');
             const fileName = urlParts[urlParts.length - 1];
-            await supabase.storage.from('dokumanlar').remove([fileName]);
+            const { error: storageError } = await supabase.storage.from('dokumanlar').remove([fileName]);
+            if (storageError) {
+              console.error('Dosya silinirken hata oluştu:', storageError);
+              throw storageError;
+            }
             
             await logAction({
               supabase,

@@ -98,10 +98,11 @@ export default function PeriodManagementPage() {
     try {
       // Güvenlik Yaması: Aynı anda birden fazla aktif dönem olmasını engelle
       if (formData.is_active) {
-        await supabase
+        const { error: activeErr } = await supabase
           .from('donemler')
           .update({ is_active: false })
           .eq('is_active', true);
+        if (activeErr) throw activeErr;
       }
 
       if (editingPeriod) {

@@ -236,10 +236,12 @@ export default function BirimAtamalariPage() {
         if (insertError) {
            // ROLLBACK: Ekleme başarısız olursa silinenleri geri yükle
            if (oldAtamalar.length > 0) {
-             await supabase.from('kullanici_olcut_atamalari').insert(oldAtamalar);
+             const { error: rollbackErr1 } = await supabase.from('kullanici_olcut_atamalari').insert(oldAtamalar);
+             if (rollbackErr1) console.error("KRİTİK HATA: Rollback 1 başarısız oldu!", rollbackErr1);
            }
            if (oldAdminAtamalar.length > 0) {
-             await supabase.from('kullanici_olcut_atamalari').insert(oldAdminAtamalar);
+             const { error: rollbackErr2 } = await supabase.from('kullanici_olcut_atamalari').insert(oldAdminAtamalar);
+             if (rollbackErr2) console.error("KRİTİK HATA: Rollback 2 başarısız oldu!", rollbackErr2);
            }
 
            // Eger unique constraint hatasi alirsak

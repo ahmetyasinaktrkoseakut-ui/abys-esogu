@@ -385,10 +385,12 @@ export default function AnketYonetimiClient() {
   const deleteYayinlananAnket = async (anketId: string, baslik: string) => {
     if (confirm(t('delete_survey_confirm', { baslik }) || `"${baslik}" anketini kalıcı olarak silmek istediğinize emin misiniz?`)) {
       try {
-        await supabase.from('anketler').delete().eq('id', anketId);
+        const { error } = await supabase.from('anketler').delete().eq('id', anketId);
+        if (error) throw error;
         setYayinlananAnketler(prev => prev.filter(a => a.id !== anketId));
-      } catch (err) {
+      } catch (err: any) {
         console.error("Silme hatası:", err);
+        alert("Silme işlemi başarısız oldu: " + err.message);
       }
     }
   };

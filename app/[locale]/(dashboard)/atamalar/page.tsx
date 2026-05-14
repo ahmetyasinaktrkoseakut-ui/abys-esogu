@@ -141,6 +141,10 @@ export default function AtamalarPage() {
 
   const handleSave = async () => {
     if (!selectedHoca) return;
+    if (!selectedPeriod) {
+      alert("Aktif dönem seçili değil.");
+      return;
+    }
     
     setIsSaving(true);
     setMessage(null);
@@ -151,14 +155,14 @@ export default function AtamalarPage() {
         .from('kullanici_olcut_atamalari')
         .select('*')
         .eq('user_id', selectedHoca)
-        .eq('donem_id', selectedPeriod?.id);
+        .eq('donem_id', selectedPeriod.id);
 
       // 1. Önce eski atamaları sil
       const { error: deleteError } = await supabase
         .from('kullanici_olcut_atamalari')
         .delete()
         .eq('user_id', selectedHoca)
-        .eq('donem_id', selectedPeriod?.id);
+        .eq('donem_id', selectedPeriod.id);
         
       if (deleteError) throw deleteError;
 
@@ -167,7 +171,7 @@ export default function AtamalarPage() {
         const insertData = selectedOlcutIds.map(olcutId => ({
           user_id: selectedHoca,
           alt_olcut_id: olcutId,
-          donem_id: selectedPeriod?.id
+          donem_id: selectedPeriod.id
         }));
 
         const { error: insertError } = await supabase
@@ -177,7 +181,10 @@ export default function AtamalarPage() {
         if (insertError) {
           // ROLLBACK: Ekleme başarısız olursa eski atamaları geri yükle
           if (oldAtamalar && oldAtamalar.length > 0) {
-            await supabase.from('kullanici_olcut_atamalari').insert(oldAtamalar);
+            const { error: rollbackError } = await supabase.from('kullanici_olcut_atamalari').insert(oldAtamalar);
+            if (rollbackError) {
+              console.error("KRİTİK HATA: Rollback başarısız oldu!", rollbackError);
+            }
           }
           throw insertError;
         }

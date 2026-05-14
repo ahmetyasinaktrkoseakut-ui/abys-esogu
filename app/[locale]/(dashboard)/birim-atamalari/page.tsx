@@ -178,78 +178,21 @@ export default function BirimAtamalariPage() {
     try {
       const altOlcutIds = altOlcutler.map(ao => ao.id);
       
-      // 0. Olası bir hatada geri almak için eski verileri yedekle
-      let oldAtamalar: any[] = [];
-      if (altOlcutIds.length > 0) {
-        const { data: oldData } = await supabase
-          .from('kullanici_olcut_atamalari')
-          .select('*')
-          .eq('user_id', selectedHoca)
-          .eq('donem_id', selectedPeriod.id)
-          .in('alt_olcut_id', altOlcutIds);
-        oldAtamalar = oldData || [];
-      }
+      // rpc_v3_sync_birim_atamalari kullanarak atomik işlem yapıyoruz.
+      // Bu fonksiyon o başlık altındaki eski atamaları siler,
+      // admin ise başkasından çeker ve yenileri ekler.
+      const { error } = await supabase.rpc('rpc_v3_sync_birim_atamalari', {
+        p_user_id: selectedHoca,
+        p_donem_id: selectedPeriod.id,
+        p_scope_olcut_ids: altOlcutIds,
+        p_selected_olcut_ids: selectedOlcutIds
+      });
 
-      // 1. Önce bu hocanın bu başlık altındaki ESKİ atamalarını silelim
-      if (altOlcutIds.length > 0) {
-        const { error: deleteError } = await supabase
-          .from('kullanici_olcut_atamalari')
-          .delete()
-          .eq('user_id', selectedHoca)
-          .eq('donem_id', selectedPeriod.id)
-          .in('alt_olcut_id', altOlcutIds);
-          
-        if (deleteError) throw deleteError;
-      }
-
-      // Süper Yetki: Admin seçtiği ölçütleri BAŞKASINDAN alıp bu hocaya verebilir
-      let oldAdminAtamalar: any[] = [];
-      if (isAdmin && selectedOlcutIds.length > 0) {
-        const { data: oldAdminData } = await supabase
-          .from('kullanici_olcut_atamalari')
-          .select('*')
-          .eq('donem_id', selectedPeriod.id)
-          .in('alt_olcut_id', selectedOlcutIds)
-          .neq('user_id', selectedHoca);
-        oldAdminAtamalar = oldAdminData || [];
-
-        await supabase
-          .from('kullanici_olcut_atamalari')
-          .delete()
-          .eq('donem_id', selectedPeriod.id)
-          .in('alt_olcut_id', selectedOlcutIds)
-          .neq('user_id', selectedHoca);
-      }
-
-      // 2. Yeni atamaları ekle (Sadece seçili olanları)
-      if (selectedOlcutIds.length > 0) {
-        const insertData = selectedOlcutIds.map(id => ({
-          user_id: selectedHoca,
-          alt_olcut_id: id,
-          donem_id: selectedPeriod.id
-        }));
-
-        const { error: insertError } = await supabase
-          .from('kullanici_olcut_atamalari')
-          .insert(insertData);
-          
-        if (insertError) {
-           // ROLLBACK: Ekleme başarısız olursa silinenleri geri yükle
-           if (oldAtamalar.length > 0) {
-             const { error: rollbackErr1 } = await supabase.from('kullanici_olcut_atamalari').insert(oldAtamalar);
-             if (rollbackErr1) console.error("KRİTİK HATA: Rollback 1 başarısız oldu!", rollbackErr1);
-           }
-           if (oldAdminAtamalar.length > 0) {
-             const { error: rollbackErr2 } = await supabase.from('kullanici_olcut_atamalari').insert(oldAdminAtamalar);
-             if (rollbackErr2) console.error("KRİTİK HATA: Rollback 2 başarısız oldu!", rollbackErr2);
-           }
-
-           // Eger unique constraint hatasi alirsak
-           if (insertError.code === '23505') {
-               throw new Error('Seçtiğiniz ölçütlerden biri halihazırda başka bir kullanıcıya atanmış. Lütfen sayfayı yenileyip tekrar deneyin.');
-           }
-           throw insertError;
+      if (error) {
+        if (error.code === '23505') {
+            throw new Error('Seçtiğiniz ölçütlerden biri halihazırda başka bir kullanıcıya atanmış. Lütfen sayfayı yenileyip tekrar deneyin.');
         }
+        throw error;
       }
 
       setMessage({ type: 'success', text: 'Atamalar başarıyla kaydedildi.' });

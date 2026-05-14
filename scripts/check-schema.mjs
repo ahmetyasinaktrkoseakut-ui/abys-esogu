@@ -10,7 +10,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkSchema() {
   const { data, error } = await supabase
-    .from('donemler')
+    .from('alt_olcutler')
     .select('*')
     .limit(1);
     

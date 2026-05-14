@@ -150,45 +150,15 @@ export default function AtamalarPage() {
     setMessage(null);
 
     try {
-      // 0. Olası bir hatada geri almak için eski verileri yedekle
-      const { data: oldAtamalar } = await supabase
-        .from('kullanici_olcut_atamalari')
-        .select('*')
-        .eq('user_id', selectedHoca)
-        .eq('donem_id', selectedPeriod.id);
+      // rpc_v3_assign_all_olcutler kullanarak atomik işlem yapıyoruz.
+      // Bu fonksiyon önce siler, sonra array içindekileri ekler.
+      const { error } = await supabase.rpc('rpc_v3_assign_all_olcutler', {
+        p_user_id: selectedHoca,
+        p_donem_id: selectedPeriod.id,
+        p_olcut_ids: selectedOlcutIds // Frontend'de number[] olarak tutuluyor
+      });
 
-      // 1. Önce eski atamaları sil
-      const { error: deleteError } = await supabase
-        .from('kullanici_olcut_atamalari')
-        .delete()
-        .eq('user_id', selectedHoca)
-        .eq('donem_id', selectedPeriod.id);
-        
-      if (deleteError) throw deleteError;
-
-      // 2. Yeni atamaları ekle
-      if (selectedOlcutIds.length > 0) {
-        const insertData = selectedOlcutIds.map(olcutId => ({
-          user_id: selectedHoca,
-          alt_olcut_id: olcutId,
-          donem_id: selectedPeriod.id
-        }));
-
-        const { error: insertError } = await supabase
-          .from('kullanici_olcut_atamalari')
-          .insert(insertData);
-          
-        if (insertError) {
-          // ROLLBACK: Ekleme başarısız olursa eski atamaları geri yükle
-          if (oldAtamalar && oldAtamalar.length > 0) {
-            const { error: rollbackError } = await supabase.from('kullanici_olcut_atamalari').insert(oldAtamalar);
-            if (rollbackError) {
-              console.error("KRİTİK HATA: Rollback başarısız oldu!", rollbackError);
-            }
-          }
-          throw insertError;
-        }
-      }
+      if (error) throw error;
 
       // 3. Alt ölçütlerin erişim tarihlerini güncelle
       if (olcutler.length > 0) {

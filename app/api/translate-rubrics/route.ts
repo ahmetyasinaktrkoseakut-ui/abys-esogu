@@ -34,7 +34,10 @@ export async function POST() {
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { data: profile } = await supabaseAuth.from('profiller').select('rol').eq('id', user.id).single();
-    if (!profile?.rol?.toLowerCase().includes('yönetici') && !profile?.rol?.toLowerCase().includes('admin')) {
+    const userRole = (profile?.rol ?? '').toLowerCase();
+    const isAdmin = userRole.includes('yönetici') || userRole.includes('admin') || userRole.includes('yonetici');
+    
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Forbidden. Admin role required.' }, { status: 403 });
     }
 

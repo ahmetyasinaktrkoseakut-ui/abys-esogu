@@ -169,7 +169,8 @@
       "action_activity": "الإجراء / النشاط",
       "responsible": "الوحدة المسؤولة",
       "success_indicator": "مؤشر النجاح",
-      "tracking": "التتبع"
+      "tracking": "التتبع",
+      "riskler": "تحليل المخاطر"
     },
     "unknown_code": "رمز غير معروف",
     "unknown_criterion": "معيار غير معروف",
@@ -195,7 +196,8 @@
     "auto_generated_footer": "تم إنشاء هذا المستند تلقائياً بواسطة نظام إدارة الجودة.",
     "unauthorized_access": "وصول غير مصرح به",
     "unauthorized_desc": "ليس لديك إذن لعرض وإنشاء تقرير المؤسسة. يمكن للمديرين فقط الوصول إليه.",
-    "error_generating": "خطأ أثناء إنشاء التقرير"
+    "error_generating": "خطأ أثناء إنشاء التقرير",
+    "maturity_score_missing": "غير مسجل"
   },
   "Tracking": {
     "title": "تتبع العملية والتحليلات",

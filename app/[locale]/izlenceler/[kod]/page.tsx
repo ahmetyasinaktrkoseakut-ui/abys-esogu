@@ -17,7 +17,7 @@ export default async function IzlenceDetailPage({ params }: { params: Promise<{ 
     .from('ders_izlenceleri')
     .select('*')
     .eq('ders_id', kod)
-    .order('created_at', { ascending: false })
+    .order('guncelleme_tarihi', { ascending: false })
     .limit(1)
     .maybeSingle();
 

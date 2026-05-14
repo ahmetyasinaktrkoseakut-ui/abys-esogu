@@ -26,10 +26,10 @@ export async function POST(request: Request) {
       }
     });
 
-    const { data: { session } } = await supabaseAuth.auth.getSession();
-    
+    const { data: { user: authUser }, error: authError } = await supabaseAuth.auth.getUser();
+
     // Oturum yoksa veya oturumdaki kullanıcı ID'si ve emaili request ile eşleşmiyorsa reddet
-    if (!session || session.user.id !== id || session.user.email !== email) {
+    if (authError || !authUser || authUser.id !== id || authUser.email !== email) {
       return NextResponse.json({ error: 'Unauthorized profile sync attempt' }, { status: 403 });
     }
 

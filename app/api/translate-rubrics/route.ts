@@ -7,7 +7,7 @@ import { createServerClient } from '@supabase/ssr';
 // Vercel execution timeout limit (adjust based on your plan, Hobby allows max 60s)
 export const maxDuration = 60;
 
-export async function GET() {
+export async function POST() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;

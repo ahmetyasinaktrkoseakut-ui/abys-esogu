@@ -160,7 +160,8 @@
       "action_activity": "Eylem / Faaliyet",
       "responsible": "Sorumlu Birim",
       "success_indicator": "Başarı Göstergesi",
-      "tracking": "İzleme"
+      "tracking": "İzleme",
+      "riskler": "Risk Analizi"
     },
     "unknown_code": "Bilinmeyen Kod",
     "no_criterion_name": "Ölçüt adı yok",
@@ -186,7 +187,8 @@
     "auto_generated_footer": "Bu belge kalite yönetim sistemi tarafından otomatik olarak oluşturulmuştur.",
     "unauthorized_access": "Yetkisiz Erişim",
     "unauthorized_desc": "Kurum raporunu görüntüleme ve oluşturma yetkiniz bulunmamaktadır. Sadece Yöneticiler erişebilir.",
-    "error_generating": "Rapor oluşturulurken hata"
+    "error_generating": "Rapor oluşturulurken hata",
+    "maturity_score_missing": "Puanlanmamış"
   },
   "Tracking": {
     "title": "Süreç İzleme ve Analitik",

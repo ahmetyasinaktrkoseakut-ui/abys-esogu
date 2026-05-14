@@ -46,13 +46,13 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
 
     const duyurularChannel = supabase
       .channel('sidebar_duyurular')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'duyurular' }, () => {
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'duyurular', filter: `alici_id=eq.${userId}` }, () => {
         fetchUnreadCount();
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'duyuru_okumalar', filter: `kullanici_id=eq.${userId}` }, () => {
         fetchUnreadCount();
       })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'duyurular' }, () => {
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'duyurular', filter: `alici_id=eq.${userId}` }, () => {
         fetchUnreadCount();
       })
       .subscribe();

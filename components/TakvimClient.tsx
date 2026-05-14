@@ -107,7 +107,7 @@ export default function TakvimClient() {
     }
 
     fetchData();
-  }, [selectedPeriod]);
+  }, [selectedPeriod, locale, t]);
 
   const exportToWord = () => {
     if (!kayitlar || kayitlar.length === 0) return;

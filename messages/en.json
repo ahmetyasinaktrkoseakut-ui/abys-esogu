@@ -253,7 +253,8 @@
       "search_placeholder": "Search name or title...",
       "loading": "Loading users...",
       "no_user": "No registered unit coordinator found.",
-      "anonymous_user": "Anonymous User"
+      "anonymous_user": "Anonymous User",
+      "search_no_result": "No results found."
     },
     "main": {
       "select_user_title": "Select Personnel to Assign Criteria",

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client';
 
 interface Period {
@@ -25,7 +25,7 @@ export function PeriodProvider({ children }: { children: ReactNode }) {
   const [selectedPeriod, setSelectedPeriod] = useState<Period | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchPeriods = async () => {
+  const fetchPeriods = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data, error } = await supabase
@@ -41,29 +41,30 @@ export function PeriodProvider({ children }: { children: ReactNode }) {
       setPeriods(data || []);
       
       // Select the active period by default if not already set
-      if (!selectedPeriod && data && data.length > 0) {
-        const savedPeriodId = localStorage.getItem('selectedPeriodId');
-        let periodToSelect = null;
-        if (savedPeriodId) {
-          periodToSelect = data.find(p => p.id === savedPeriodId);
+      setSelectedPeriod(prev => {
+        if (!prev && data && data.length > 0) {
+          const savedPeriodId = localStorage.getItem('selectedPeriodId');
+          let periodToSelect = null;
+          if (savedPeriodId) {
+            periodToSelect = data.find(p => p.id === savedPeriodId);
+          }
+          
+          if (!periodToSelect) {
+            periodToSelect = data.find(p => p.is_active) || data[0];
+          }
+          
+          return periodToSelect || null;
         }
-        
-        if (!periodToSelect) {
-          periodToSelect = data.find(p => p.is_active) || data[0];
-        }
-        
-        if (periodToSelect) {
-          setSelectedPeriod(periodToSelect);
-        }
-      }
+        return prev;
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchPeriods();
-  }, []);
+  }, [fetchPeriods]);
 
   const handleSetSelectedPeriod = (period: Period) => {
     setSelectedPeriod(period);

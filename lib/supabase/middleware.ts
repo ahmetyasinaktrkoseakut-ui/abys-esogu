@@ -71,11 +71,6 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (user) {
-    const { data: profile } = await supabase
-      .from('profiller')
-      .select('rol')
-      .eq('id', user.id)
-      .maybeSingle()
 
     if (isLoginPage) {
       return redirectWithLocale('/olcutler');

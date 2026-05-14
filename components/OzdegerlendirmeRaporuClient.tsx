@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use, useRef } from 'react';
+import { useState, useEffect, use, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download, Save, Plus, Link as LinkIcon } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
@@ -46,7 +46,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const { selectedPeriod } = usePeriod();
   const editorRef = useRef<RichTextEditorRef>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!selectedPeriod) return;
     try {
       setIsLoading(true);
@@ -92,46 +92,52 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         setOnayDurumu(raporData?.onay_durumu || 'bekliyor');
         setRedNedeni(raporData?.red_nedeni);
       } else {
+        setRaporMetni('');
+        setKanitlar([]);
+        setRaporOlusturuldu(false);
         setOnayDurumu('bekliyor');
         setRedNedeni(null);
       }
 
       // --- ACL & AUTHORITY LOGIC ---
       const now = new Date();
+      const { data: pukoData } = await supabase.from('puko_degerlendirmeleri').select('olgunluk_puani').eq('alt_olcut_id', resolvedParams.id).eq('donem_id', selectedPeriod.id);
+      if (pukoData && pukoData.length > 0) {
+        setOlgunlukPuani(pukoData[0].olgunluk_puani);
+      }
+
       let accessLocked = false;
       
       // Eğer tarih kısıtı varsa ve kullanıcı admin/koordinatör değilse kontrol et
-      if (olcut && !localUserIsAdmin) {
-        if (olcut.erisim_baslangic && now < new Date(olcut.erisim_baslangic)) accessLocked = true;
-        if (olcut.erisim_bitis && now > new Date(olcut.erisim_bitis)) accessLocked = true;
+      if (olcutDetay && !localUserIsAdmin) {
+        if (olcutDetay.erisim_baslangic && now < new Date(olcutDetay.erisim_baslangic)) accessLocked = true;
+        if (olcutDetay.erisim_bitis && now > new Date(olcutDetay.erisim_bitis)) accessLocked = true;
       }
 
       // Salt okunur olma durumlarını belirle
       let finalReadOnly = false;
 
       if (!localUserIsAdmin) {
-        // Normal kullanıcılar için kısıtlar:
         if (selectedPeriod?.is_active === false) finalReadOnly = true;
-        // if (raporData?.onay_durumu === 'onaylandi') finalReadOnly = true; // BU SATIR SİLİNDİ: Onaylansa bile düzenlenebilecek
         if (accessLocked) finalReadOnly = true;
       } else {
-        // Admin/Koordinatör her zaman düzenleyebilir (Overwrite yetkisi)
         finalReadOnly = false;
       }
 
       setIsReadOnly(finalReadOnly);
-
-
-    } catch (error) {
-      console.error("Fetch Data Error:", error);
+    } catch (e) {
+      console.error(e);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [resolvedParams.id, selectedPeriod]);
 
   useEffect(() => {
-    fetchData();
-  }, [resolvedParams.id, selectedPeriod]);
+    const syncInit = async () => {
+      await fetchData();
+    };
+    syncInit();
+  }, [fetchData]);
 
   const exportToWord = () => {
     if (!raporMetni) return;

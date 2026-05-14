@@ -64,9 +64,16 @@ export default function RaporlarClient() {
     checkAuth();
   }, []);
 
+  // Veri çekme veya periyot değişiminde state yönetimi
+  // Veri çekme veya periyot değişiminde state yönetimi
   useEffect(() => {
-    setRaporData(null);
-  }, [selectedPeriod]);
+    const syncState = async () => {
+      if (raporData !== null) {
+        setRaporData(null);
+      }
+    };
+    syncState();
+  }, [selectedPeriod, raporData]);
 
   const getDuzeyAciklamasi = (olcut: any, puan: number, loc: string) => {
     if (!olcut || !puan) return '';

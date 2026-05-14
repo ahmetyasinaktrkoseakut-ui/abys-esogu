@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Save, Users, AlertCircle, CheckCircle2, Search, Trash2 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
@@ -28,11 +28,7 @@ export default function KoordinatorlerPage() {
   const t = useTranslations('Coordinators');
   const tCommon = useTranslations('Common');
   
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setIsLoading(true);
       setMessage(null);
@@ -60,7 +56,11 @@ export default function KoordinatorlerPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [t, tCommon]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleAssign = async () => {
     if (!selectedUser || !selectedTopic) {

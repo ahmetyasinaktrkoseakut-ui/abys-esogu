@@ -106,12 +106,14 @@ export default function AtamalarPage() {
   }, [fetchInitialData]);
 
   useEffect(() => {
-    if (selectedHoca) {
-      fetchHocaAtamalari(selectedHoca);
-    } else {
-      // Sadece doluysa boşalt, sonsuz döngüyü/gereksiz render'ı engelle
-      setSelectedOlcutIds(prev => prev.length > 0 ? [] : prev);
-    }
+    const syncData = async () => {
+      if (selectedHoca) {
+        await fetchHocaAtamalari(selectedHoca);
+      } else {
+        setSelectedOlcutIds(prev => prev.length > 0 ? [] : prev);
+      }
+    };
+    syncData();
   }, [selectedHoca, fetchHocaAtamalari]);
 
   const handleToggleOlcut = (id: number) => {

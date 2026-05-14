@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Users, AlertCircle, Loader2, Save, CheckCircle2, Search } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
@@ -37,7 +37,7 @@ export default function BirimAtamalariPage() {
     }
   }, [selectedHoca, allAtamalar]);
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     if (!selectedPeriod) return;
     try {
       setIsLoading(true);
@@ -159,7 +159,24 @@ export default function BirimAtamalariPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedPeriod]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
+
+  useEffect(() => {
+    const syncAtamalar = async () => {
+      if (selectedHoca) {
+        // Sadece bu hocanın atamalarını seçili duruma getir
+        const hocaAtamalari = allAtamalar.filter(a => a.user_id === selectedHoca).map(a => a.alt_olcut_id);
+        setSelectedOlcutIds(hocaAtamalari);
+      } else {
+        setSelectedOlcutIds(prev => prev.length > 0 ? [] : prev);
+      }
+    };
+    syncAtamalar();
+  }, [selectedHoca, allAtamalar]);
 
   const handleToggleOlcut = (id: number) => {
     setSelectedOlcutIds(prev => 

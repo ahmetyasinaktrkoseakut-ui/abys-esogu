@@ -88,7 +88,18 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
                 {t('tracking')}
               </Link>
             )}
-
+            {isCoordinator && (
+              <>
+                <Link href="/birim-atamalari" className={getLinkClass('/birim-atamalari')}>
+                  <Users className="w-5 h-5 flex-shrink-0" />
+                  {t('unit_assignments')}
+                </Link>
+                <Link href="/veri-onayi" className={getLinkClass('/veri-onayi')}>
+                  <FileCheck className="w-5 h-5 flex-shrink-0" />
+                  {t('data_approval')}
+                </Link>
+              </>
+            )}
           </>
         )}
 

@@ -35,19 +35,7 @@ export default function AtamalarPage() {
     }));
   };
 
-  useEffect(() => {
-    fetchInitialData();
-  }, [selectedPeriod]);
-
-  useEffect(() => {
-    if (selectedHoca) {
-      fetchHocaAtamalari(selectedHoca);
-    } else {
-      setSelectedOlcutIds([]);
-    }
-  }, [selectedHoca, selectedPeriod]);
-
-  const fetchInitialData = async () => {
+  const fetchInitialData = useCallback(async () => {
     if (!selectedPeriod) return;
     try {
       setIsLoading(true);
@@ -86,9 +74,9 @@ export default function AtamalarPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedPeriod, t]);
 
-  const fetchHocaAtamalari = async (userId: string) => {
+  const fetchHocaAtamalari = useCallback(async (userId: string) => {
     if (!selectedPeriod) {
       setSelectedOlcutIds([]);
       return;
@@ -111,7 +99,20 @@ export default function AtamalarPage() {
       console.error("Atama çekme hatası:", error);
       setMessage({ type: 'error', text: t('messages.atama_fetch_error') });
     }
-  };
+  }, [selectedPeriod, t]);
+
+  useEffect(() => {
+    fetchInitialData();
+  }, [fetchInitialData]);
+
+  useEffect(() => {
+    if (selectedHoca) {
+      fetchHocaAtamalari(selectedHoca);
+    } else {
+      // Sadece doluysa boşalt, sonsuz döngüyü/gereksiz render'ı engelle
+      setSelectedOlcutIds(prev => prev.length > 0 ? [] : prev);
+    }
+  }, [selectedHoca, fetchHocaAtamalari]);
 
   const handleToggleOlcut = (id: number) => {
     setSelectedOlcutIds(prev => 

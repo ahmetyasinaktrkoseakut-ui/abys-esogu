@@ -44,7 +44,7 @@ export default function RaporlarClient() {
   const locale = useLocale();
 
   useEffect(() => {
-    async function checkAuth() {
+    const checkAuth = async () => {
       setIsLoading(true);
       try {
         const { data: { user } } = await supabase.auth.getUser();
@@ -60,7 +60,7 @@ export default function RaporlarClient() {
       } finally {
         setIsLoading(false);
       }
-    }
+    };
     checkAuth();
   }, []);
 

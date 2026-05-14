@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import OpenAI from 'openai';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
 // Vercel execution timeout limit (adjust based on your plan, Hobby allows max 60s)
 export const maxDuration = 60;
@@ -8,11 +10,10 @@ export const maxDuration = 60;
 export async function GET() {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    // Prefer SERVICE_ROLE_KEY to bypass RLS for server operations, fallback to ANON_KEY
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const openaiKey = process.env.OPENAI_API_KEY;
 
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json({ error: 'Supabase credentials are not configured' }, { status: 500 });
     }
 
@@ -20,7 +21,25 @@ export async function GET() {
       return NextResponse.json({ error: 'OPENAI_API_KEY is not defined in environment variables' }, { status: 500 });
     }
 
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Güvenlik Yaması: API'yi çağıran kişinin gerçekten Yönetici olup olmadığını kontrol et.
+    const cookieStore = await cookies();
+    const supabaseAuth = createServerClient(supabaseUrl, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll() {}
+      }
+    });
+
+    const { data: { user } } = await supabaseAuth.auth.getUser();
+    if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    const { data: profile } = await supabaseAuth.from('profiller').select('rol').eq('id', user.id).single();
+    if (!profile?.rol?.toLowerCase().includes('yönetici') && !profile?.rol?.toLowerCase().includes('admin')) {
+      return NextResponse.json({ error: 'Forbidden. Admin role required.' }, { status: 403 });
+    }
+
+    // Yetki onaylandı, şimdi işlemleri yapmak için servis rolünü kullan
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const openai = new OpenAI({ apiKey: openaiKey });
 
     // 1. Fetch records where olgunluk_duzeyleri is not null but translations are null

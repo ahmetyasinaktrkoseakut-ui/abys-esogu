@@ -176,10 +176,21 @@ export default function BirimAtamalariPage() {
     setMessage(null);
 
     try {
-      // 1. Önce bu hocanın bu başlık altındaki ESKİ atamalarını silelim
-      // Tüm alt ölçütleri biliyoruz (altOlcutler state'inde).
       const altOlcutIds = altOlcutler.map(ao => ao.id);
       
+      // 0. Olası bir hatada geri almak için eski verileri yedekle
+      let oldAtamalar: any[] = [];
+      if (altOlcutIds.length > 0) {
+        const { data: oldData } = await supabase
+          .from('kullanici_olcut_atamalari')
+          .select('*')
+          .eq('user_id', selectedHoca)
+          .eq('donem_id', selectedPeriod.id)
+          .in('alt_olcut_id', altOlcutIds);
+        oldAtamalar = oldData || [];
+      }
+
+      // 1. Önce bu hocanın bu başlık altındaki ESKİ atamalarını silelim
       if (altOlcutIds.length > 0) {
         const { error: deleteError } = await supabase
           .from('kullanici_olcut_atamalari')
@@ -192,7 +203,16 @@ export default function BirimAtamalariPage() {
       }
 
       // Süper Yetki: Admin seçtiği ölçütleri BAŞKASINDAN alıp bu hocaya verebilir
+      let oldAdminAtamalar: any[] = [];
       if (isAdmin && selectedOlcutIds.length > 0) {
+        const { data: oldAdminData } = await supabase
+          .from('kullanici_olcut_atamalari')
+          .select('*')
+          .eq('donem_id', selectedPeriod.id)
+          .in('alt_olcut_id', selectedOlcutIds)
+          .neq('user_id', selectedHoca);
+        oldAdminAtamalar = oldAdminData || [];
+
         await supabase
           .from('kullanici_olcut_atamalari')
           .delete()
@@ -214,6 +234,14 @@ export default function BirimAtamalariPage() {
           .insert(insertData);
           
         if (insertError) {
+           // ROLLBACK: Ekleme başarısız olursa silinenleri geri yükle
+           if (oldAtamalar.length > 0) {
+             await supabase.from('kullanici_olcut_atamalari').insert(oldAtamalar);
+           }
+           if (oldAdminAtamalar.length > 0) {
+             await supabase.from('kullanici_olcut_atamalari').insert(oldAdminAtamalar);
+           }
+
            // Eger unique constraint hatasi alirsak
            if (insertError.code === '23505') {
                throw new Error('Seçtiğiniz ölçütlerden biri halihazırda başka bir kullanıcıya atanmış. Lütfen sayfayı yenileyip tekrar deneyin.');

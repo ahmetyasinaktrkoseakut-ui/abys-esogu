@@ -61,6 +61,7 @@ export async function updateSession(request: NextRequest) {
   if (
     !user &&
     !isLoginPage &&
+    !pathWithoutLocale.startsWith('/anket/') &&
     !pathWithoutLocale.startsWith('/sifre-yenile') &&
     !pathWithoutLocale.startsWith('/izlenceler') &&
     !pathname.startsWith('/_next') &&

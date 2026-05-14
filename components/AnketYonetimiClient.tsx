@@ -315,7 +315,8 @@ export default function AnketYonetimiClient() {
           aciklama: anket.aciklama,
           hedef_olcutler: hedefOlcutler
         };
-        await supabase.from('anketler').insert(insertAnket);
+        const { error } = await supabase.from('anketler').insert(insertAnket);
+        if (error) throw new Error(error.message);
       }
       
       // State sıfırlama (Temizlik kuralı)

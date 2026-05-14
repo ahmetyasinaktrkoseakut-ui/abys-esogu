@@ -270,9 +270,11 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      if (!selectedPeriod) throw new Error("Aktif dönem seçili değil.");
+      
       const upsertData = {
         alt_olcut_id: String(resolvedParams.id),
-        donem_id: String(selectedPeriod?.id),
+        donem_id: String(selectedPeriod.id),
         icerik: raporMetni ?? '',
         kanitlar: kanitlar ?? [],
         onay_durumu: 'bekliyor',
@@ -283,7 +285,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .from('ozdegerlendirme_raporlari')
         .select('id')
         .eq('alt_olcut_id', String(resolvedParams.id))
-        .eq('donem_id', String(selectedPeriod?.id))
+        .eq('donem_id', String(selectedPeriod.id))
         .order('olusturulma_tarihi', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -301,22 +303,24 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         .from('ozdegerlendirme_raporlari')
         .select('id')
         .eq('alt_olcut_id', String(resolvedParams.id))
-        .eq('donem_id', String(selectedPeriod?.id))
+        .eq('donem_id', String(selectedPeriod.id))
         .maybeSingle();
 
       if (currentRecord) {
-        await supabase
+        const { error: rErr } = await supabase
           .from('ozdegerlendirme_raporlari')
           .update({ onay_durumu: 'bekliyor', red_nedeni: null })
           .eq('id', currentRecord.id);
+        if (rErr) throw rErr;
 
         if (!isAdmin) {
           // BİLDİRİM SENKRONİZASYONU: Kullanıcı raporu güncellediğinde, puko durumlarını 'Beklemede'ye çek.
-          await supabase
+          const { error: pErr } = await supabase
             .from('puko_degerlendirmeleri')
             .update({ durum: 'Beklemede', red_nedeni: null })
             .eq('alt_olcut_id', String(resolvedParams.id))
-            .eq('donem_id', String(selectedPeriod?.id));
+            .eq('donem_id', String(selectedPeriod.id));
+          if (pErr) throw pErr;
         }
 
         setOnayDurumu('bekliyor');

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const { id, email, ad_soyad, rol } = await request.json();
+    const { id, email, ad_soyad } = await request.json();
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -21,7 +21,7 @@ export async function POST(request: Request) {
         id,
         email,
         ad_soyad,
-        rol: rol || 'BirimSorumlusu'
+        rol: 'BirimSorumlusu' // Güvenlik yaması: Dışarıdan rol ataması iptal edildi
       });
 
     if (error) {

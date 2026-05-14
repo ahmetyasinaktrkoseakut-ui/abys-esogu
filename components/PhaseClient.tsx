@@ -152,12 +152,14 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      if (!selectedPeriod) throw new Error("Aktif dönem seçili değil.");
+      
       const { data: { user } } = await supabase.auth.getUser();
       
       const upsertData: Record<string, any> = {
         alt_olcut_id: resolvedParams.id,
         puko_asamasi: phaseId,
-        donem_id: selectedPeriod?.id,
+        donem_id: selectedPeriod.id,
         aciklama: aciklama,
         risk_analizi: riskAnalizi,
         kanit_dosyalari: dokumanlar

@@ -146,6 +146,13 @@ export default function AtamalarPage() {
     setMessage(null);
 
     try {
+      // 0. Olası bir hatada geri almak için eski verileri yedekle
+      const { data: oldAtamalar } = await supabase
+        .from('kullanici_olcut_atamalari')
+        .select('*')
+        .eq('user_id', selectedHoca)
+        .eq('donem_id', selectedPeriod?.id);
+
       // 1. Önce eski atamaları sil
       const { error: deleteError } = await supabase
         .from('kullanici_olcut_atamalari')
@@ -167,7 +174,13 @@ export default function AtamalarPage() {
           .from('kullanici_olcut_atamalari')
           .insert(insertData);
           
-        if (insertError) throw insertError;
+        if (insertError) {
+          // ROLLBACK: Ekleme başarısız olursa eski atamaları geri yükle
+          if (oldAtamalar && oldAtamalar.length > 0) {
+            await supabase.from('kullanici_olcut_atamalari').insert(oldAtamalar);
+          }
+          throw insertError;
+        }
       }
 
       // 3. Alt ölçütlerin erişim tarihlerini güncelle

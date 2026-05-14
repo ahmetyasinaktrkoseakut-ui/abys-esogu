@@ -299,12 +299,14 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
       };
       
       if (pukoId) {
-        await supabase.from('puko_degerlendirmeleri')
+        const { error } = await supabase.from('puko_degerlendirmeleri')
           .update(upsertPuko)
           .eq('id', pukoId)
           .eq('donem_id', selectedPeriod?.id);
+        if (error) throw new Error(error.message);
       } else {
-        const { data: newPuko } = await supabase.from('puko_degerlendirmeleri').insert(upsertPuko).select('id').maybeSingle();
+        const { data: newPuko, error } = await supabase.from('puko_degerlendirmeleri').insert(upsertPuko).select('id').maybeSingle();
+        if (error) throw new Error(error.message);
         if (newPuko) setPukoId(newPuko.id.toString());
       }
 
@@ -320,9 +322,11 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
           aciklama: anket.aciklama
         };
         if (anket.id && !anket.id.startsWith('temp_')) {
-          await supabase.from('anketler').update(upsertAnket).eq('id', anket.id);
+          const { error } = await supabase.from('anketler').update(upsertAnket).eq('id', anket.id);
+          if (error) throw new Error(error.message);
         } else {
-          await supabase.from('anketler').insert(upsertAnket);
+          const { error } = await supabase.from('anketler').insert(upsertAnket);
+          if (error) throw new Error(error.message);
         }
       }
 
@@ -335,18 +339,20 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         };
 
         if (ozdegerlendirmeRaporuId) {
-          await supabase.from('ozdegerlendirme_raporlari')
+          const { error } = await supabase.from('ozdegerlendirme_raporlari')
             .update(upsertRapor)
             .eq('id', ozdegerlendirmeRaporuId);
+          if (error) throw new Error(error.message);
         } else {
           // Eğer rapor yoksa içeriği ve kanıtları boş olacak şekilde oluştur
           upsertRapor.icerik = '';
           upsertRapor.kanitlar = [];
           upsertRapor.onay_durumu = 'bekliyor';
-          const { data: newRapor } = await supabase.from('ozdegerlendirme_raporlari')
+          const { data: newRapor, error } = await supabase.from('ozdegerlendirme_raporlari')
             .insert(upsertRapor)
             .select('id')
             .maybeSingle();
+          if (error) throw new Error(error.message);
           if (newRapor) setOzdegerlendirmeRaporuId(newRapor.id.toString());
         }
       }

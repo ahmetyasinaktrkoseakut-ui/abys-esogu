@@ -6,9 +6,12 @@ import { supabase } from '@/lib/supabase/client'
 import { Lock, Mail, User, Loader2, Eye, EyeOff, LayoutDashboard } from 'lucide-react'
 import { useTranslations } from 'next-intl'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { useParams } from 'next/navigation'
 
 export default function LoginPage() {
   const router = useRouter()
+  const params = useParams()
+  const locale = params.locale as string
   const t = useTranslations('Auth')
   const tErrors = useTranslations('Errors')
   
@@ -71,6 +74,8 @@ export default function LoginPage() {
             }
           } catch (syncErr: any) {
             console.error("Senkronizasyon Hatası:", syncErr);
+            // Profil oluşturulamazsa oturumu kapat ki hatalı bir auth state oluşmasın
+            await supabase.auth.signOut();
             throw syncErr; // Kayıt işlemini durdur ve hatayı göster
           }
         }
@@ -79,12 +84,13 @@ export default function LoginPage() {
         setIsLogin(true)
       }
     } catch (err: any) {
+      const errorMessage = err.message || '';
       try {
-        const localizedError = tErrors(err.message as any);
+        const localizedError = tErrors(errorMessage as any);
         if (localizedError.includes('Errors.')) throw new Error();
         setMessage({ type: 'error', text: localizedError });
       } catch {
-        setMessage({ type: 'error', text: tErrors('default') });
+        setMessage({ type: 'error', text: errorMessage || tErrors('default') });
       }
     } finally {
       setIsSubmitting(false)
@@ -98,7 +104,7 @@ export default function LoginPage() {
 
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/sifre-yenile`
+        redirectTo: `${window.location.origin}/${locale}/sifre-yenile`
       })
 
       if (error) throw error

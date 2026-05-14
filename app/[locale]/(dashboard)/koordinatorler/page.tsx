@@ -77,20 +77,34 @@ export default function KoordinatorlerPage() {
       // Biz doğrudan eskiyi silip yenisini ekleyelim veya upsert kullanalım.
       // Sütunların kullanici_id ve baslik olduğunu biliyoruz.
       
+      // Olası bir hatada geri almak için eski verileri yedekle
+      const { data: oldData } = await supabase
+        .from('baslik_koordinatorleri')
+        .select('*')
+        .eq('kullanici_id', selectedUser);
+
       // Kullanıcı zaten bir başlığa atanmışsa onu silelim
-      await supabase
+      const { error: deleteError } = await supabase
         .from('baslik_koordinatorleri')
         .delete()
         .eq('kullanici_id', selectedUser);
 
-      const { error } = await supabase
+      if (deleteError) throw deleteError;
+
+      const { error: insertError } = await supabase
         .from('baslik_koordinatorleri')
         .insert({
           kullanici_id: selectedUser,
           baslik: selectedTopic
         });
 
-      if (error) throw error;
+      if (insertError) {
+         // Ekleme başarısız olursa silinenleri geri yükle
+         if (oldData && oldData.length > 0) {
+           await supabase.from('baslik_koordinatorleri').insert(oldData);
+         }
+         throw insertError;
+      }
 
       setMessage({ type: 'success', text: t('assign_success') || 'Koordinatör başarıyla atandı.' });
       setSelectedUser('');

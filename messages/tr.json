@@ -398,7 +398,18 @@
     "quote": "Akreditasyon, eğitimde mükemmeliyetin ve şeffaflığın temelidir.",
     "system_name": "Akreditasyon Bilgi",
     "system_subname": "Yönetim Sistemi",
-    "quality_system": "Kalite Yönetim Sistemi"
+    "quality_system": "Kalite Yönetim Sistemi",
+    "forgotPassword": "Şifremi Unuttum",
+    "resetLinkSent": "Sıfırlama bağlantısı gönderildi.",
+    "newPassword": "Yeni Şifre",
+    "updateSuccess": "Şifreniz başarıyla güncellendi."
+  },
+  "Errors": {
+    "Invalid login credentials": "E-posta veya şifre hatalı",
+    "User already registered": "Bu e-posta adresi zaten kullanımda",
+    "Password should be at least 6 characters": "Şifre en az 6 karakter olmalıdır",
+    "Email not confirmed": "E-posta adresinizi onaylamanız gerekmektedir",
+    "default": "Beklenmeyen bir hata oluştu. Lütfen tekrar deneyin."
   },
   "Surveys": {
     "title": "Anket Yönetimi ve Dağıtımı",

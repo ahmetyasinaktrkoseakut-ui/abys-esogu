@@ -10,8 +10,10 @@ import LanguageSwitcher from '@/components/LanguageSwitcher'
 export default function LoginPage() {
   const router = useRouter()
   const t = useTranslations('Auth')
+  const tErrors = useTranslations('Errors')
   
   const [isLogin, setIsLogin] = useState(true)
+  const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [adSoyad, setAdSoyad] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -77,7 +79,39 @@ export default function LoginPage() {
         setIsLogin(true)
       }
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || t('error_default') })
+      try {
+        const localizedError = tErrors(err.message as any);
+        if (localizedError.includes('Errors.')) throw new Error();
+        setMessage({ type: 'error', text: localizedError });
+      } catch {
+        setMessage({ type: 'error', text: tErrors('default') });
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsSubmitting(true)
+    setMessage(null)
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/sifre-yenile`
+      })
+
+      if (error) throw error
+
+      setMessage({ type: 'success', text: t('resetLinkSent') })
+    } catch (err: any) {
+      try {
+        const localizedError = tErrors(err.message as any);
+        if (localizedError.includes('Errors.')) throw new Error();
+        setMessage({ type: 'error', text: localizedError });
+      } catch {
+        setMessage({ type: 'error', text: tErrors('default') });
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -114,10 +148,10 @@ export default function LoginPage() {
           {/* Karşılama Metni */}
           <div className="mb-10">
             <h3 className="text-4xl font-extrabold text-slate-900 tracking-tight mb-3">
-              {isLogin ? t('login_title') : t('signup_title')}
+              {isForgotPassword ? t('forgotPassword') : (isLogin ? t('login_title') : t('signup_title'))}
             </h3>
             <p className="text-slate-500 font-medium">
-              {isLogin ? t('login_desc') : t('signup_desc')}
+              {isForgotPassword ? '' : (isLogin ? t('login_desc') : t('signup_desc'))}
             </p>
           </div>
 
@@ -131,94 +165,138 @@ export default function LoginPage() {
             </div>
           )}
 
-          <form onSubmit={handleAuth} className="space-y-5">
-            
-            {!isLogin && (
+          {isForgotPassword ? (
+            <form onSubmit={handleForgotPassword} className="space-y-5">
               <div className="space-y-2">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('full_name')}</label>
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('email')}</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors">
-                    <User className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
                   </div>
                   <input
-                    type="text"
+                    type="email"
                     required
-                    value={adSoyad}
-                    onChange={(e) => setAdSoyad(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
-                    placeholder={t('full_name_placeholder')}
+                    placeholder={t('email_placeholder')}
                   />
                 </div>
               </div>
-            )}
 
-            <div className="space-y-2">
-              <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('email')}</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
-                </div>
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
-                  placeholder={t('email_placeholder')}
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between items-end pr-1">
-                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('password')}</label>
-                {isLogin && <button type="button" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">{t('forgot_password')}</button>}
-              </div>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
-                </div>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
-                  placeholder={t('password_placeholder')}
-                />
-                <button 
-                  type="button" 
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 transition-colors"
+              <div className="pt-6">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white py-5 rounded-2xl font-black text-lg transition-all shadow-2xl shadow-indigo-500/40 disabled:opacity-70 disabled:active:scale-100 uppercase tracking-tighter"
                 >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  {isSubmitting && <Loader2 className="w-6 h-6 animate-spin" />}
+                  {t('forgotPassword')}
                 </button>
               </div>
-            </div>
 
-            <div className="pt-6">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white py-5 rounded-2xl font-black text-lg transition-all shadow-2xl shadow-indigo-500/40 disabled:opacity-70 disabled:active:scale-100 uppercase tracking-tighter"
-              >
-                {isSubmitting && <Loader2 className="w-6 h-6 animate-spin" />}
-                {isLogin ? t('login_button') : t('signup_button')}
-              </button>
-            </div>
-          </form>
+              <div className="mt-6 text-center">
+                <button 
+                  type="button"
+                  onClick={() => setIsForgotPassword(false)}
+                  className="text-slate-500 font-bold hover:text-indigo-600 transition-colors"
+                >
+                  İptal
+                </button>
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleAuth} className="space-y-5">
+              
+              {!isLogin && (
+                <div className="space-y-2">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('full_name')}</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none transition-colors">
+                      <User className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={adSoyad}
+                      onChange={(e) => setAdSoyad(e.target.value)}
+                      className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
+                      placeholder={t('full_name_placeholder')}
+                    />
+                  </div>
+                </div>
+              )}
 
-          <div className="mt-10 text-center">
-            <p className="text-slate-500 font-bold">
-              {isLogin ? t('no_account') : t('have_account')}
-              <button 
-                onClick={() => setIsLogin(!isLogin)}
-                className="ml-2 text-indigo-600 hover:text-indigo-700 underline underline-offset-4 decoration-2"
-              >
-                {isLogin ? t('signup_link') : t('login_link')}
-              </button>
-            </p>
-          </div>
+              <div className="space-y-2">
+                <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('email')}</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full pl-12 pr-4 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
+                    placeholder={t('email_placeholder')}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between items-end pr-1">
+                  <label className="text-xs font-black text-slate-400 uppercase tracking-widest ml-1">{t('password')}</label>
+                  {isLogin && <button type="button" onClick={() => setIsForgotPassword(true)} className="text-xs font-bold text-indigo-600 hover:text-indigo-700">{t('forgot_password')}</button>}
+                </div>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-slate-300 group-focus-within:text-indigo-600" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full pl-12 pr-12 py-4 bg-slate-50 border-2 border-slate-50 rounded-2xl text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:bg-white focus:border-indigo-600 transition-all shadow-sm"
+                    placeholder={t('password_placeholder')}
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-indigo-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-6">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 active:scale-[0.98] text-white py-5 rounded-2xl font-black text-lg transition-all shadow-2xl shadow-indigo-500/40 disabled:opacity-70 disabled:active:scale-100 uppercase tracking-tighter"
+                >
+                  {isSubmitting && <Loader2 className="w-6 h-6 animate-spin" />}
+                  {isLogin ? t('login_button') : t('signup_button')}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {!isForgotPassword && (
+            <div className="mt-10 text-center">
+              <p className="text-slate-500 font-bold">
+                {isLogin ? t('no_account') : t('have_account')}
+                <button 
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="ml-2 text-indigo-600 hover:text-indigo-700 underline underline-offset-4 decoration-2"
+                >
+                  {isLogin ? t('signup_link') : t('login_link')}
+                </button>
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

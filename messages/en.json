@@ -398,7 +398,18 @@
     "quote": "Accreditation is the foundation of excellence and transparency in education.",
     "system_name": "Accreditation Info",
     "system_subname": "Management System",
-    "quality_system": "Quality Management System"
+    "quality_system": "Quality Management System",
+    "forgotPassword": "Forgot Password",
+    "resetLinkSent": "Password reset link sent.",
+    "newPassword": "New Password",
+    "updateSuccess": "Password updated successfully."
+  },
+  "Errors": {
+    "Invalid login credentials": "Invalid email or password",
+    "User already registered": "This email is already in use",
+    "Password should be at least 6 characters": "Password must be at least 6 characters",
+    "Email not confirmed": "You need to confirm your email address",
+    "default": "An unexpected error occurred. Please try again."
   },
   "Surveys": {
     "title": "Survey Management and Distribution",

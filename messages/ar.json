@@ -342,7 +342,18 @@
     "quote": "الاعتماد هو أساس التميز والشفافية في التعليم.",
     "system_name": "معلومات الاعتماد",
     "system_subname": "نظام الإدارة",
-    "quality_system": "نظام إدارة الجودة"
+    "quality_system": "نظام إدارة الجودة",
+    "forgotPassword": "نسيت كلمة المرور",
+    "resetLinkSent": "تم إرسال رابط إعادة تعيين كلمة المرور.",
+    "newPassword": "كلمة مرور جديدة",
+    "updateSuccess": "تم تحديث كلمة المرور بنجاح."
+  },
+  "Errors": {
+    "Invalid login credentials": "البريد الإلكتروني أو كلمة المرور غير صالحة",
+    "User already registered": "البريد الإلكتروني مسجل بالفعل",
+    "Password should be at least 6 characters": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
+    "Email not confirmed": "يجب تأكيد عنوان بريدك الإلكتروني",
+    "default": "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
   },
   "Surveys": {
     "title": "إدارة وتوزيع الاستبيانات",

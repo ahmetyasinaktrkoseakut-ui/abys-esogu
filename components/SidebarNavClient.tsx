@@ -97,7 +97,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
           {t('syllabi')}
         </Link>
         {isAdmin && (
-          <div className="pl-6">
+          <div className="ltr:pl-6 rtl:pr-6">
             <Link href="/izlence-takip" className={getLinkClass('/izlence-takip')}>
               <BarChart2 className="w-4 h-4 flex-shrink-0" />
               {t('syllabus_data')}
@@ -157,7 +157,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
             <div className="relative">
               <Megaphone className="w-5 h-5 flex-shrink-0" />
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
+                <span className="absolute -top-1 ltr:-right-1 rtl:-left-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white shadow-sm ring-1 ring-white">
                   {unreadCount}
                 </span>
               )}

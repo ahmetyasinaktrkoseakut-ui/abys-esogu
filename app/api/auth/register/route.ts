@@ -9,10 +9,7 @@ export async function POST(request: Request) {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
-      return NextResponse.json(
-        { error: 'Supabase credentials missing' },
-        { status: 500 }
-      );
+      throw new Error('Supabase configuration error');
     }
 
     // Admin client to bypass RLS

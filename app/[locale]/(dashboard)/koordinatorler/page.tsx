@@ -72,39 +72,13 @@ export default function KoordinatorlerPage() {
     setMessage(null);
 
     try {
-      // Önce bu kullanıcının mevcut atamasını silelim veya üstüne yazalım
-      // Supabase upsert için primary key gerekir. Tabloda id varsa upsert yaparız. 
-      // Biz doğrudan eskiyi silip yenisini ekleyelim veya upsert kullanalım.
-      // Sütunların kullanici_id ve baslik olduğunu biliyoruz.
-      
-      // Olası bir hatada geri almak için eski verileri yedekle
-      const { data: oldData } = await supabase
-        .from('baslik_koordinatorleri')
-        .select('*')
-        .eq('kullanici_id', selectedUser);
+      // rpc_v3_assign_koordinator kullanarak atomik işlem yapıyoruz.
+      const { error } = await supabase.rpc('rpc_v3_assign_koordinator', {
+        p_user_id: selectedUser,
+        p_baslik: selectedTopic
+      });
 
-      // Kullanıcı zaten bir başlığa atanmışsa onu silelim
-      const { error: deleteError } = await supabase
-        .from('baslik_koordinatorleri')
-        .delete()
-        .eq('kullanici_id', selectedUser);
-
-      if (deleteError) throw deleteError;
-
-      const { error: insertError } = await supabase
-        .from('baslik_koordinatorleri')
-        .insert({
-          kullanici_id: selectedUser,
-          baslik: selectedTopic
-        });
-
-      if (insertError) {
-         // Ekleme başarısız olursa silinenleri geri yükle
-         if (oldData && oldData.length > 0) {
-           await supabase.from('baslik_koordinatorleri').insert(oldData);
-         }
-         throw insertError;
-      }
+      if (error) throw error;
 
       setMessage({ type: 'success', text: t('assign_success') || 'Koordinatör başarıyla atandı.' });
       setSelectedUser('');

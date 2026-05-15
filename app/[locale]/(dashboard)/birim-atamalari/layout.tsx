@@ -23,9 +23,19 @@ export default async function birimatamalariLayout({
     .single();
 
   const rol = profile?.rol?.toLowerCase() || '';
-  if (!rol.includes('yönetici') && !rol.includes('yonetici') && !rol.includes('admin')) {
-    // Yönetici değilse bu sayfaya girmesi yasak, yönlendir.
-    return redirect(`/${locale}/olcutler`);
+  const isAdmin = rol.includes('yönetici') || rol.includes('yonetici') || rol.includes('admin');
+  
+  if (!isAdmin) {
+    // Koordinatör mü kontrol et
+    const { count } = await supabase
+      .from('baslik_koordinatorleri')
+      .select('*', { count: 'exact', head: true })
+      .eq('kullanici_id', user.id);
+    
+    if ((count || 0) === 0) {
+      // Ne yönetici ne koordinatör, yasakla.
+      return redirect(`/${locale}/olcutler`);
+    }
   }
 
   return <>{children}</>;

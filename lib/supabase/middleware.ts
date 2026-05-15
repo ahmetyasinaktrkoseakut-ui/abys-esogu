@@ -77,8 +77,8 @@ export async function updateSession(request: NextRequest) {
       return redirectWithLocale('/olcutler');
     }
 
-    const oldPaths = ['/', '/puko', '/birimler'];
-    if (oldPaths.some(p => pathWithoutLocale === p || pathWithoutLocale.startsWith('/birimler'))) {
+    const oldPaths = ['/', '/puko'];
+    if (oldPaths.some(p => pathWithoutLocale === p) || pathWithoutLocale === '/birimler' || pathWithoutLocale.startsWith('/birimler/')) {
       return redirectWithLocale('/olcutler');
     }
   }

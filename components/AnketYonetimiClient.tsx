@@ -167,8 +167,8 @@ export default function AnketYonetimiClient() {
   const fetchPublishedAnketler = async (userIsAdmin: boolean, expectedDbBaslik: string | null, tumOlcutlerData: any[]) => {
     if (!selectedPeriod) return;
     
-    const gecerliOlcutler = userIsAdmin ? tumOlcutlerData : tumOlcutlerData.filter(o => o.baslik === expectedDbBaslik);
-    const gecerliIdler = gecerliOlcutler.flatMap(o => o.altOlcutler.map((ao: any) => ao.id.toString()));
+    const gecerliOlcutler = userIsAdmin ? (tumOlcutlerData || []) : (tumOlcutlerData || []).filter(o => o.baslik === expectedDbBaslik);
+    const gecerliIdler = gecerliOlcutler.flatMap(o => (o.altOlcutler || []).map((ao: any) => ao.id.toString()));
 
     const { data: existingAnketler } = await supabase
       .from('anketler')
@@ -258,9 +258,13 @@ export default function AnketYonetimiClient() {
             };
             expectedDbBaslik = baslikMap[coordData.baslik];
           } else {
+            // Koordinatör kaydı yoksa ve admin değilse uyarı verip dur
             setIsLoading(false);
             return;
           }
+        } else {
+          // Admin ise her zaman koordinatör gibi işlem yapabilsin (Süper Yetki)
+          setIsCoordinator(true);
         }
 
         const { data: allBasliklar } = await supabase.from('ana_basliklar').select('*');

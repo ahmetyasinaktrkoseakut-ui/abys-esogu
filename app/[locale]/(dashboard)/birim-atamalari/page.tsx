@@ -62,7 +62,10 @@ export default function BirimAtamalariPage() {
           .maybeSingle();
 
         if (coordError || !coordData) {
-          throw new Error("Bu sayfaya erişim yetkiniz yok veya atanmış bir başlığınız bulunmuyor.");
+          // Hata fırlatmak yerine uyarı veriyoruz ki sayfa dışarı atmasın
+          setMessage({ type: 'error', text: "Koordinatör yetkiniz doğrulanamadı. Lütfen bir yöneticiye danışın." });
+          setIsLoading(false);
+          return;
         }
         
         setCoordinatorTopic(coordData.baslik);
@@ -156,6 +159,7 @@ export default function BirimAtamalariPage() {
     } catch (error: any) {
       console.error("Veri çekme hatası:", error);
       setMessage({ type: 'error', text: error.message || 'Veriler yüklenirken hata oluştu.' });
+      setIsLoading(false);
     } finally {
       setIsLoading(false);
     }

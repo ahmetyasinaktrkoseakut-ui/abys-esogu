@@ -294,7 +294,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
         puko_asamasi: 'kontrol',
         donem_id: selectedPeriod?.id,
         aciklama: birimDegerlendirmesi,
-        durum: 'Beklemede',
+        durum: 'Taslak',
         red_nedeni: null
       };
       

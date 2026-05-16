@@ -80,7 +80,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
 
       if (pukoData) {
         setPukoId(pukoData.id);
-        setOnayDurumu(pukoData.durum || 'Beklemede');
+        setOnayDurumu(pukoData.durum || 'Taslak');
         setAciklama(pukoData.aciklama || '');
         setRiskAnalizi(pukoData.risk_analizi || '');
         // handle JSONB or Text array for kanit_dosyalari
@@ -167,7 +167,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       };
 
       if (!isReadOnly) {
-        upsertData.durum = 'Beklemede';
+        upsertData.durum = 'Taslak';
         upsertData.red_nedeni = null;
       }
 

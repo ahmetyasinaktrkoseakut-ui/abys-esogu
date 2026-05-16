@@ -77,7 +77,7 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
         donem_id: selectedPeriod?.id,
         aciklama: aciklama,
         olgunluk_puani: olgunlukPuani,
-        durum: 'Beklemede',
+        durum: 'Taslak',
         red_nedeni: null
       };
       

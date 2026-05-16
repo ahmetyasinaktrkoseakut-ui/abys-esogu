@@ -64,6 +64,7 @@ export default function NotificationBellClient({ userId, isAdmin }: { userId: st
               .select('*, alt_olcutler(kod, olcut_adi, olcut_adi_en, olcut_adi_ar)')
               .in('alt_olcut_id', allowedAltOlcutIds)
               .eq('donem_id', selectedPeriod.id)
+              .in('durum', ['Onaylandı', 'Reddedildi'])
               .order('olusturulma_tarihi', { ascending: false })
               .limit(5);
               

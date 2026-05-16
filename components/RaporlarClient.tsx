@@ -64,16 +64,10 @@ export default function RaporlarClient() {
     checkAuth();
   }, []);
 
-  // Veri çekme veya periyot değişiminde state yönetimi
-  // Veri çekme veya periyot değişiminde state yönetimi
+  // Periyot değişiminde state temizleme
   useEffect(() => {
-    const syncState = async () => {
-      if (raporData !== null) {
-        setRaporData(null);
-      }
-    };
-    syncState();
-  }, [selectedPeriod, raporData]);
+    setRaporData(null);
+  }, [selectedPeriod]);
 
   const getDuzeyAciklamasi = (olcut: any, puan: number, loc: string) => {
     if (!olcut || !puan) return '';
@@ -97,10 +91,12 @@ export default function RaporlarClient() {
       const { data: altOlcutler } = await supabase.from('alt_olcutler').select('*').order('kod', { ascending: true });
       const { data: pukoVerileri } = await supabase.from('puko_degerlendirmeleri')
         .select('alt_olcut_id, puko_asamasi, aciklama, olgunluk_puani, kanit_dosyalari')
-        .eq('donem_id', String(selectedPeriod?.id));
+        .eq('donem_id', String(selectedPeriod?.id))
+        .eq('durum', 'Onaylandı');
       const { data: ozdegerlendirmeVerileri } = await supabase.from('ozdegerlendirme_raporlari')
         .select('alt_olcut_id, icerik, kanitlar, olusturulma_tarihi')
         .eq('donem_id', String(selectedPeriod?.id))
+        .eq('onay_durumu', 'onaylandi')
         .order('olusturulma_tarihi', { ascending: false });
 
 

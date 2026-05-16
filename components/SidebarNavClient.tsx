@@ -124,12 +124,10 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
                 <Bell className="w-5 h-5 flex-shrink-0" />
                 {t('notifications')}
               </Link>
-              {isAdmin && (
-                <Link href="/takvim" className={getLinkClass('/takvim')}>
-                  <Calendar className="w-5 h-5 flex-shrink-0" />
-                  {t('calendar')}
-                </Link>
-              )}
+              <Link href="/takvim" className={getLinkClass('/takvim')}>
+                <Calendar className="w-5 h-5 flex-shrink-0" />
+                {t('calendar')}
+              </Link>
               {(isAdmin) && (
                 <>
                   <Link href="/kalite-el-kitabi" className={getLinkClass('/kalite-el-kitabi')}>

@@ -30,7 +30,9 @@ export default function BildirimlerPage() {
         const role = (profile?.rol || '').toLowerCase().trim();
         
         const isUserAdmin = role.includes('yonetici') || role.includes('admin') || role.includes('yönetici');
-        const isUserCoordinator = !isUserAdmin && (role.includes('koordinatör') || role.includes('koordinator') || role.includes('koord'));
+        
+        const { count: coordCount } = await supabase.from('baslik_koordinatorleri').select('*', { count: 'exact', head: true }).eq('kullanici_id', user.id);
+        const isUserCoordinator = !isUserAdmin && (coordCount || 0) > 0;
         
         setIsAdmin(isUserAdmin || isUserCoordinator); 
 

@@ -12,8 +12,10 @@ export default async function DashboardPage() {
   const isAdmin = profile?.rol?.toLowerCase().includes('admin') || profile?.rol?.toLowerCase().includes('yönetici') || profile?.rol?.toLowerCase().includes('yonetici');
 
   const { count: assignmentCount } = await supabase.from('kullanici_olcut_atamalari').select('*', { count: 'exact', head: true }).eq('user_id', user.id);
+  const { count: coordCount } = await supabase.from('baslik_koordinatorleri').select('*', { count: 'exact', head: true }).eq('kullanici_id', user.id);
+  const isCoordinator = (coordCount || 0) > 0;
 
-  if (!isAdmin && (assignmentCount || 0) === 0) {
+  if (!isAdmin && !isCoordinator && (assignmentCount || 0) === 0) {
     redirect('/ders-izlenceleri');
   }
 

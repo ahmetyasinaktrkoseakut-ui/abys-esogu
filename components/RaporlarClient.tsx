@@ -265,64 +265,7 @@ export default function RaporlarClient() {
               }
             });
           } else {
-            const phases = ['planlama', 'uygulama', 'kontrol', 'onlem', 'olgunluk'];
-            phases.forEach(phase => {
-              const data = pukoList.find(p => p.puko_asamasi === phase);
-              if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
-                let phaseText = data.aciklama;
-                
-                if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari) && data.kanit_dosyalari.length > 0) {
-                  const phaseEvidenceStrings: string[] = [];
-                  data.kanit_dosyalari.forEach((k: any) => {
-                    let ev = allEvidences.find(e => e.url === k.url);
-                    if (!ev) {
-                      ev = { ...k, no: localEvidenceCounter++ };
-                      allEvidences.push(ev);
-                    }
-                    phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
-                  });
-                  
-                  const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
-                  if (phaseText.trim().endsWith('</p>')) {
-                    phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
-                  } else {
-                    phaseText += evidenceHtml;
-                  }
-                }
-                combinedText += (combinedText ? '<br/><br/>' : '') + phaseText;
-              } else if (data && data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
-                data.kanit_dosyalari.forEach((k: any) => {
-                  if (!allEvidences.find(e => e.url === k.url)) {
-                    allEvidences.push({ ...k, no: localEvidenceCounter++ });
-                  }
-                });
-              }
-            });
-
-            if (!combinedText) {
-              const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
-              if (raporPuko && raporPuko.aciklama) {
-                let phaseText = raporPuko.aciklama;
-                if (raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0) {
-                  const phaseEvidenceStrings: string[] = [];
-                  raporPuko.kanit_dosyalari.forEach((k: any) => {
-                    let ev = allEvidences.find(e => e.url === k.url);
-                    if (!ev) {
-                      ev = { ...k, no: localEvidenceCounter++ };
-                      allEvidences.push(ev);
-                    }
-                    phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
-                  });
-                  const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
-                  if (phaseText.trim().endsWith('</p>')) {
-                    phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
-                  } else {
-                    phaseText += evidenceHtml;
-                  }
-                }
-                combinedText = phaseText;
-              }
-            }
+            combinedText = '';
           }
 
           const uniqueEvidences = allEvidences;
@@ -486,67 +429,7 @@ export default function RaporlarClient() {
                             }
                           });
                         } else {
-                          const phases = ['planlama', 'uygulama', 'kontrol', 'onlem', 'olgunluk'];
-                          phases.forEach(phase => {
-                            const data = pukoList.find(p => p.puko_asamasi === phase);
-                            if (data && data.aciklama && data.aciklama !== '<p></p>' && data.aciklama !== '') {
-                              let phaseText = data.aciklama;
-
-                              if (data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari) && data.kanit_dosyalari.length > 0) {
-                                const phaseEvidenceStrings: string[] = [];
-                                data.kanit_dosyalari.forEach((k: any) => {
-                                  let ev = allEvidences.find(e => e.url === k.url);
-                                  if (!ev) {
-                                    ev = { ...k, no: localEvidenceCounter++ };
-                                    allEvidences.push(ev);
-                                  }
-                                  phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
-                                });
-                                
-                                const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
-                                
-                                if (phaseText.trim().endsWith('</p>')) {
-                                  phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
-                                } else {
-                                  phaseText += evidenceHtml;
-                                }
-                              }
-                              combinedText += (combinedText ? '<br/><br/>' : '') + phaseText;
-                            } else if (data && data.kanit_dosyalari && Array.isArray(data.kanit_dosyalari)) {
-                               data.kanit_dosyalari.forEach((k: any) => {
-                                 if (!allEvidences.find(e => e.url === k.url)) {
-                                   allEvidences.push({ ...k, no: localEvidenceCounter++ });
-                                 }
-                               });
-                            }
-                          });
-
-                          if (!combinedText) {
-                            const raporPuko = pukoList.find(p => p.puko_asamasi === 'rapor');
-                            if (raporPuko && raporPuko.aciklama) {
-                              let phaseText = raporPuko.aciklama;
-                              if (raporPuko.kanit_dosyalari && Array.isArray(raporPuko.kanit_dosyalari) && raporPuko.kanit_dosyalari.length > 0) {
-                                const phaseEvidenceStrings: string[] = [];
-                                raporPuko.kanit_dosyalari.forEach((k: any) => {
-                                  let ev = allEvidences.find(e => e.url === k.url);
-                                  if (!ev) {
-                                    ev = { ...k, no: localEvidenceCounter++ };
-                                    allEvidences.push(ev);
-                                  }
-                                  phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
-                                });
-                                
-                                const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
-                                
-                                if (phaseText.trim().endsWith('</p>')) {
-                                  phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
-                                } else {
-                                  phaseText += evidenceHtml;
-                                }
-                              }
-                              combinedText = phaseText;
-                            }
-                          }
+                          combinedText = '';
                         }
 
                         const evidencesWithNumbers = allEvidences;

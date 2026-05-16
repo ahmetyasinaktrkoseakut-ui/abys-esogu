@@ -109,9 +109,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       let accessLocked = false;
       
       // Eğer tarih kısıtı varsa ve kullanıcı admin/koordinatör değilse kontrol et
-      if (olcutDetay && !localUserIsAdmin) {
-        if (olcutDetay.erisim_baslangic && now < new Date(olcutDetay.erisim_baslangic)) accessLocked = true;
-        if (olcutDetay.erisim_bitis && now > new Date(olcutDetay.erisim_bitis)) accessLocked = true;
+      if (olcut && !localUserIsAdmin) {
+        if (olcut.erisim_baslangic && now < new Date(olcut.erisim_baslangic)) accessLocked = true;
+        if (olcut.erisim_bitis && now > new Date(olcut.erisim_bitis)) accessLocked = true;
       }
 
       // Salt okunur olma durumlarını belirle

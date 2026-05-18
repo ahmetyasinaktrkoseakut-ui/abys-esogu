@@ -584,7 +584,6 @@ export default function AnketYonetimiClient() {
                             
                             <div className="px-3 py-1 mt-2 text-[10px] font-bold text-slate-400 uppercase border-t pt-2">{t('types.advanced')}</div>
                             <button onClick={() => handleAddSoru(anketIdx, 'likert')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📊 {t('types.likert')}</button>
-                            <button onClick={() => handleAddSoru(anketIdx, 'coklu_metin')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔢 {t('types.coklu_metin')}</button>
                             <button onClick={() => handleAddSoru(anketIdx, 'bilgi_kutusu')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">ℹ️ {t('types.bilgi_kutusu')}</button>
                             <button onClick={() => handleAddSoru(anketIdx, 'bolum_basligi')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📌 Bölüm Başlığı</button>
                           </div>

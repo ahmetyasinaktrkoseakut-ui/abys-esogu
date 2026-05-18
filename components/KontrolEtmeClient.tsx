@@ -582,7 +582,6 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                             
                             <div className="px-3 py-1 mt-2 text-[10px] font-bold text-slate-400 uppercase border-t pt-2">Gelişmiş Yapılar</div>
                             <button onClick={() => handleAddSoru(anketIdx, 'likert')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">📊 Likert Ölçek (Tablo)</button>
-                            <button onClick={() => handleAddSoru(anketIdx, 'coklu_metin')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">🔢 Çoklu Birim Metin Girişi</button>
                             <button onClick={() => handleAddSoru(anketIdx, 'bilgi_kutusu')} className="text-left px-3 py-2 text-sm text-slate-700 hover:bg-purple-50 hover:text-purple-700 rounded-lg">ℹ️ Bilgi / Açıklama Kutusu</button>
                           </div>
                         </div>

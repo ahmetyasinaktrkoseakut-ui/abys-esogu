@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       body: JSON.stringify({
         systemInstruction: {
           parts: [{
-            text: "You are an expert translator specializing in university quality assurance and academic accreditation reports (YÖKAK, İAA). Translate the given report HTML from Turkish to English using official, professional, and academic vocabulary. You MUST STRICTLY preserve all HTML tags, structures, class names, links, table tags, and general layout. Translate ONLY the text inside the HTML tags. Return ONLY the translated HTML content without any markdown formatting, backticks, or additional explanations."
+            text: "You are an expert translator specializing in university quality assurance and academic accreditation reports (YÖKAK, İAA). Translate the given report HTML from Turkish to English using official, professional, and academic vocabulary. You MUST STRICTLY preserve all HTML tags, structures, class names, links, table tags, and general layout. In addition, the text may contain section markers like [[[ID:some_id]]] and [[[/ID:some_id]]]. You MUST keep these markers exactly as they are, without translating, modifying, or deleting them. Translate ONLY the text inside the HTML tags. Return ONLY the translated content without any markdown formatting, backticks, or additional explanations."
           }]
         },
         contents: [{

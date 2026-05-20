@@ -333,34 +333,60 @@ export default function RaporlarClient() {
 
     setIsTranslating(true);
     try {
-      const updatedOzdegerlendirme = await Promise.all(
-        raporData.ozdegerlendirmeVerileri.map(async (item) => {
-          if (!item.icerik || item.icerik.trim() === '' || item.icerik === '<p></p>') {
-            return item;
-          }
-          try {
-            const response = await fetch('/api/translate-report', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ htmlContent: item.icerik })
-            });
-            if (!response.ok) {
-              console.error(`Translation failed for alt_olcut_id: ${item.alt_olcut_id}`);
-              return item;
-            }
-            const data = await response.json();
-            return {
-              ...item,
-              icerik: data.translatedHtml || item.icerik
-            };
-          } catch (err) {
-            console.error(`Error translating alt_olcut_id: ${item.alt_olcut_id}`, err);
-            return item;
-          }
-        })
+      let payload = '';
+      const itemsToTranslate = raporData.ozdegerlendirmeVerileri.filter(
+        item => item.icerik && item.icerik.trim() !== '' && item.icerik !== '<p></p>'
       );
+
+      if (itemsToTranslate.length === 0) {
+        alert("Çevrilecek dolu rapor metni bulunamadı.");
+        setIsTranslating(false);
+        return;
+      }
+
+      itemsToTranslate.forEach((item) => {
+        payload += `[[[ID:${item.alt_olcut_id}]]]\n${item.icerik}\n[[[/ID:${item.alt_olcut_id}]]]\n\n`;
+      });
+
+      const response = await fetch('/api/translate-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ htmlContent: payload })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Çeviri servisi hata döndü.');
+      }
+
+      const data = await response.json();
+      const translatedText = data.translatedHtml;
+
+      if (!translatedText) {
+        throw new Error("Çeviri sonucu alınamadı.");
+      }
+
+      const regex = /\[\[\[ID:([^\]]+)\]\]\]([\s\S]*?)\[\[\[\/ID:\1\]\]\]/g;
+      let match;
+      const translations: Record<string, string> = {};
+      
+      while ((match = regex.exec(translatedText)) !== null) {
+        const id = match[1];
+        const content = match[2].trim();
+        translations[id] = content;
+      }
+
+      const updatedOzdegerlendirme = raporData.ozdegerlendirmeVerileri.map((item) => {
+        if (translations[item.alt_olcut_id]) {
+          return {
+            ...item,
+            icerik: translations[item.alt_olcut_id]
+          };
+        }
+        return item;
+      });
 
       setRaporData({
         ...raporData,

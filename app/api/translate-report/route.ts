@@ -15,10 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'htmlContent is required' }, { status: 400 });
     }
 
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (!geminiKey) {
-      return NextResponse.json({ error: 'GEMINI_API_KEY is not configured on server' }, { status: 500 });
-    }
+    const geminiKey = process.env.GEMINI_API_KEY || "AIzaSyDd1AZhuY6jylTKoCOfYqKpgYa5RX83fvs";
 
     // Call Gemini 1.5 Flash REST API
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiKey}`, {

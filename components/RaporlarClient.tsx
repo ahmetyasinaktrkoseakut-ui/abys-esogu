@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, LineChart, FileText, Printer, Building2, CheckCircle2, Download, BookOpen } from 'lucide-react';
+import { Loader2, LineChart, FileText, Printer, Building2, CheckCircle2, Download, BookOpen, Globe } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import DOMPurify from 'dompurify';
@@ -35,6 +35,7 @@ export default function RaporlarClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
   const [raporData, setRaporData] = useState<{
     anaBasliklar: AnaBaslik[],
     altOlcutler: AltOlcut[],
@@ -321,6 +322,60 @@ export default function RaporlarClient() {
     URL.revokeObjectURL(url);
   };
 
+  const handleTranslateReport = async () => {
+    if (!raporData || !raporData.ozdegerlendirmeVerileri || raporData.ozdegerlendirmeVerileri.length === 0) {
+      alert("Çevrilecek rapor içeriği bulunamadı.");
+      return;
+    }
+
+    const confirmTranslate = window.confirm("Rapor içeriğindeki tüm özdeğerlendirme metinlerini yapay zeka ile İngilizceye çevirmek istiyor musunuz? Bu işlem sayfadaki metinleri güncelleyecektir.");
+    if (!confirmTranslate) return;
+
+    setIsTranslating(true);
+    try {
+      const updatedOzdegerlendirme = await Promise.all(
+        raporData.ozdegerlendirmeVerileri.map(async (item) => {
+          if (!item.icerik || item.icerik.trim() === '' || item.icerik === '<p></p>') {
+            return item;
+          }
+          try {
+            const response = await fetch('/api/translate-report', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ htmlContent: item.icerik })
+            });
+            if (!response.ok) {
+              console.error(`Translation failed for alt_olcut_id: ${item.alt_olcut_id}`);
+              return item;
+            }
+            const data = await response.json();
+            return {
+              ...item,
+              icerik: data.translatedHtml || item.icerik
+            };
+          } catch (err) {
+            console.error(`Error translating alt_olcut_id: ${item.alt_olcut_id}`, err);
+            return item;
+          }
+        })
+      );
+
+      setRaporData({
+        ...raporData,
+        ozdegerlendirmeVerileri: updatedOzdegerlendirme
+      });
+
+      alert("Tüm rapor metinleri başarıyla İngilizceye çevrildi!");
+    } catch (err: any) {
+      console.error('Global Translation Error:', err);
+      alert(`Çeviri sırasında bir hata oluştu: ${err.message}`);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const getPukoForOlcut = (olcutId: string) => {
     return raporData?.pukoVerileri.filter(p => p.alt_olcut_id === olcutId) || [];
   };
@@ -338,12 +393,22 @@ export default function RaporlarClient() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {raporData && (
-            <button 
-              onClick={exportToWord}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md"
-            >
-              <Download className="w-5 h-5" /> {t('export_word')}
-            </button>
+            <>
+              <button 
+                onClick={handleTranslateReport}
+                disabled={isTranslating}
+                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md disabled:opacity-50"
+              >
+                {isTranslating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Globe className="w-5 h-5" />}
+                {isTranslating ? "Çevriliyor..." : "İngilizceye Çevir"}
+              </button>
+              <button 
+                onClick={exportToWord}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md"
+              >
+                <Download className="w-5 h-5" /> {t('export_word')}
+              </button>
+            </>
           )}
         </div>
       </div>

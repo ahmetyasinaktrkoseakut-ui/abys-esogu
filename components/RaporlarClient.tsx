@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, LineChart, FileText, Printer, Building2, CheckCircle2, Download, BookOpen, Globe } from 'lucide-react';
+import { Loader2, LineChart, FileText, Printer, Building2, CheckCircle2, Download, BookOpen } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import DOMPurify from 'dompurify';
@@ -35,7 +35,6 @@ export default function RaporlarClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isTranslating, setIsTranslating] = useState(false);
   const [raporData, setRaporData] = useState<{
     anaBasliklar: AnaBaslik[],
     altOlcutler: AltOlcut[],
@@ -322,86 +321,6 @@ export default function RaporlarClient() {
     URL.revokeObjectURL(url);
   };
 
-  const handleTranslateReport = async () => {
-    if (!raporData || !raporData.ozdegerlendirmeVerileri || raporData.ozdegerlendirmeVerileri.length === 0) {
-      alert("Çevrilecek rapor içeriği bulunamadı.");
-      return;
-    }
-
-    const confirmTranslate = window.confirm("Rapor içeriğindeki tüm özdeğerlendirme metinlerini yapay zeka ile İngilizceye çevirmek istiyor musunuz? Bu işlem sayfadaki metinleri güncelleyecektir.");
-    if (!confirmTranslate) return;
-
-    setIsTranslating(true);
-    try {
-      let payload = '';
-      const itemsToTranslate = raporData.ozdegerlendirmeVerileri.filter(
-        item => item.icerik && item.icerik.trim() !== '' && item.icerik !== '<p></p>'
-      );
-
-      if (itemsToTranslate.length === 0) {
-        alert("Çevrilecek dolu rapor metni bulunamadı.");
-        setIsTranslating(false);
-        return;
-      }
-
-      itemsToTranslate.forEach((item) => {
-        payload += `[[[ID:${item.alt_olcut_id}]]]\n${item.icerik}\n[[[/ID:${item.alt_olcut_id}]]]\n\n`;
-      });
-
-      const response = await fetch('/api/translate-report', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ htmlContent: payload })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Çeviri servisi hata döndü.');
-      }
-
-      const data = await response.json();
-      const translatedText = data.translatedHtml;
-
-      if (!translatedText) {
-        throw new Error("Çeviri sonucu alınamadı.");
-      }
-
-      const regex = /\[\[\[ID:([^\]]+)\]\]\]([\s\S]*?)\[\[\[\/ID:\1\]\]\]/g;
-      let match;
-      const translations: Record<string, string> = {};
-      
-      while ((match = regex.exec(translatedText)) !== null) {
-        const id = match[1];
-        const content = match[2].trim();
-        translations[id] = content;
-      }
-
-      const updatedOzdegerlendirme = raporData.ozdegerlendirmeVerileri.map((item) => {
-        if (translations[item.alt_olcut_id]) {
-          return {
-            ...item,
-            icerik: translations[item.alt_olcut_id]
-          };
-        }
-        return item;
-      });
-
-      setRaporData({
-        ...raporData,
-        ozdegerlendirmeVerileri: updatedOzdegerlendirme
-      });
-
-      alert("Tüm rapor metinleri başarıyla İngilizceye çevrildi!");
-    } catch (err: any) {
-      console.error('Global Translation Error:', err);
-      alert(`Çeviri sırasında bir hata oluştu: ${err.message}`);
-    } finally {
-      setIsTranslating(false);
-    }
-  };
-
   const getPukoForOlcut = (olcutId: string) => {
     return raporData?.pukoVerileri.filter(p => p.alt_olcut_id === olcutId) || [];
   };
@@ -419,22 +338,12 @@ export default function RaporlarClient() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {raporData && (
-            <>
-              <button 
-                onClick={handleTranslateReport}
-                disabled={isTranslating}
-                className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md disabled:opacity-50"
-              >
-                {isTranslating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Globe className="w-5 h-5" />}
-                {isTranslating ? "Çevriliyor..." : "İngilizceye Çevir"}
-              </button>
-              <button 
-                onClick={exportToWord}
-                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md"
-              >
-                <Download className="w-5 h-5" /> {t('export_word')}
-              </button>
-            </>
+            <button 
+              onClick={exportToWord}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md"
+            >
+              <Download className="w-5 h-5" /> {t('export_word')}
+            </button>
           )}
         </div>
       </div>

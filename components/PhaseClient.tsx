@@ -356,7 +356,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
         <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="flex flex-col gap-2">
-            <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
+            <div className="text-sm text-slate-700 flex items-center gap-2 font-medium">
               <span className="cursor-pointer hover:text-blue-600">{t('home')}</span> &gt; 
               <span className="cursor-pointer hover:text-blue-600">{t('criteria')}</span> &gt;
               <span className="text-slate-800">{[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
@@ -367,7 +367,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               </h2>
               <Info className="w-4 h-4 text-slate-400 cursor-pointer" />
             </div>
-            <p className="text-sm text-slate-500">{t('process_management_desc', { phaseTitle: tStepPanel(`${phaseId}_title`) })}</p>
+            <p className="text-sm text-slate-800">{t('process_management_desc', { phaseTitle: tStepPanel(`${phaseId}_title`) })}</p>
           </div>
           
           {/* Eski Onay/Ret butonları ve durum rozeti Stage 7'ye taşındı */}

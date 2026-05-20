@@ -796,7 +796,7 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                         {anket.sorular.map(soru => {
                           const ozet = (cevapOzetleri[anket.id as string] || []).find(c => c.soru_id === soru.id);
 
-                          if (soru.tip === 'kisa_yanit') {
+                          if (soru.tip === 'kisa_yanit' || soru.tip === 'uzun_yanit') {
                             const yanitlar = ozet?.cevaplar || [];
                             return (
                               <div key={soru.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">

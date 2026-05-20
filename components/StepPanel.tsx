@@ -204,7 +204,7 @@ export default function StepPanel({ activeStepId, altOlcutId }: { activeStepId: 
                      <h3 className={`font-bold text-[10px] sm:text-xs tracking-tight ${isActive ? step.colorClass.split(' ')[0] : 'text-slate-700'}`}>
                        {step.title}
                      </h3>
-                     <p className="text-[10px] text-slate-500 mt-0.5 leading-tight">{step.subtitle}</p>
+                     <p className="text-[10px] text-slate-700 mt-0.5 leading-tight">{step.subtitle}</p>
                   </div>
                   
                   <div className="mt-3">

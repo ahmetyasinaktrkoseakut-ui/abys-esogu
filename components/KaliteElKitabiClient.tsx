@@ -132,7 +132,7 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
     <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
       <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex flex-col gap-2">
-          <div className="text-sm text-slate-500 flex items-center gap-2 font-medium">
+          <div className="text-sm text-slate-700 flex items-center gap-2 font-medium">
             <span className="cursor-pointer hover:text-blue-600">Ana Sayfa</span> &gt; 
             <span className="cursor-pointer hover:text-blue-600">Ölçütler</span> &gt;
             <span className="text-slate-800">{[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ')}</span>

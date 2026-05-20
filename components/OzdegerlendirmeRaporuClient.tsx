@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download, Save, Plus, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download, Save, Plus, Link as LinkIcon, Globe } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
 import { useTranslations, useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
@@ -26,6 +26,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const [isSaving, setIsSaving] = useState(false);
   const [isReadOnly, setIsReadOnly] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
 
   // Onay / Ret Sistematiği
   const [onayDurumu, setOnayDurumu] = useState<string>('');
@@ -185,6 +186,44 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     URL.revokeObjectURL(url);
   };
 
+  const handleTranslate = async () => {
+    if (!raporMetni || raporMetni.trim() === '' || raporMetni === '<p></p>') {
+      alert("Çevrilecek rapor metni bulunamadı.");
+      return;
+    }
+
+    const confirmTranslate = window.confirm("Rapor metnini yapay zeka ile İngilizceye çevirmek istiyor musunuz? Bu işlem editördeki metni güncelleyecektir.");
+    if (!confirmTranslate) return;
+
+    setIsTranslating(true);
+    try {
+      const response = await fetch('/api/translate-report', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ htmlContent: raporMetni })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Çeviri servisi hata döndü.');
+      }
+
+      const data = await response.json();
+      if (data.translatedHtml) {
+        setRaporMetni(data.translatedHtml);
+        alert("Rapor başarıyla İngilizceye çevrildi!");
+      } else {
+        throw new Error("Çeviri sonucu alınamadı.");
+      }
+    } catch (err: any) {
+      console.error('Translation Error:', err);
+      alert(`Çeviri sırasında hata oluştu: ${err.message}`);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const handleRaporOlustur = async () => {
     // GÜVENLİK KİLİDİ: Kullanıcı onayı olmadan mevcut veriyi ezme
@@ -647,6 +686,14 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                   className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
                 >
                   <Download className="w-4 h-4" /> {t('download_word')}
+                </button>
+                <button 
+                  onClick={handleTranslate}
+                  disabled={isTranslating}
+                  className="bg-white/20 hover:bg-white/30 disabled:opacity-50 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
+                >
+                  {isTranslating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
+                  {isTranslating ? "Çevriliyor..." : "İngilizceye Çevir"}
                 </button>
                 <button 
                   onClick={handleRaporOlustur}

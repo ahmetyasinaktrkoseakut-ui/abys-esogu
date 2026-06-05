@@ -41,7 +41,8 @@ type SoruTipi =
   | 'acilir_menu' 
   | 'likert' 
   | 'coklu_metin' 
-  | 'bilgi_kutusu';
+  | 'bilgi_kutusu'
+  | 'bolum_basligi';
 
 interface Secenek {
   id: string;
@@ -793,11 +794,14 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        {anket.sorular.map(soru => {
+                        {anket.sorular.filter(s => s.tip !== 'bilgi_kutusu' && s.tip !== 'bolum_basligi').map(soru => {
                           const ozet = (cevapOzetleri[anket.id as string] || []).find(c => c.soru_id === soru.id);
+                          const isTextResponse = soru.tip === 'kisa_yanit' || soru.tip === 'uzun_yanit';
+                          const isLikert = soru.tip === 'likert';
+                          const isCokluMetin = soru.tip === 'coklu_metin';
 
-                          if (soru.tip === 'kisa_yanit' || soru.tip === 'uzun_yanit') {
-                            const yanitlar = ozet?.cevaplar || [];
+                          if (isTextResponse) {
+                            const yanitlar = (ozet?.cevaplar || []).filter(c => c && typeof c === 'string' && c.trim() !== '');
                             return (
                               <div key={soru.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">
                                 <h4 className="font-semibold text-slate-700 mb-3 text-sm">{soru.soru}</h4>
@@ -810,6 +814,79 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                                 ) : (
                                   <p className="text-xs text-slate-400 italic">Yanıt yok.</p>
                                 )}
+                              </div>
+                            );
+                          }
+
+                          if (isCokluMetin) {
+                            const yanitlar = ozet?.cevaplar || [];
+                            return (
+                              <div key={soru.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">
+                                <h4 className="font-semibold text-slate-700 mb-3 text-sm">{soru.soru}</h4>
+                                {yanitlar.length > 0 ? (
+                                  <div className="max-h-[200px] overflow-y-auto space-y-3 pr-2">
+                                    {yanitlar.map((cevapObj, idx) => (
+                                      <div key={idx} className="bg-slate-50 p-3 rounded-lg text-xs text-slate-700 border border-slate-100 space-y-1">
+                                        <div className="font-bold text-slate-400 select-none border-b pb-1 mb-1">Cevap #{idx + 1}</div>
+                                        {cevapObj && typeof cevapObj === 'object' ? (
+                                          Object.entries(cevapObj).map(([birimKey, val]) => (
+                                            <div key={birimKey} className="flex flex-col md:flex-row gap-1 border-b border-slate-100 last:border-0 pb-1">
+                                              <span className="font-bold text-slate-600 min-w-[100px]">{birimKey}:</span>
+                                              <span className="text-slate-800 break-all">{String(val || '')}</span>
+                                            </div>
+                                          ))
+                                        ) : (
+                                          <p className="text-slate-800">{String(cevapObj)}</p>
+                                        )}
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-slate-400 italic">Yanıt yok.</p>
+                                )}
+                              </div>
+                            );
+                          }
+
+                          if (isLikert) {
+                            const soruOzetleri = ozet?.cevaplar || [];
+                            const safeSecenekler = soru.secenekler && soru.secenekler.length > 0
+                              ? soru.secenekler
+                              : Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => ({ id: `col${i}`, metin: (i + 1).toString() }));
+                            const safeBirimler = soru.birimler && soru.birimler.length > 0
+                              ? soru.birimler
+                              : ['Değerlendirme İfadesi'];
+
+                            return (
+                              <div key={soru.id} className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2">
+                                <h4 className="font-semibold text-slate-700 mb-3 text-sm">{soru.soru}</h4>
+                                <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                                  <table className="w-full text-xs text-left min-w-max">
+                                    <thead className="bg-slate-50 border-b border-slate-200">
+                                      <tr>
+                                        <th className="p-2 text-slate-500 font-bold border-r border-slate-200">İfade</th>
+                                        {safeSecenekler.map(sec => (
+                                          <th key={sec.id} className="p-2 text-center text-slate-500 font-bold border-r border-slate-200 last:border-0">{sec.metin}</th>
+                                        ))}
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {safeBirimler.map((ifade, iIdx) => {
+                                        const safeRowId = `row_${iIdx}`;
+                                        return (
+                                          <tr key={iIdx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
+                                            <td className="p-2 font-medium text-slate-700 border-r border-slate-200">{ifade}</td>
+                                            {safeSecenekler.map(sec => {
+                                              const val = sec.id || sec.metin;
+                                              const count = soruOzetleri.filter(c => c && typeof c === 'object' && c[safeRowId] === val).length;
+                                              return <td key={sec.id} className="p-2 text-center text-slate-600 border-r border-slate-200 last:border-0 font-bold">{count}</td>;
+                                            })}
+                                          </tr>
+                                        );
+                                      })}
+                                    </tbody>
+                                  </table>
+                                </div>
                               </div>
                             );
                           }
@@ -827,8 +904,6 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
                                 }
                               });
                             }
-                          } else if (soru.tip === 'likert') {
-                            // Likert tablo verisi için şimdilik boş chart veya ortalama mantığı eklenebilir
                           }
 
                           const chartData = Object.keys(dataMap).map(k => {

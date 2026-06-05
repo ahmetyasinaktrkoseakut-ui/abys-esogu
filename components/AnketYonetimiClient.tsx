@@ -990,9 +990,18 @@ export default function AnketYonetimiClient() {
 
                           const isTextResponse = soru.tip === 'kisa_yanit' || soru.tip === 'uzun_yanit';
                           const isLikert = soru.tip === 'likert';
+                          const isCokluMetin = soru.tip === 'coklu_metin';
+
+                          const safeSecenekler = soru.secenekler && soru.secenekler.length > 0
+                            ? soru.secenekler
+                            : Array.from({ length: soru.likert_olcek || 5 }).map((_, i) => ({ id: `col${i}`, metin: (i + 1).toString() }));
+                          
+                          const safeBirimler = soru.birimler && soru.birimler.length > 0
+                            ? soru.birimler
+                            : ['Değerlendirme İfadesi'];
 
                           return (
-                            <div key={`chart_${soru.id}`} className={`bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col ${isTextResponse || isLikert ? 'h-auto max-h-[400px]' : 'h-[280px]'}`}>
+                            <div key={`chart_${soru.id}`} className={`bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col ${isTextResponse || isLikert || isCokluMetin ? 'h-auto max-h-[400px]' : 'h-[280px]'}`}>
                               <h4 className="font-semibold text-slate-700 mb-4 text-xs text-center line-clamp-2" title={soru.soru}>{soru.soru}</h4>
                               <div className="flex-1 w-full overflow-y-auto">
                                 {isTextResponse ? (
@@ -1008,24 +1017,42 @@ export default function AnketYonetimiClient() {
                                       <div className="text-center text-slate-400 text-xs py-4">Yanıt yok.</div>
                                     )}
                                   </div>
+                                ) : isCokluMetin ? (
+                                  <div className="space-y-3 pr-2">
+                                    {soruOzetleri.filter(c => c && typeof c === 'object').length > 0 ? (
+                                      soruOzetleri.filter(c => c && typeof c === 'object').map((cevapObj, cIdx) => (
+                                        <div key={cIdx} className="bg-slate-50 p-3 rounded-lg border border-slate-200 text-xs text-slate-700 space-y-1 shadow-sm mb-2">
+                                          <div className="font-bold text-slate-400 select-none border-b pb-1 mb-1">Cevap #{cIdx + 1}</div>
+                                          {Object.entries(cevapObj).map(([birimKey, val]) => (
+                                            <div key={birimKey} className="flex flex-col md:flex-row gap-1 border-b border-slate-100 last:border-0 pb-1">
+                                              <span className="font-bold text-slate-600 min-w-[100px]">{birimKey}:</span>
+                                              <span className="text-slate-800 break-all">{String(val || '')}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ))
+                                    ) : (
+                                      <div className="text-center text-slate-400 text-xs py-4">Yanıt yok.</div>
+                                    )}
+                                  </div>
                                 ) : isLikert ? (
                                   <div className="overflow-x-auto border border-slate-200 rounded-lg">
                                     <table className="w-full text-xs text-left min-w-max">
                                       <thead className="bg-slate-50 border-b border-slate-200">
                                         <tr>
                                           <th className="p-2 text-slate-500 font-bold border-r border-slate-200">İfade</th>
-                                          {(soru.secenekler || []).map(sec => (
+                                          {safeSecenekler.map(sec => (
                                             <th key={sec.id} className="p-2 text-center text-slate-500 font-bold border-r border-slate-200 last:border-0">{sec.metin}</th>
                                           ))}
                                         </tr>
                                       </thead>
                                       <tbody>
-                                        {(soru.birimler || []).map((ifade, iIdx) => {
+                                        {safeBirimler.map((ifade, iIdx) => {
                                           const safeRowId = `row_${iIdx}`;
                                           return (
                                             <tr key={iIdx} className="border-b border-slate-100 last:border-0 hover:bg-slate-50/50">
                                               <td className="p-2 font-medium text-slate-700 border-r border-slate-200">{ifade}</td>
-                                              {(soru.secenekler || []).map(sec => {
+                                              {safeSecenekler.map(sec => {
                                                 const val = sec.id || sec.metin;
                                                 const count = soruOzetleri.filter(c => c && typeof c === 'object' && c[safeRowId] === val).length;
                                                 return <td key={sec.id} className="p-2 text-center text-slate-600 border-r border-slate-200 last:border-0 font-bold">{count}</td>;

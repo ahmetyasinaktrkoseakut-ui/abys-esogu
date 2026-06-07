@@ -77,17 +77,33 @@ export default function DuyurularClient({ currentUserId, isAdmin }: { currentUse
     if (!newAnnouncement.baslik.trim() || !newAnnouncement.icerik.trim()) return;
 
     setIsSubmitting(true);
-    const { error } = await supabase.from('duyurular').insert({
-      baslik: newAnnouncement.baslik.trim(),
-      icerik: newAnnouncement.icerik.trim(),
-    });
+    try {
+      const response = await fetch('/api/duyurular', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          baslik: newAnnouncement.baslik.trim(),
+          icerik: newAnnouncement.icerik.trim(),
+        }),
+      });
 
-    if (!error) {
-      setNewAnnouncement({ baslik: '', icerik: '' });
-      setShowModal(false);
-      alert(t('save_success'));
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setNewAnnouncement({ baslik: '', icerik: '' });
+        setShowModal(false);
+        alert(t('save_success'));
+      } else {
+        alert(result.error || 'Duyuru kaydedilirken bir hata oluştu.');
+      }
+    } catch (err: any) {
+      console.error('Add announcement error:', err);
+      alert(err.message || 'Duyuru gönderilirken bağlantı hatası oluştu.');
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   return (

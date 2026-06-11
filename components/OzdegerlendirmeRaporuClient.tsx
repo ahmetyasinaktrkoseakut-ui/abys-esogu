@@ -19,6 +19,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const [raporOlusturuldu, setRaporOlusturuldu] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [raporMetni, setRaporMetni] = useState('');
+  const [raporMetniEn, setRaporMetniEn] = useState('');
   const [kanitlar, setKanitlar] = useState<any[]>([]);
   const [olgunlukPuani, setOlgunlukPuani] = useState<number | null>(null);
   
@@ -45,6 +46,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const locale = useLocale();
   const { selectedPeriod } = usePeriod();
   const editorRef = useRef<RichTextEditorRef>(null);
+  const editorEnRef = useRef<RichTextEditorRef>(null);
 
   const fetchData = useCallback(async () => {
     if (!selectedPeriod) return;
@@ -86,13 +88,22 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         cleanIcerik = cleanIcerik.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
         cleanIcerik = cleanIcerik.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
 
+        let cleanIcerikEn = raporData?.icerik_en ?? '';
+        cleanIcerikEn = cleanIcerikEn.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
+        cleanIcerikEn = cleanIcerikEn.replace(/(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI/gi, '');
+        cleanIcerikEn = cleanIcerikEn.replace(/<hr\s*\/?>/gi, '');
+        cleanIcerikEn = cleanIcerikEn.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
+        cleanIcerikEn = cleanIcerikEn.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
+
         setRaporMetni(cleanIcerik);
+        setRaporMetniEn(cleanIcerikEn);
         setKanitlar(raporData?.kanitlar ?? []);
         setRaporOlusturuldu(true);
         setOnayDurumu(raporData?.onay_durumu || 'bekliyor');
         setRedNedeni(raporData?.red_nedeni);
       } else {
         setRaporMetni('');
+        setRaporMetniEn('');
         setKanitlar([]);
         setRaporOlusturuldu(false);
         setOnayDurumu('bekliyor');
@@ -188,8 +199,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
   const handleRaporOlustur = async () => {
     // GÜVENLİK KİLİDİ: Kullanıcı onayı olmadan mevcut veriyi ezme
-    if (raporMetni && raporMetni.trim() !== '' && raporMetni !== '<p></p>') {
-      const confirmReset = window.confirm("DİKKAT: Bu işlem editörde yaptığınız tüm manuel değişiklikleri (yazılar ve atıflar) SİLECEK ve metni önceki aşamalardaki ham verilerle baştan oluşturacaktır. Onaylıyor musunuz?");
+    if ((raporMetni && raporMetni.trim() !== '' && raporMetni !== '<p></p>') || (raporMetniEn && raporMetniEn.trim() !== '' && raporMetniEn !== '<p></p>')) {
+      const confirmReset = window.confirm("DİKKAT: Bu işlem editörde yaptığınız tüm manuel değişiklikleri (yazılar ve atıflar) SİLECEK ve metinleri önceki aşamalardaki ham verilerle baştan oluşturacaktır. Onaylıyor musunuz?");
       if (!confirmReset) return;
     }
 
@@ -262,6 +273,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       const uniqueKanitlar = birlesikKanitlar;
 
       setRaporMetni(birlesikMetin ?? '');
+      setRaporMetniEn(birlesikMetin ?? '');
       setKanitlar(uniqueKanitlar ?? []);
       setRaporOlusturuldu(true);
       
@@ -282,6 +294,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         alt_olcut_id: String(resolvedParams.id),
         donem_id: String(selectedPeriod.id),
         icerik: raporMetni ?? '',
+        icerik_en: raporMetniEn ?? '',
         kanitlar: kanitlar ?? [],
         onay_durumu: 'bekliyor',
         red_nedeni: null,
@@ -457,7 +470,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     }
   };
 
-  const handleKanitEkle = (index: number) => {
+  const handleKanitEkle = (index: number, target: 'tr' | 'en' = 'tr') => {
     if (isReadOnly) return;
     const doc = kanitlar[index];
     if (!doc) return;
@@ -465,10 +478,18 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     // KESİNLİKLE [Kanıt X] formatında, yeni sekmede açılacak link
     const anchorHTML = `&nbsp;<a href="${doc.url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[Kanıt ${index + 1}]</a>&nbsp;`;
     
-    if (editorRef.current) {
-      editorRef.current.insertContent(anchorHTML);
+    if (target === 'tr') {
+      if (editorRef.current) {
+        editorRef.current.insertContent(anchorHTML);
+      } else {
+        setRaporMetni(prev => (prev || '') + anchorHTML);
+      }
     } else {
-      setRaporMetni(prev => (prev || '') + anchorHTML);
+      if (editorEnRef.current) {
+        editorEnRef.current.insertContent(anchorHTML);
+      } else {
+        setRaporMetniEn(prev => (prev || '') + anchorHTML);
+      }
     }
   };
 
@@ -667,8 +688,19 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
               </div>
             </div>
 
-            <div className="p-8 lg:p-12 bg-[#FAFAFA] border-b border-slate-200">
-               <RichTextEditor ref={editorRef} content={raporMetni} onChange={setRaporMetni} readOnly={isReadOnly} minHeight="500px" />
+            <div className="p-8 lg:p-12 bg-[#FAFAFA] border-b border-slate-200 space-y-8">
+              <div>
+                <h4 className="text-base font-bold text-slate-800 mb-2">Türkçe Rapor Metni</h4>
+                <RichTextEditor ref={editorRef} content={raporMetni} onChange={setRaporMetni} readOnly={isReadOnly} minHeight="400px" />
+              </div>
+              
+              <div className="border-t border-slate-200 pt-6">
+                <h4 className="text-base font-bold text-slate-800 mb-2 flex items-center gap-2">
+                  {t('english_report_title')}
+                  <span className="text-xs font-normal text-slate-500">({t('english_report_desc')})</span>
+                </h4>
+                <RichTextEditor ref={editorEnRef} content={raporMetniEn} onChange={setRaporMetniEn} readOnly={isReadOnly} minHeight="400px" />
+              </div>
             </div>
 
             <div className="p-8 lg:p-12 bg-white">
@@ -716,12 +748,20 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                           </td>
                           <td className="py-3 px-4 text-center">
                             {!isReadOnly && (
-                              <button 
-                                onClick={() => handleKanitEkle(idx)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-semibold transition-colors"
-                              >
-                                <Plus className="w-3.5 h-3.5" /> {t('add_to_text')}
-                              </button>
+                              <div className="flex gap-2 justify-center">
+                                <button 
+                                  onClick={() => handleKanitEkle(idx, 'tr')}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg text-xs font-semibold transition-colors"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> TR
+                                </button>
+                                <button 
+                                  onClick={() => handleKanitEkle(idx, 'en')}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-600 hover:bg-orange-600 hover:text-white rounded-lg text-xs font-semibold transition-colors"
+                                >
+                                  <Plus className="w-3.5 h-3.5" /> EN
+                                </button>
+                              </div>
                             )}
                           </td>
                         </tr>

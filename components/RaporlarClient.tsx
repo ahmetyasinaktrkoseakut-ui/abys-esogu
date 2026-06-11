@@ -94,7 +94,7 @@ export default function RaporlarClient() {
         .eq('donem_id', String(selectedPeriod?.id))
         .eq('durum', 'Onaylandı');
       const { data: ozdegerlendirmeVerileri } = await supabase.from('ozdegerlendirme_raporlari')
-        .select('alt_olcut_id, icerik, kanitlar, olusturulma_tarihi')
+        .select('alt_olcut_id, icerik, icerik_en, kanitlar, olusturulma_tarihi')
         .eq('donem_id', String(selectedPeriod?.id))
         .eq('onay_durumu', 'onaylandi')
         .order('olusturulma_tarihi', { ascending: false });
@@ -211,12 +211,12 @@ export default function RaporlarClient() {
 
 
 
-  const exportToWord = () => {
+  const exportToWord = (isEn = false) => {
     if (!raporData) return;
 
     let htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>${t('institutional_report')}</title>
+      <head><meta charset='utf-8'><title>${isEn ? 'Institutional Self-Evaluation Report (English)' : t('institutional_report')}</title>
       <style>
         body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.5; padding: 20px; }
         h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; color: #1a202c; }
@@ -229,14 +229,15 @@ export default function RaporlarClient() {
       </style>
       </head>
       <body>
-        <h1>${t('institutional_report')}</h1>
-        <p style='text-align:center; color: #718096;'>${t('created_at')}: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
+        <h1>${isEn ? 'Institutional Self-Evaluation Report (English)' : t('institutional_report')}</h1>
+        <p style='text-align:center; color: #718096;'>${isEn ? 'Creation Date' : t('created_at')}: ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
     `;
 
     raporData.anaBasliklar.forEach(anaBaslik => {
       const ilgiliOlcutler = raporData.altOlcutler.filter(o => o.ana_baslik_id === anaBaslik.id);
       if (ilgiliOlcutler.length > 0) {
-        htmlContent += `<h2>${anaBaslik.kod} - ${getLocalizedField(anaBaslik, 'baslik_adi', locale)}</h2>`;
+        const docLang = isEn ? 'en' : locale;
+        htmlContent += `<h2>${anaBaslik.kod} - ${getLocalizedField(anaBaslik, 'baslik_adi', docLang)}</h2>`;
         ilgiliOlcutler.forEach(olcut => {
           const ozdegerlendirme = raporData.ozdegerlendirmeVerileri.find(ov => String(ov.alt_olcut_id) === String(olcut.id));
           const pukoList = getPukoForOlcut(olcut.id);
@@ -245,8 +246,10 @@ export default function RaporlarClient() {
           const allEvidences: any[] = [];
           let localEvidenceCounter = 1;
 
-          if (ozdegerlendirme && ozdegerlendirme.icerik) {
-            combinedText = ozdegerlendirme.icerik;
+          const targetIcerik = isEn ? ozdegerlendirme?.icerik_en : ozdegerlendirme?.icerik;
+
+          if (ozdegerlendirme && targetIcerik) {
+            combinedText = targetIcerik;
             
             // Agresif temizlik: Başlıkları ve puan metinlerini her türlü tag yapısında temizle
             combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK|RAPOR)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
@@ -271,20 +274,20 @@ export default function RaporlarClient() {
           const uniqueEvidences = allEvidences;
           const olgunlukPuani = pukoList.find(p => p.puko_asamasi === 'olgunluk')?.olgunluk_puani;
 
-          htmlContent += `<h3>${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</h3>`;
+          htmlContent += `<h3>${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', docLang)}</h3>`;
           
           if (combinedText) {
             htmlContent += `<div>${combinedText}</div>`;
           } else {
-            htmlContent += `<p style='color: #a0aec0; font-style: italic;'>${t('no_report_yet')}</p>`;
+            htmlContent += `<p style='color: #a0aec0; font-style: italic;'>${isEn ? 'No English report available for this criterion.' : t('no_report_yet')}</p>`;
           }
           
           if (combinedText || olgunlukPuani || uniqueEvidences.length > 0) {
             htmlContent += `<div style='background-color: #fffaf0; padding: 15px; border: 1px solid #feebc8; margin-top: 20px;'>`;
             
             if (olgunlukPuani) {
-              const rubricText = getDuzeyAciklamasi(olcut, olgunlukPuani, locale);
-              htmlContent += `<p style='color: #c05621; font-weight: bold; margin: 0;'>${t('maturity_score')}: ${olgunlukPuani} / 5</p>`;
+              const rubricText = getDuzeyAciklamasi(olcut, olgunlukPuani, docLang);
+              htmlContent += `<p style='color: #c05621; font-weight: bold; margin: 0;'>${isEn ? 'Maturity Score' : t('maturity_score')}: ${olgunlukPuani} / 5</p>`;
               if (rubricText) {
                 htmlContent += `<p style='color: #9c4221; font-style: italic; font-size: 13px; margin-top: 5px; margin-bottom: 15px;'>${rubricText}</p>`;
               }
@@ -292,7 +295,7 @@ export default function RaporlarClient() {
             
             if (uniqueEvidences.length > 0) {
               htmlContent += `<div style='border-top: 1px solid #feebc8; padding-top: 10px; margin-top: 10px;'>`;
-              htmlContent += `<p style='color: #c05621; font-size: 12px; font-weight: bold; margin-bottom: 5px;'>${t('attached_evidences')}</p>`;
+              htmlContent += `<p style='color: #c05621; font-size: 12px; font-weight: bold; margin-bottom: 5px;'>${isEn ? 'Attached Evidences' : t('attached_evidences')}</p>`;
               const evidenceLinks = uniqueEvidences.map((k, idx) => 
                 `<a href='${k.url}' style='color: #2b6cb0; text-decoration: none; font-size: 12px; display: block; margin-bottom: 3px;'>${k.no}. ${k.name}</a>`
               ).join('');
@@ -307,7 +310,7 @@ export default function RaporlarClient() {
     });
 
     htmlContent += `
-        <div class='footer'>${t('auto_generated_footer')}</div>
+        <div class='footer'>${isEn ? 'This document was automatically generated by the quality management system.' : t('auto_generated_footer')}</div>
       </body>
       </html>
     `;
@@ -316,7 +319,7 @@ export default function RaporlarClient() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Kurum_Raporu.doc';
+    link.download = isEn ? 'Institutional_Self_Evaluation_Report_EN.doc' : 'Kurum_Raporu.doc';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -338,12 +341,20 @@ export default function RaporlarClient() {
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {raporData && (
-            <button 
-              onClick={exportToWord}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md"
-            >
-              <Download className="w-5 h-5" /> {t('export_word')}
-            </button>
+            <>
+              <button 
+                onClick={() => exportToWord(false)}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Download className="w-5 h-5" /> {t('export_word')}
+              </button>
+              <button 
+                onClick={() => exportToWord(true)}
+                className="flex items-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <Download className="w-5 h-5" /> {t('export_word_en')}
+              </button>
+            </>
           )}
         </div>
       </div>

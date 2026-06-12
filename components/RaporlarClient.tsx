@@ -34,6 +34,7 @@ export default function RaporlarClient() {
   const { selectedPeriod } = usePeriod();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isObserver, setIsObserver] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [raporData, setRaporData] = useState<{
     anaBasliklar: AnaBaslik[],
@@ -51,9 +52,12 @@ export default function RaporlarClient() {
         if (user) {
           const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
           const role = profile?.rol?.toLowerCase() || '';
-          if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || role.includes('gozlemci') || role.includes('gözlemci')) {
+          const userIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+          const userIsObserver = role.includes('gozlemci') || role.includes('gözlemci');
+          if (userIsAdmin || userIsObserver) {
             setIsAdmin(true);
           }
+          setIsObserver(userIsObserver);
         }
       } catch (e) {
         console.error(e);
@@ -212,6 +216,7 @@ export default function RaporlarClient() {
 
 
   const exportToWord = (isEn = false) => {
+    if (isObserver) return;
     if (!raporData) return;
 
     let htmlContent = `
@@ -340,7 +345,7 @@ export default function RaporlarClient() {
           <p className="text-slate-500 mt-2">{t('description')}</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          {raporData && (
+          {raporData && !isObserver && (
             <>
               <button 
                 onClick={() => exportToWord(false)}

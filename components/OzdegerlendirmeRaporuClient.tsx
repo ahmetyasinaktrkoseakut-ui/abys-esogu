@@ -24,9 +24,10 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   const [olgunlukPuani, setOlgunlukPuani] = useState<number | null>(null);
   
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isReadOnly, setIsReadOnly] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isObserver, setIsObserver] = useState(false);
+  const [isReadOnly, setIsReadOnly] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Onay / Ret Sistematiği
   const [onayDurumu, setOnayDurumu] = useState<string>('');
@@ -61,6 +62,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         localUserIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
         const localUserIsObserver = role.includes('gözlemci') || role.includes('gozlemci');
         setIsAdmin(localUserIsAdmin);
+        setIsObserver(localUserIsObserver);
         
         // Adminlerin de düzenleme yapabilmesi için ReadOnly kısıtlamasını esnetiyoruz, gözlemci ise kilitle
         if (selectedPeriod?.is_active === false || localUserIsObserver) {
@@ -152,6 +154,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   }, [fetchData]);
 
   const exportToWord = () => {
+    if (isObserver) return;
     if (!raporMetni) return;
 
     let htmlContent = `
@@ -664,12 +667,14 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <button 
-                  onClick={exportToWord}
-                  className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" /> {t('download_word')}
-                </button>
+                {!isObserver && (
+                  <button 
+                    onClick={exportToWord}
+                    className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"
+                  >
+                    <Download className="w-4 h-4" /> {t('download_word')}
+                  </button>
+                )}
                 <button 
                   onClick={handleRaporOlustur}
                   className="bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2"

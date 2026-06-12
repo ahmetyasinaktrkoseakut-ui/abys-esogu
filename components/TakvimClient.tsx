@@ -31,6 +31,7 @@ export default function TakvimClient() {
   const [kayitlar, setKayitlar] = useState<EylemPlani[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isObserver, setIsObserver] = useState(false);
   const locale = useLocale();
 
   useEffect(() => {
@@ -44,7 +45,9 @@ export default function TakvimClient() {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = profile?.rol?.toLowerCase() || '';
         const userIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+        const userIsObserver = role.includes('gozlemci') || role.includes('gözlemci');
         setIsAdmin(userIsAdmin);
+        setIsObserver(userIsObserver);
 
         let query = supabase
           .from('eylem_planlari')
@@ -52,7 +55,7 @@ export default function TakvimClient() {
           .eq('donem_id', selectedPeriod.id)
           .order('id', { ascending: false });
 
-        if (!userIsAdmin) {
+        if (!userIsAdmin && !userIsObserver) {
           // Personel: Sadece atandığı ölçütlerin eylem planlarını görebilir
           const { data: atamalar } = await supabase
             .from('kullanici_olcut_atamalari')
@@ -110,6 +113,7 @@ export default function TakvimClient() {
   }, [selectedPeriod, locale, t]);
 
   const exportToWord = () => {
+    if (isObserver) return;
     if (!kayitlar || kayitlar.length === 0) return;
 
     let htmlContent = `
@@ -209,7 +213,7 @@ export default function TakvimClient() {
           </p>
         </div>
         
-        {kayitlar.length > 0 && (
+        {kayitlar.length > 0 && !isObserver && (
           <button 
             onClick={exportToWord}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-md shrink-0"

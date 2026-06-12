@@ -31,6 +31,7 @@ export default function OnerilenlerClient() {
   const { selectedPeriod } = usePeriod();
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isObserver, setIsObserver] = useState(false);
   const [raporData, setRaporData] = useState<{
     anaBasliklar: AnaBaslik[],
     altOlcutler: AltOlcut[],
@@ -48,8 +49,11 @@ export default function OnerilenlerClient() {
         if (user) {
           const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
           const role = profile?.rol?.toLowerCase() || '';
-          if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin')) {
+          const userIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+          const userIsObserver = role.includes('gozlemci') || role.includes('gözlemci');
+          if (userIsAdmin || userIsObserver) {
             setIsAdmin(true);
+            setIsObserver(userIsObserver);
 
             // Verileri Çek
             const [anaBasliklarRes, altOlcutlerRes, pukoRes, birimlerRes] = await Promise.all([
@@ -110,6 +114,7 @@ export default function OnerilenlerClient() {
   }
 
   const exportToWord = () => {
+    if (isObserver) return;
     if (!raporData) return;
 
     let htmlContent = `
@@ -188,7 +193,7 @@ export default function OnerilenlerClient() {
           </h1>
           <p className="text-slate-500 mt-2">{t('description')}</p>
         </div>
-        {raporData && (
+        {raporData && !isObserver && (
           <button
             onClick={exportToWord}
             className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-md flex-shrink-0"

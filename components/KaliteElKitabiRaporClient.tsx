@@ -10,11 +10,22 @@ export default function KaliteElKitabiRaporClient() {
   const [altOlcutler, setAltOlcutler] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isObserver, setIsObserver] = useState(false);
   const locale = useLocale();
   const t = useTranslations('QualityManualReport');
   const tKalite = useTranslations('KaliteElKitabi');
 
   useEffect(() => {
+    const checkRole = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
+        const role = profile?.rol?.toLowerCase() || '';
+        const userIsObserver = role.includes('gozlemci') || role.includes('gözlemci');
+        setIsObserver(userIsObserver);
+      }
+    };
+    checkRole();
     fetchData();
   }, []);
 
@@ -36,6 +47,7 @@ export default function KaliteElKitabiRaporClient() {
   };
 
   const handleExportWord = () => {
+    if (isObserver) return;
     if (altOlcutler.length === 0) return;
     
     let htmlContent = `
@@ -110,12 +122,14 @@ export default function KaliteElKitabiRaporClient() {
           </h2>
           <p className="text-slate-500 mt-2">{t('description')}</p>
         </div>
-        <button 
-          onClick={handleExportWord}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center gap-2"
-        >
-          <BookOpen className="w-5 h-5" /> {t('download_btn')}
-        </button>
+        {!isObserver && (
+          <button 
+            onClick={handleExportWord}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center gap-2"
+          >
+            <BookOpen className="w-5 h-5" /> {t('download_btn')}
+          </button>
+        )}
       </div>
 
       {altOlcutler.length === 0 ? (

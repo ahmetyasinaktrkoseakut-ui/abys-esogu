@@ -37,7 +37,7 @@ export default function OlcutlerPage() {
         // 1. Profil ve Rolü Al
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = (profile?.rol || '').toLowerCase().trim();
-        const isAdmin = role.includes('yonetici') || role.includes('admin') || role.includes('yönetici');
+        const isAdmin = role.includes('yonetici') || role.includes('admin') || role.includes('yönetici') || role.includes('gozlemci') || role.includes('gözlemci');
 
         // 2. Koordinatörlük Tablosunu Kontrol Et (Rolden bağımsız - kesin çözüm)
         const { data: coordData } = await supabase

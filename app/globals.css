@@ -19,6 +19,11 @@
   --color-emerald-600: #14281d;
   
   --color-brand-600: #0f1e36;
+
+  /* Slate Text Contrast Overrides */
+  --color-slate-400: #475569;
+  --color-slate-500: #334155; /* Replaces faint slate-500 with high contrast slate-700 */
+  --color-slate-600: #1e293b; /* Replaces slate-600 with high contrast slate-800 */
 }
 
 @theme inline {

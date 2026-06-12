@@ -72,7 +72,7 @@ export default function KoordinatorlerPage() {
   }, [fetchData]);
 
   const handleAssign = async () => {
-    if (!selectedUser || !selectedTopic) {
+    if (!selectedUser || (selectedRole !== 'Gözlemci' && !selectedTopic)) {
       setMessage({ type: 'error', text: t('select_user_topic_error') || 'Lütfen kullanıcı ve başlık seçiniz.' });
       return;
     }
@@ -84,7 +84,7 @@ export default function KoordinatorlerPage() {
       // rpc_v4_assign_koordinator_with_role kullanarak atomik işlem yapıyoruz.
       const { error } = await supabase.rpc('rpc_v4_assign_koordinator_with_role', {
         p_user_id: selectedUser,
-        p_baslik: selectedTopic,
+        p_baslik: selectedRole === 'Gözlemci' ? null : selectedTopic,
         p_rol: selectedRole
       });
 
@@ -200,14 +200,21 @@ export default function KoordinatorlerPage() {
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">{t('assigned_topic') || 'Sorumlu Olacağı Başlık'}</label>
               <select 
-                value={selectedTopic} 
+                value={selectedRole === 'Gözlemci' ? '' : selectedTopic} 
                 onChange={(e) => setSelectedTopic(e.target.value)}
-                className="w-full p-2 border rounded-lg text-sm bg-slate-50"
+                disabled={selectedRole === 'Gözlemci'}
+                className="w-full p-2 border rounded-lg text-sm bg-slate-50 disabled:opacity-70"
               >
-                <option value="">{t('select_topic_placeholder') || '-- Başlık Seç --'}</option>
-                {TOPICS.map(topic => (
-                  <option key={topic} value={topic}>{topic}</option>
-                ))}
+                {selectedRole === 'Gözlemci' ? (
+                  <option value="">-- Gözlemci İçin Başlık Seçilmez --</option>
+                ) : (
+                  <>
+                    <option value="">{t('select_topic_placeholder') || '-- Başlık Seç --'}</option>
+                    {TOPICS.map(topic => (
+                      <option key={topic} value={topic}>{topic}</option>
+                    ))}
+                  </>
+                )}
               </select>
             </div>
 
@@ -226,7 +233,7 @@ export default function KoordinatorlerPage() {
 
             <button
               onClick={handleAssign}
-              disabled={isSaving || !selectedUser || !selectedTopic || isObserver}
+              disabled={isSaving || !selectedUser || (selectedRole !== 'Gözlemci' && !selectedTopic) || isObserver}
               className="w-full mt-6 flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
@@ -240,14 +247,35 @@ export default function KoordinatorlerPage() {
           <h3 className="text-lg font-extrabold text-slate-900 mb-6 border-b border-slate-100 pb-4">{t('current_coordinators') || 'Mevcut Koordinatörler'}</h3>
           
           <div className="flex-1 overflow-y-auto pr-2 space-y-3">
-            {isLoading ? (
-              <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>
-            ) : coordinators.length === 0 ? (
-              <div className="text-center py-12 text-sm text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                {t('no_coordinators') || 'Henüz atanmış bir koordinatör yok.'}
-              </div>
-            ) : (
-              coordinators.map(coord => {
+            {(() => {
+              const displayList = [
+                ...coordinators.map(c => ({
+                  kullanici_id: c.kullanici_id,
+                  baslik: c.baslik,
+                  isVirtual: false
+                })),
+                ...users
+                  .filter(u => u.rol === 'Gozlemci')
+                  .map(u => ({
+                    kullanici_id: u.id,
+                    baslik: 'Tüm Sistem',
+                    isVirtual: true
+                  }))
+              ];
+
+              if (isLoading) {
+                return <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-blue-500" /></div>;
+              }
+
+              if (displayList.length === 0) {
+                return (
+                  <div className="text-center py-12 text-sm text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                    {t('no_coordinators') || 'Henüz atanmış bir koordinatör yok.'}
+                  </div>
+                );
+              }
+
+              return displayList.map(coord => {
                 const user = users.find(u => String(u.id) === String(coord.kullanici_id));
                 return (
                   <div key={coord.kullanici_id + coord.baslik} className="flex items-center justify-between p-5 border border-slate-100 rounded-2xl bg-white hover:bg-indigo-50/30 hover:border-indigo-100 hover:shadow-md transition-all group">
@@ -260,11 +288,11 @@ export default function KoordinatorlerPage() {
                         {coord.baslik}
                       </div>
                       <div className={`inline-flex mt-4 ml-2 px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-widest border transition-all ${
-                        user?.rol === 'Gozlemci'
+                        coord.isVirtual || user?.rol === 'Gozlemci'
                           ? 'bg-amber-50 text-amber-700 border-amber-100'
                           : 'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
-                        {user?.rol === 'Gozlemci' ? 'Gözlemci' : 'Koordinatör'}
+                        {coord.isVirtual || user?.rol === 'Gozlemci' ? 'Gözlemci' : 'Koordinatör'}
                       </div>
                     </div>
                     {!isObserver && (
@@ -278,8 +306,8 @@ export default function KoordinatorlerPage() {
                     )}
                   </div>
                 );
-              })
-            )}
+              });
+            })()}
           </div>
         </div>
 

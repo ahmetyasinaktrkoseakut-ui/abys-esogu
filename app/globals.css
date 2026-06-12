@@ -5,6 +5,22 @@
   --foreground: #171717;
 }
 
+@theme {
+  /* Academic Colors Overrides */
+  --color-blue-500: #1e293b;
+  --color-blue-600: #0f1e36; /* Oxford Blue */
+  --color-blue-700: #0a1324;
+
+  --color-indigo-500: #bfa17a; /* Academic Gold */
+  --color-indigo-600: #9e7f59;
+  --color-indigo-700: #7d613e;
+
+  --color-emerald-500: #1e3a2b; /* Muted Sage Green */
+  --color-emerald-600: #14281d;
+  
+  --color-brand-600: #0f1e36;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

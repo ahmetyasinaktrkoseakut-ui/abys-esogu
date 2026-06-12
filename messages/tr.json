@@ -465,6 +465,9 @@
   "Documents": {
     "title": "Döküman Yönetimi",
     "description": "Sistem genelindeki tüm PUKÖ kanıt dosyaları ve belgeler.",
+    "search_placeholder": "Doküman veya ölçüt ara...",
+    "view": "Görüntüle",
+    "no_document_found": "Sistemde kayıtlı doküman bulunamadı.",
     "table": {
       "file_name": "Dosya Adı",
       "related_criteria": "İlgili Ölçüt",

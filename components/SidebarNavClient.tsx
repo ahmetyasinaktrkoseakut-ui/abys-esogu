@@ -67,7 +67,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
     return `flex items-center gap-3 px-4 py-3 transition-all duration-300 text-sm group rounded-xl mx-2 ${
       isActive 
         ? 'bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/20' 
-        : 'text-slate-400 hover:bg-slate-800/50 hover:text-white'
+        : 'text-slate-200 hover:bg-slate-800/50 hover:text-white'
     }`;
   };
 

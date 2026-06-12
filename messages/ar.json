@@ -437,6 +437,9 @@
   "Documents": {
     "title": "إدارة المستندات",
     "description": "جميع ملفات أدلة PDCA والمستندات عبر النظام.",
+    "search_placeholder": "البحث عن مستند أو معيار...",
+    "view": "عرض",
+    "no_document_found": "لم يتم العثور على مستندات في النظام.",
     "table": {
       "file_name": "اسم الملف",
       "related_criteria": "المعيار ذو الصلة",

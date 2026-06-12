@@ -466,6 +466,9 @@
   "Documents": {
     "title": "Document Management",
     "description": "All PDCA evidence files and documents throughout the system.",
+    "search_placeholder": "Search document or criterion...",
+    "view": "View",
+    "no_document_found": "No documents found in the system.",
     "table": {
       "file_name": "File Name",
       "related_criteria": "Related Criterion",

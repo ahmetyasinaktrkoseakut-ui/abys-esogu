@@ -59,10 +59,11 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = profile?.rol?.toLowerCase() || '';
         localUserIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+        const localUserIsObserver = role.includes('gözlemci') || role.includes('gozlemci');
         setIsAdmin(localUserIsAdmin);
         
-        // Adminlerin de düzenleme yapabilmesi için ReadOnly kısıtlamasını esnetiyoruz
-        if (selectedPeriod?.is_active === false) {
+        // Adminlerin de düzenleme yapabilmesi için ReadOnly kısıtlamasını esnetiyoruz, gözlemci ise kilitle
+        if (selectedPeriod?.is_active === false || localUserIsObserver) {
           setIsReadOnly(true);
         }
       }

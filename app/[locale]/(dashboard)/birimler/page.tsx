@@ -7,6 +7,7 @@ import { Building2, Plus, X, Loader2, Calendar } from 'lucide-react';
 export default function BirimlerPage() {
   const [birimler, setBirimler] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isObserver, setIsObserver] = useState(false);
   
   // Modal state
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -17,6 +18,13 @@ export default function BirimlerPage() {
   const fetchBirimler = async () => {
     setIsLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
+        const role = profile?.rol?.toLowerCase() || '';
+        setIsObserver(role.includes('gozlemci') || role.includes('gözlemci'));
+      }
+
       const { data, error } = await supabase
         .from('birimler')
         .select('*')
@@ -37,6 +45,7 @@ export default function BirimlerPage() {
 
   const handleAddBirim = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isObserver) return;
     if (!yeniBirimAdi.trim()) return;
 
     setIsSubmitting(true);
@@ -91,13 +100,15 @@ export default function BirimlerPage() {
             Sisteme kayıtlı tüm fakülte, yüksekokul veya koordinatörlük birimlerini buradan görüntüleyebilir ve yeni birim ekleyebilirsiniz.
           </p>
         </div>
-        <button 
-          onClick={() => setIsModalOpen(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2 active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Yeni Birim Ekle</span>
-        </button>
+        {!isObserver && (
+          <button 
+            onClick={() => setIsModalOpen(true)}
+            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl text-sm font-bold shadow-lg shadow-indigo-500/20 transition-all flex items-center gap-2 active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Yeni Birim Ekle</span>
+          </button>
+        )}
       </div>
 
       <div className="bg-white border border-slate-200/60 rounded-3xl shadow-sm overflow-hidden">

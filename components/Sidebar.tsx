@@ -21,6 +21,7 @@ export default async function Sidebar() {
   }
 
   const isAdmin = role.toLowerCase().includes('yonetici') || role.toLowerCase().includes('yönetici') || role.toLowerCase().includes('admin');
+  const isObserver = role.toLowerCase().includes('gözlemci') || role.toLowerCase().includes('gozlemci');
 
   // Ölçüt ataması var mı kontrol et
   let hasAssignment = false;
@@ -51,7 +52,7 @@ export default async function Sidebar() {
         </div>
       </div>
 
-      <SidebarNavClient isAdmin={isAdmin} userId={user?.id || ''} hasAssignment={hasAssignment} isCoordinator={isCoordinator} />
+      <SidebarNavClient isAdmin={isAdmin} isObserver={isObserver} userId={user?.id || ''} hasAssignment={hasAssignment} isCoordinator={isCoordinator} />
     </aside>
   );
 }

@@ -34,6 +34,7 @@ export default function PeriodManagementPage() {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isObserver, setIsObserver] = useState(false);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -53,9 +54,11 @@ export default function PeriodManagementPage() {
       const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
       const role = profile?.rol?.toLowerCase() || '';
       const isUserAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
-      setIsAdmin(isUserAdmin);
+      const isUserObserver = role.includes('gozlemci') || role.includes('gözlemci');
+      setIsAdmin(isUserAdmin || isUserObserver);
+      setIsObserver(isUserObserver);
 
-      if (isUserAdmin) {
+      if (isUserAdmin || isUserObserver) {
         const { data } = await supabase
           .from('donemler')
           .select('*')
@@ -92,6 +95,7 @@ export default function PeriodManagementPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isObserver) return;
     if (!formData.donem_adi.trim()) return;
 
     setIsSubmitting(true);
@@ -138,6 +142,7 @@ export default function PeriodManagementPage() {
   };
 
   const handleSealPeriod = async (period: Period) => {
+    if (isObserver) return;
     if (!confirm(`${period.donem_adi} dönemini mühürlemek istediğinize emin misiniz? Bu işlem geri alınamaz ve tüm veriler salt okunur (read-only) olacaktır.`)) return;
 
     try {
@@ -185,6 +190,7 @@ export default function PeriodManagementPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (isObserver) return;
     if (!confirm(t('messages.delete_confirm'))) return;
     try {
       const { error } = await supabase.from('donemler').delete().eq('id', id);
@@ -222,13 +228,15 @@ export default function PeriodManagementPage() {
           </h1>
           <p className="text-slate-500 mt-2 text-sm">{t('description')}</p>
         </div>
-        <button 
-          onClick={() => handleOpenModal()}
-          className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 active:scale-95"
-        >
-          <Plus className="w-5 h-5" />
-          {t('add_new')}
-        </button>
+        {!isObserver && (
+          <button 
+            onClick={() => handleOpenModal()}
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-md shadow-indigo-500/20 active:scale-95"
+          >
+            <Plus className="w-5 h-5" />
+            {t('add_new')}
+          </button>
+        )}
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition-all overflow-hidden">
@@ -274,25 +282,31 @@ export default function PeriodManagementPage() {
                   <td className="px-6 py-4 text-right space-x-2">
                     {!period.is_sealed && (
                       <>
-                        <button 
-                          onClick={() => handleSealPeriod(period)}
-                          className="p-2 text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
-                          title="Dönemi Mühürle (Kalıcı Kilit)"
-                        >
-                          <Lock className="w-5 h-5" />
-                        </button>
-                        <button 
-                          onClick={() => handleOpenModal(period)}
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-5 h-5" />
-                        </button>
-                        <button 
-                          onClick={() => handleDelete(period.id)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
+                        {!isObserver ? (
+                          <>
+                            <button 
+                              onClick={() => handleSealPeriod(period)}
+                              className="p-2 text-slate-900 hover:bg-slate-100 rounded-lg transition-colors border border-slate-200"
+                              title="Dönemi Mühürle (Kalıcı Kilit)"
+                            >
+                              <Lock className="w-5 h-5" />
+                            </button>
+                            <button 
+                              onClick={() => handleOpenModal(period)}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-5 h-5" />
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(period.id)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            >
+                              <Trash2 className="w-5 h-5" />
+                            </button>
+                          </>
+                        ) : (
+                          <span className="text-xs font-bold text-slate-400 italic">Salt Okunur</span>
+                        )}
                       </>
                     )}
                     {period.is_sealed && (

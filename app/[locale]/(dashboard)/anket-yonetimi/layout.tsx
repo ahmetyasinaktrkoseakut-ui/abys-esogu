@@ -23,7 +23,7 @@ export default async function anketyonetimiLayout({
     .single();
 
   const rol = profile?.rol?.toLowerCase() || '';
-  const isAdmin = rol.includes('yönetici') || rol.includes('yonetici') || rol.includes('admin');
+  const isAdmin = rol.includes('yönetici') || rol.includes('yonetici') || rol.includes('admin') || rol.includes('gözlemci') || rol.includes('gozlemci');
   
   if (!isAdmin) {
     // Koordinatör mü kontrol et

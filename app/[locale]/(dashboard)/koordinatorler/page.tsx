@@ -20,9 +20,11 @@ export default function KoordinatorlerPage() {
   
   const [selectedUser, setSelectedUser] = useState<string>('');
   const [selectedTopic, setSelectedTopic] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<'Koordinatör' | 'Gözlemci'>('Koordinatör');
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isObserver, setIsObserver] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   const t = useTranslations('Coordinators');
@@ -39,6 +41,13 @@ export default function KoordinatorlerPage() {
         
       if (pError) throw pError;
       setUsers(profiles || []);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const currentUserProfile = (profiles || []).find(p => String(p.id) === String(user.id));
+        const role = currentUserProfile?.rol?.toLowerCase() || '';
+        setIsObserver(role.includes('gözlemci') || role.includes('gozlemci'));
+      }
 
       const { data: coords, error: cError } = await supabase
         .from('baslik_koordinatorleri')
@@ -72,10 +81,11 @@ export default function KoordinatorlerPage() {
     setMessage(null);
 
     try {
-      // rpc_v3_assign_koordinator kullanarak atomik işlem yapıyoruz.
-      const { error } = await supabase.rpc('rpc_v3_assign_koordinator', {
+      // rpc_v4_assign_koordinator_with_role kullanarak atomik işlem yapıyoruz.
+      const { error } = await supabase.rpc('rpc_v4_assign_koordinator_with_role', {
         p_user_id: selectedUser,
-        p_baslik: selectedTopic
+        p_baslik: selectedTopic,
+        p_rol: selectedRole
       });
 
       if (error) throw error;
@@ -83,6 +93,7 @@ export default function KoordinatorlerPage() {
       setMessage({ type: 'success', text: t('assign_success') || 'Koordinatör başarıyla atandı.' });
       setSelectedUser('');
       setSelectedTopic('');
+      setSelectedRole('Koordinatör');
       fetchData(); // Listeyi yenile
     } catch (error: any) {
       console.error('Save error:', error);
@@ -102,11 +113,10 @@ export default function KoordinatorlerPage() {
     if (!window.confirm(t('delete_confirm', { baslik }) || `${baslik} koordinatörlüğünü silmek istediğinize emin misiniz?`)) return;
     
     try {
-      const { error } = await supabase
-        .from('baslik_koordinatorleri')
-        .delete()
-        .eq('kullanici_id', kullanici_id)
-        .eq('baslik', baslik);
+      const { error } = await supabase.rpc('rpc_v4_remove_koordinator', {
+        p_user_id: kullanici_id,
+        p_baslik: baslik
+      });
         
       if (error) throw error;
       
@@ -201,9 +211,22 @@ export default function KoordinatorlerPage() {
               </select>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Atanacak Rol</label>
+              <select 
+                value={selectedRole} 
+                onChange={(e) => setSelectedRole(e.target.value as any)}
+                disabled={isObserver}
+                className="w-full p-2 border rounded-lg text-sm bg-slate-50 disabled:opacity-75"
+              >
+                <option value="Koordinatör">Koordinatör (Veri Girişlerini Onaylayabilir/Düzenleyebilir)</option>
+                <option value="Gözlemci">Gözlemci (Tüm Sistemi Görüntüleyebilir, Müdahale Edemez)</option>
+              </select>
+            </div>
+
             <button
               onClick={handleAssign}
-              disabled={isSaving || !selectedUser || !selectedTopic}
+              disabled={isSaving || !selectedUser || !selectedTopic || isObserver}
               className="w-full mt-6 flex items-center justify-center gap-3 bg-indigo-600 hover:bg-indigo-700 text-white py-4 rounded-xl text-sm font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 disabled:opacity-50"
             >
               {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
@@ -236,14 +259,23 @@ export default function KoordinatorlerPage() {
                       <div className="inline-flex mt-4 px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">
                         {coord.baslik}
                       </div>
+                      <div className={`inline-flex mt-4 ml-2 px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-widest border transition-all ${
+                        user?.rol === 'Gozlemci'
+                          ? 'bg-amber-50 text-amber-700 border-amber-100'
+                          : 'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}>
+                        {user?.rol === 'Gozlemci' ? 'Gözlemci' : 'Koordinatör'}
+                      </div>
                     </div>
-                    <button 
-                      onClick={() => handleRemove(coord.kullanici_id, coord.baslik)}
-                      className="p-3 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
-                      title={t('remove_assignment') || "Atamayı Sil"}
-                    >
-                      <Trash2 className="w-5 h-5" />
-                    </button>
+                    {!isObserver && (
+                      <button 
+                        onClick={() => handleRemove(coord.kullanici_id, coord.baslik)}
+                        className="p-3 text-slate-300 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all opacity-0 group-hover:opacity-100"
+                        title={t('remove_assignment') || "Atamayı Sil"}
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    )}
                   </div>
                 );
               })

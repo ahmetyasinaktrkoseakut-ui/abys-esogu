@@ -60,7 +60,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       if (user) {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = profile?.rol?.toLowerCase() || '';
-        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || selectedPeriod?.is_active === false || selectedPeriod?.is_sealed === true) {
+        if (role.includes('yonetici') || role.includes('yönetici') || role.includes('admin') || role.includes('gözlemci') || role.includes('gozlemci') || selectedPeriod?.is_active === false || selectedPeriod?.is_sealed === true) {
           setIsReadOnly(true);
         }
       }

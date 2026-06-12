@@ -118,6 +118,7 @@ export default function AnketYonetimiClient() {
   const { selectedPeriod } = usePeriod();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCoordinator, setIsCoordinator] = useState(false);
+  const [isObserver, setIsObserver] = useState(false);
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -242,10 +243,12 @@ export default function AnketYonetimiClient() {
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = profile?.rol?.toLowerCase() || '';
         const userIsAdmin = role.includes('yonetici') || role.includes('yönetici') || role.includes('admin');
+        const userIsObserver = role.includes('gozlemci') || role.includes('gözlemci');
         setIsAdmin(userIsAdmin);
+        setIsObserver(userIsObserver);
 
         let expectedDbBaslik: string | null = null;
-        if (!userIsAdmin) {
+        if (!userIsAdmin && !userIsObserver) {
           const { data: coordData } = await supabase.from('baslik_koordinatorleri').select('baslik').eq('kullanici_id', user.id).maybeSingle();
           if (coordData) {
             setIsCoordinator(true);
@@ -263,7 +266,7 @@ export default function AnketYonetimiClient() {
             return;
           }
         } else {
-          // Admin ise her zaman koordinatör gibi işlem yapabilsin (Süper Yetki)
+          // Admin veya Gözlemci ise her zaman koordinatör gibi işlem yapabilsin
           setIsCoordinator(true);
         }
 
@@ -290,7 +293,7 @@ export default function AnketYonetimiClient() {
           setOlcutler(secili);
         }
 
-        await fetchPublishedAnketler(userIsAdmin, expectedDbBaslik, tumOlcutler);
+        await fetchPublishedAnketler(userIsAdmin || userIsObserver, expectedDbBaslik, tumOlcutler);
 
       } catch (err) {
         console.error(err);
@@ -302,6 +305,7 @@ export default function AnketYonetimiClient() {
   }, [selectedPeriod]);
 
   const handleSave = async () => {
+    if (isObserver) return;
     if (!selectedPeriod) return;
     if (hedefOlcutler.length === 0) {
       alert(t('target_criteria'));
@@ -387,6 +391,7 @@ export default function AnketYonetimiClient() {
 
   // Yayınlanmış anket silme
   const deleteYayinlananAnket = async (anketId: string, baslik: string) => {
+    if (isObserver) return;
     if (confirm(t('delete_survey_confirm', { baslik }) || `"${baslik}" anketini kalıcı olarak silmek istediğinize emin misiniz?`)) {
       try {
         const { error } = await supabase.from('anketler').delete().eq('id', anketId);
@@ -472,10 +477,12 @@ export default function AnketYonetimiClient() {
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           <label className="block text-md font-bold text-slate-800">{t('target_criteria')}</label>
-          <div className="space-x-2">
-            <button onClick={selectAll} className="text-xs font-semibold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg hover:bg-purple-100">{t('select_all')}</button>
-            <button onClick={deselectAll} className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200">{t('deselect_all')}</button>
-          </div>
+          {!isObserver && (
+            <div className="space-x-2">
+              <button onClick={selectAll} className="text-xs font-semibold text-purple-600 bg-purple-50 px-3 py-1.5 rounded-lg hover:bg-purple-100">{t('select_all')}</button>
+              <button onClick={deselectAll} className="text-xs font-semibold text-slate-600 bg-slate-100 px-3 py-1.5 rounded-lg hover:bg-slate-200">{t('deselect_all')}</button>
+            </div>
+          )}
         </div>
         
         <div className="max-h-[300px] overflow-y-auto border border-slate-200 rounded-xl p-4 bg-slate-50 space-y-4">
@@ -492,6 +499,7 @@ export default function AnketYonetimiClient() {
                         type="checkbox" 
                         checked={isSelected}
                         onChange={() => toggleOlcut(idStr)}
+                        disabled={isObserver}
                         className="mt-1 w-4 h-4 text-purple-600 rounded border-slate-300 focus:ring-purple-500"
                       />
                       <span className="text-xs font-medium text-slate-700 leading-tight">
@@ -508,17 +516,20 @@ export default function AnketYonetimiClient() {
         <p className="text-xs text-slate-500 mt-2">{t('selected_count', { count: hedefOlcutler.length })}</p>
       </div>
 
-      <div className="mb-6 flex justify-end">
-        <button 
-          onClick={addNewAnket}
-          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md shadow-purple-500/30 active:scale-[0.98]"
-        >
-          <Plus className="w-5 h-5" />
-          {t('add_new_form')}
-        </button>
-      </div>
+      {!isObserver && (
+        <div className="mb-6 flex justify-end">
+          <button 
+            onClick={addNewAnket}
+            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md shadow-purple-500/30 active:scale-[0.98]"
+          >
+            <Plus className="w-5 h-5" />
+            {t('add_new_form')}
+          </button>
+        </div>
+      )}
 
-      <div className="space-y-6 mb-8">
+      {!isObserver && (
+        <div className="space-y-6 mb-8">
         {anketListesi.map((anket, anketIdx) => (
           <div key={anket.id} className="bg-white rounded-2xl shadow-sm border border-slate-200">
             {/* Header / Accordion Toggle */}
@@ -893,18 +904,21 @@ export default function AnketYonetimiClient() {
             )}
           </div>
         ))}
-      </div>
+        </div>
+      )}
 
-      <div className="flex justify-end p-6 bg-white border-t border-slate-200 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] rounded-t-2xl mb-12">
-        <button 
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
-        >
-          {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-          {isSaving ? t('saving') : t('save_and_distribute')}
-        </button>
-      </div>
+      {!isObserver && (
+        <div className="flex justify-end p-6 bg-white border-t border-slate-200 sticky bottom-0 z-10 shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] rounded-t-2xl mb-12">
+          <button 
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-md active:scale-[0.98] disabled:opacity-50"
+          >
+            {isSaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+            {isSaving ? t('saving') : t('save_and_distribute')}
+          </button>
+        </div>
+      )}
 
       {/* 3. Yayınlanan Anketler ve Canlı Analizler Paneli */}
       {yayinlananAnketler.length > 0 && (
@@ -936,12 +950,14 @@ export default function AnketYonetimiClient() {
                           <LinkIcon className="w-3.5 h-3.5" /> {t('copy_link')}
                         </button>
 
-                        <button 
-                          onClick={() => deleteYayinlananAnket(anketId, anket.baslik)}
-                          className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" /> Anketi Kaldır
-                        </button>
+                        {!isObserver && (
+                          <button 
+                            onClick={() => deleteYayinlananAnket(anketId, anket.baslik)}
+                            className="flex items-center gap-1.5 px-2 py-1 bg-red-50 text-red-600 rounded-lg text-xs font-semibold hover:bg-red-100 transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Anketi Kaldır
+                          </button>
+                        )}
                       </div>
                     </div>
                     {hedefler.length > 0 && (

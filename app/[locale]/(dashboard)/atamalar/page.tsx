@@ -24,6 +24,7 @@ export default function AtamalarPage() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isObserver, setIsObserver] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const locale = useLocale();
@@ -39,6 +40,14 @@ export default function AtamalarPage() {
     if (!selectedPeriod) return;
     try {
       setIsLoading(true);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
+        const role = profile?.rol?.toLowerCase() || '';
+        setIsObserver(role.includes('gözlemci') || role.includes('gozlemci'));
+      }
+
       // Hocaları getir (Birim Sorumluları)
       const { data: profillerData, error: profillerError } = await supabase
         .from('profiller')
@@ -315,20 +324,22 @@ export default function AtamalarPage() {
                     {t('main.selected_count', { count: selectedOlcutIds.length, total: olcutler.length })}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => handleSelectAll(true)}
-                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 text-slate-600 transition-colors"
-                  >
-                    {t('main.select_all')}
-                  </button>
-                  <button 
-                    onClick={() => handleSelectAll(false)}
-                    className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 text-slate-600 transition-colors"
-                  >
-                    {t('main.deselect_all')}
-                  </button>
-                </div>
+                {!isObserver && (
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleSelectAll(true)}
+                      className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 text-slate-600 transition-colors"
+                    >
+                      {t('main.select_all')}
+                    </button>
+                    <button 
+                      onClick={() => handleSelectAll(false)}
+                      className="text-xs px-3 py-1.5 bg-white border border-slate-200 rounded-md hover:bg-slate-50 text-slate-600 transition-colors"
+                    >
+                      {t('main.deselect_all')}
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 bg-[#F8FAFC]">
@@ -387,9 +398,9 @@ export default function AtamalarPage() {
                                         <input
                                           type="checkbox"
                                           checked={isSelected}
-                                          disabled={isAssignedToOther}
+                                          disabled={isAssignedToOther || isObserver}
                                           onChange={() => {
-                                            if (!isAssignedToOther) handleToggleOlcut(olcut.id);
+                                            if (!isAssignedToOther && !isObserver) handleToggleOlcut(olcut.id);
                                           }}
                                           className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 disabled:opacity-50"
                                         />
@@ -413,8 +424,9 @@ export default function AtamalarPage() {
                                         <input 
                                           type="datetime-local"
                                           value={olcut.erisim_baslangic ? new Date(new Date(olcut.erisim_baslangic).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
+                                          disabled={isObserver}
                                           onChange={(e) => handleDateChange(olcut.id, 'erisim_baslangic', e.target.value)}
-                                          className="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                          className="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-75"
                                         />
                                       </div>
                                       <div className="flex-1">
@@ -422,8 +434,9 @@ export default function AtamalarPage() {
                                         <input 
                                           type="datetime-local"
                                           value={olcut.erisim_bitis ? new Date(new Date(olcut.erisim_bitis).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : ''}
+                                          disabled={isObserver}
                                           onChange={(e) => handleDateChange(olcut.id, 'erisim_bitis', e.target.value)}
-                                          className="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                                          className="w-full text-[11px] bg-slate-50 border border-slate-200 rounded p-1.5 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-75"
                                         />
                                       </div>
                                     </div>
@@ -442,7 +455,7 @@ export default function AtamalarPage() {
               <div className="p-4 bg-white border-t border-slate-100 flex justify-end">
                 <button
                   onClick={handleSave}
-                  disabled={isSaving || (selectedPeriod ? !selectedPeriod.is_active : false)}
+                  disabled={isSaving || (selectedPeriod ? !selectedPeriod.is_active : false) || isObserver}
                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl text-sm font-bold transition-all shadow-md shadow-indigo-500/20 disabled:opacity-70 active:scale-95"
                 >
                   {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}

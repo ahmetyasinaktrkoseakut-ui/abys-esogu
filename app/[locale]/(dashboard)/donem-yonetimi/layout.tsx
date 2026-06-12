@@ -23,7 +23,7 @@ export default async function donemyonetimiLayout({
     .single();
 
   const rol = profile?.rol?.toLowerCase() || '';
-  if (!rol.includes('yönetici') && !rol.includes('yonetici') && !rol.includes('admin')) {
+  if (!rol.includes('yönetici') && !rol.includes('yonetici') && !rol.includes('admin') && !rol.includes('gözlemci') && !rol.includes('gozlemci')) {
     // Yönetici değilse bu sayfaya girmesi yasak, yönlendir.
     return redirect(`/${locale}/olcutler`);
   }

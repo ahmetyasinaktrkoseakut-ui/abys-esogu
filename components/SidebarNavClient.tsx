@@ -21,7 +21,7 @@ import {
 import { LogoutButton } from './LogoutButton';
 import { Users, FileCheck, ClipboardCheck } from 'lucide-react';
 
-export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoordinator }: { isAdmin: boolean, userId: string, hasAssignment: boolean, isCoordinator?: boolean }) {
+export default function SidebarNavClient({ isAdmin, isObserver = false, userId, hasAssignment, isCoordinator }: { isAdmin: boolean, isObserver?: boolean, userId: string, hasAssignment: boolean, isCoordinator?: boolean }) {
   const pathname = usePathname();
   const t = useTranslations('Navigation');
   const tAnn = useTranslations('Announcements');
@@ -71,7 +71,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
     }`;
   };
 
-  const showFullMenu = isAdmin || hasAssignment || isCoordinator;
+  const showFullMenu = isAdmin || isObserver || hasAssignment || isCoordinator;
 
   return (
     <>
@@ -82,7 +82,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
               <Home className="w-5 h-5 flex-shrink-0" />
               {t('dashboard')}
             </Link>
-            {isAdmin && (
+            {(isAdmin || isObserver) && (
               <Link href="/izleme" className={getLinkClass('/izleme')}>
                 <BarChart2 className="w-5 h-5 flex-shrink-0" />
                 {t('tracking')}
@@ -107,7 +107,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
           <GraduationCap className="w-5 h-5 flex-shrink-0" />
           {t('syllabi')}
         </Link>
-        {isAdmin && (
+        {(isAdmin || isObserver) && (
           <div className="ltr:pl-6 rtl:pr-6">
             <Link href="/izlence-takip" className={getLinkClass('/izlence-takip')}>
               <BarChart2 className="w-4 h-4 flex-shrink-0" />
@@ -128,7 +128,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
                 <Calendar className="w-5 h-5 flex-shrink-0" />
                 {t('calendar')}
               </Link>
-              {(isAdmin) && (
+              {(isAdmin || isObserver) && (
                 <>
                   <Link href="/kalite-el-kitabi" className={getLinkClass('/kalite-el-kitabi')}>
                     <BookOpen className="w-5 h-5 flex-shrink-0" />
@@ -136,7 +136,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
                   </Link>
                 </>
               )}
-              {(isAdmin || isCoordinator) && (
+              {(isAdmin || isObserver || isCoordinator) && (
                 <>
                   <Link href="/anket-yonetimi" className={getLinkClass('/anket-yonetimi')}>
                     <Activity className="w-5 h-5 flex-shrink-0" />
@@ -144,7 +144,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
                   </Link>
                 </>
               )}
-              {isAdmin && (
+              {(isAdmin || isObserver) && (
                 <>
                   <Link href="/raporlar" className={getLinkClass('/raporlar')}>
                     <LineChart className="w-5 h-5 flex-shrink-0" />
@@ -177,7 +177,7 @@ export default function SidebarNavClient({ isAdmin, userId, hasAssignment, isCoo
       </nav>
       
       <div className="p-4 border-t border-[#1e293b] mt-auto space-y-1">
-        {isAdmin && (
+        {(isAdmin || isObserver) && (
           <>
             <Link href="/donem-yonetimi" className={getLinkClass('/donem-yonetimi')}>
               <Calendar className="w-5 h-5 flex-shrink-0" />

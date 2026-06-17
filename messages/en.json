@@ -51,8 +51,10 @@
   },
   "Roles": {
     "admin": "Administrator",
-    "unit_admin": "Unit Manager",
-    "user": "Personnel"
+    "unit_admin": "Unit Responsible",
+    "user": "Staff",
+    "observer": "Observer",
+    "coordinator": "Coordinator"
   },
   "Phase": {
     "home": "Home",
@@ -559,11 +561,49 @@
     "criterion": "Criterion",
     "detail": "Detail",
     "no_logs": "No matching activity logs found.",
+    "loading": "Loading logs...",
+    "unauthorized": "Access Denied",
+    "unauthorized_desc": "Activity Log can only be viewed by Administrators and Topic Coordinators.",
+    "back_to_home": "Back to Home",
+    "refresh": "Refresh",
+    "responsible_heading_locked": "🔒 Assigned Heading: {letter} (Locked)",
+    "go_to_criterion": "Go to Criterion",
+    "pagination_text": "Showing {start}-{end} of {total} records.",
+    "system_user": "System / Deleted User",
     "action_types": {
       "INSERT": "Insert",
       "UPDATE": "Update",
       "DELETE": "Delete",
       "SEAL": "Seal"
+    },
+    "details": {
+      "puko_insert": "New PDCA evaluation entered ({phase} Phase, Status: {status})",
+      "puko_update": "PDCA evaluation updated ({phase} Phase, Status: {status})",
+      "evidence_delete": "Evidence file deleted: {fileName}",
+      "evidence_upload": "Evidence file uploaded: {fileName}",
+      "self_evaluation_reject": "Self-Evaluation Report REJECTED. Reason: {reason}",
+      "self_evaluation_action": "Self-Evaluation Report {action}",
+      "quality_manual_update": "Quality Manual reporting details updated",
+      "period_seal": "Academic period sealed / archived: {name}",
+      "period_update": "Period info updated: {name}",
+      "generic_action": "Action performed on table {table} ({action})",
+      "no_reason": "Not specified",
+      "updated": "Updated",
+      "approved": "Approved",
+      "rejected": "Rejected",
+      "puko_phases": {
+        "planlama": "Planning (P)",
+        "uygulama": "Execution (E)",
+        "kontrol": "Checking (C)",
+        "onlem": "Acting (A)",
+        "olgunluk": "Maturity Level"
+      },
+      "statuses": {
+        "taslak": "Draft",
+        "beklemede": "Pending",
+        "onaylandi": "Approved",
+        "reddedildi": "Rejected"
+      }
     }
   }
 }

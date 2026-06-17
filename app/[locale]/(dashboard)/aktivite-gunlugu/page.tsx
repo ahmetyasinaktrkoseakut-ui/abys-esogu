@@ -29,8 +29,28 @@ interface LogEntry {
 export default function AktiviteGunluguPage() {
   const t = useTranslations('AuditLog');
   const tNav = useTranslations('Navigation');
+  const tRoles = useTranslations('Roles');
+  const tTracking = useTranslations('Tracking');
   const locale = useLocale();
   const router = useRouter();
+
+  const getLocalizedRole = (roleStr?: string) => {
+    if (!roleStr) return tRoles('user');
+    const normalized = roleStr.toLowerCase().replace(/\s+/g, '');
+    if (normalized.includes('yonetici') || normalized.includes('yönetici') || normalized.includes('admin')) {
+      return tRoles('admin');
+    }
+    if (normalized.includes('birimsorumlusu') || normalized.includes('birimyoneticisi') || normalized.includes('unitadmin')) {
+      return tRoles('unit_admin');
+    }
+    if (normalized.includes('gozlemci') || normalized.includes('gözlemci') || normalized.includes('observer')) {
+      return tRoles('observer');
+    }
+    if (normalized.includes('koordinator') || normalized.includes('koordinatör') || normalized.includes('coordinator')) {
+      return tRoles('coordinator');
+    }
+    return tRoles('user');
+  };
 
   // Context hook for period changes
   const { selectedPeriod } = usePeriodContext();
@@ -174,8 +194,8 @@ export default function AktiviteGunluguPage() {
 
           return {
             ...log,
-            userName: uMap?.name || 'Sistem / Silinmiş Kullanıcı',
-            userRole: uMap?.role || 'Personel',
+            userName: uMap ? uMap.name : null,
+            userRole: uMap ? uMap.role : null,
             criterionKod: cMap?.kod || '',
             criterionName: cMap?.name || '',
             alt_olcut_id: alt_olcut_id?.toString()
@@ -206,56 +226,71 @@ export default function AktiviteGunluguPage() {
     
     if (table.includes('puko_degerlendirmeleri')) {
       const data = log.yeni_veri || log.eski_veri || {};
-      const asamaMap: Record<string, string> = {
-        planlama: 'Planlama (P)',
-        uygulama: 'Uygulama (U)',
-        kontrol: 'Kontrol Etme (K)',
-        onlem: 'Önlem Alma (O)',
-        olgunluk: 'Olgunluk Düzeyi'
-      };
-      const asamaStr = asamaMap[data.puko_asamasi] || data.puko_asamasi || '';
-      const durumStr = data.durum || '';
       
-      if (action === 'INSERT') {
-        return `Yeni PUKÖ değerlendirmesi girildi (${asamaStr} Aşaması, Durum: ${durumStr})`;
+      const phaseKey = data.puko_asamasi || '';
+      let phaseStr = phaseKey;
+      try {
+        phaseStr = t(`details.puko_phases.${phaseKey}`);
+      } catch (_) {
+        const asamaMap: Record<string, string> = {
+          planlama: 'Planlama (P)',
+          uygulama: 'Uygulama (U)',
+          kontrol: 'Kontrol Etme (K)',
+          onlem: 'Önlem Alma (O)',
+          olgunluk: 'Olgunluk Düzeyi'
+        };
+        phaseStr = asamaMap[phaseKey] || phaseKey;
       }
-      return `PUKÖ değerlendirmesi güncellendi (${asamaStr} Aşaması, Durum: ${durumStr})`;
+
+      const statusRaw = (data.durum || '').toLowerCase();
+      let statusStr = data.durum || '';
+      if (statusRaw === 'taslak') statusStr = t('details.statuses.taslak');
+      else if (statusRaw === 'beklemede') statusStr = t('details.statuses.beklemede');
+      else if (statusRaw === 'onaylandi' || statusRaw === 'onaylandı') statusStr = t('details.statuses.onaylandi');
+      else if (statusRaw === 'reddedildi') statusStr = t('details.statuses.reddedildi');
+
+      if (action === 'INSERT') {
+        return t('details.puko_insert', { phase: phaseStr, status: statusStr });
+      }
+      return t('details.puko_update', { phase: phaseStr, status: statusStr });
     }
 
     if (table.includes('dokumanlar')) {
       const data = log.yeni_veri || log.eski_veri || {};
       const fileName = data.name || 'dosya';
       if (action === 'DELETE') {
-        return `Kanıt dosyası silindi: ${fileName}`;
+        return t('details.evidence_delete', { fileName });
       }
-      return `Kanıt dosyası yüklendi: ${fileName}`;
+      return t('details.evidence_upload', { fileName });
     }
 
     if (table.includes('ozdegerlendirme_raporlari')) {
       const data = log.yeni_veri || log.eski_veri || {};
-      const durum = data.onay_durumu || 'bekliyor';
-      const actionLabel = table.includes('onay') ? 'Onaylandı' : table.includes('red') ? 'Reddedildi' : 'Güncellendi';
+      const reason = data.red_nedeni || t('details.no_reason');
       
+      const tableActionKey = table.includes('onay') ? 'approved' : table.includes('red') ? 'rejected' : 'updated';
+      const localizedAction = t(`details.${tableActionKey}`);
+
       if (table.includes('red')) {
-        return `Özdeğerlendirme Raporu REDDEDİLDİ. Neden: ${data.red_nedeni || 'Belirtilmedi'}`;
+         return t('details.self_evaluation_reject', { reason });
       }
-      return `Özdeğerlendirme Raporu ${actionLabel}`;
+      return t('details.self_evaluation_action', { action: localizedAction });
     }
 
     if (table.includes('alt_olcutler') && table.includes('kalite_el_kitabi')) {
-      return `Kalite El Kitabı raporlama detayları güncellendi`;
+      return t('details.quality_manual_update');
     }
 
     if (table.includes('donemler')) {
       const data = log.yeni_veri || log.eski_veri || {};
       const name = data.donem_adi || '';
       if (action === 'SEAL') {
-        return `Akademik dönem mühürlendi / arşivlendi: ${name}`;
+        return t('details.period_seal', { name });
       }
-      return `Dönem bilgisi güncellendi: ${name}`;
+      return t('details.period_update', { name });
     }
 
-    return `${table} tablosunda işlem gerçekleştirildi (${action})`;
+    return t('details.generic_action', { table, action });
   };
 
   // Perform client-side searching and filtering
@@ -303,7 +338,7 @@ export default function AktiviteGunluguPage() {
     return (
       <div className="h-[70vh] flex flex-col items-center justify-center gap-3">
         <Loader2 className="w-10 h-10 animate-spin text-indigo-600" />
-        <span className="text-sm font-semibold text-slate-500">Loglar yükleniyor...</span>
+        <span className="text-sm font-semibold text-slate-500">{t('loading')}</span>
       </div>
     );
   }
@@ -314,15 +349,15 @@ export default function AktiviteGunluguPage() {
         <div className="w-20 h-20 bg-red-50 dark:bg-red-950/20 text-red-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
           <AlertCircle className="w-10 h-10" />
         </div>
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Erişim Yetkisi Yok</h3>
+        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">{t('unauthorized')}</h3>
         <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-          Aktivite Günlüğü sadece Yöneticiler ve Başlık Koordinatörleri tarafından görüntülenebilir.
+          {t('unauthorized_desc')}
         </p>
         <button 
           onClick={() => router.replace('/olcutler')}
           className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-2xl hover:bg-indigo-700 transition-all cursor-pointer"
         >
-          Ana Sayfaya Dön
+          {t('back_to_home')}
         </button>
       </div>
     );
@@ -341,7 +376,7 @@ export default function AktiviteGunluguPage() {
           className="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-[#0f1e36] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm text-sm font-bold text-slate-700 dark:text-slate-200 hover:border-indigo-200 dark:hover:border-slate-700 transition-all cursor-pointer shrink-0 active:scale-95"
         >
           <RefreshCw className="w-4 h-4" />
-          Yenile
+          {t('refresh')}
         </button>
       </div>
 
@@ -385,16 +420,16 @@ export default function AktiviteGunluguPage() {
                 className="w-full px-4 py-2.5 bg-slate-50 dark:bg-[#0a1324] border border-slate-200 dark:border-slate-800 rounded-2xl outline-none focus:border-indigo-500 text-sm text-slate-700 dark:text-slate-300 transition-all"
               >
                 <option value="">-- {t('heading_placeholder')} --</option>
-                <option value="A">A - Kalite Güvence Sistemi</option>
-                <option value="B">B - Eğitim ve Öğretim</option>
-                <option value="C">C - Araştırma ve Geliştirme</option>
-                <option value="D">D - Toplumsal Katkı</option>
-                <option value="E">E - Yönetim Sistemi</option>
+                <option value="A">A - {tTracking('topics.A')}</option>
+                <option value="B">B - {tTracking('topics.B')}</option>
+                <option value="C">C - {tTracking('topics.C')}</option>
+                <option value="D">D - {tTracking('topics.D')}</option>
+                <option value="E">E - {tTracking('topics.E')}</option>
               </select>
             </div>
           ) : (
             <div className="flex items-center px-4 py-2.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold text-slate-500 dark:text-slate-400">
-              🔒 Sorumlu Olduğunuz Başlık: {assignedTopicLetter} (Kilitli)
+              {t('responsible_heading_locked', { letter: assignedTopicLetter || '' })}
             </div>
           )}
         </div>
@@ -429,7 +464,7 @@ export default function AktiviteGunluguPage() {
                 paginatedLogs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/50 dark:hover:bg-[#12223c]/50 transition-colors">
                     <td className="p-5 text-sm text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                      {new Date(log.tarih).toLocaleString('tr-TR', {
+                      {new Date(log.tarih).toLocaleString(locale === 'ar' ? 'ar-EG' : locale === 'en' ? 'en-US' : 'tr-TR', {
                         day: '2-digit',
                         month: '2-digit',
                         year: 'numeric',
@@ -439,10 +474,10 @@ export default function AktiviteGunluguPage() {
                     </td>
                     <td className="p-5">
                       <div className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
-                        {log.userName}
+                        {log.userName || t('system_user')}
                       </div>
                       <div className="text-xs text-slate-400 dark:text-slate-500 font-medium">
-                        {log.userRole === 'BirimSorumlusu' ? 'Birim Sorumlusu' : log.userRole}
+                        {log.userName ? getLocalizedRole(log.userRole) : '-'}
                       </div>
                     </td>
                     <td className="p-5">
@@ -470,7 +505,7 @@ export default function AktiviteGunluguPage() {
                         <button 
                           onClick={() => router.push(`/olcutler/${log.alt_olcut_id}/uygulama`)}
                           className="p-2 hover:bg-slate-100 dark:hover:bg-[#1e2d4a] rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 transition-all cursor-pointer"
-                          title="Ölçüte Git"
+                          title={t('go_to_criterion')}
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -494,7 +529,11 @@ export default function AktiviteGunluguPage() {
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4 bg-white dark:bg-[#0f1e36] border border-slate-200 dark:border-slate-800 rounded-2xl px-6 py-4 shadow-sm">
           <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">
-            Toplam {filteredLogs.length} kayıttan {currentPage * logsPerPage + 1}-{Math.min((currentPage + 1) * logsPerPage, filteredLogs.length)} arası gösteriliyor.
+            {t('pagination_text', { 
+              total: filteredLogs.length, 
+              start: currentPage * logsPerPage + 1, 
+              end: Math.min((currentPage + 1) * logsPerPage, filteredLogs.length) 
+            })}
           </span>
           <div className="flex items-center gap-2">
             <button 

@@ -51,8 +51,10 @@
   },
   "Roles": {
     "admin": "مدير",
-    "unit_admin": "مدير الوحدة",
-    "user": "موظف"
+    "unit_admin": "مسؤول الوحدة",
+    "user": "موظف",
+    "observer": "مراقب",
+    "coordinator": "منسق"
   },
   "Phase": {
     "home": "الصفحة الرئيسية",
@@ -558,11 +560,49 @@
     "criterion": "المعيار",
     "detail": "التفاصيل",
     "no_logs": "لم يتم العثور على سجلات نشاط مطابقة.",
+    "loading": "جاري تحميل السجلات...",
+    "unauthorized": "غير مصرح",
+    "unauthorized_desc": "سجل الأنشطة يمكن عرضه فقط من قبل المديرين ومنسقي العناوين.",
+    "back_to_home": "العودة إلى الصفحة الرئيسية",
+    "refresh": "تحديث",
+    "responsible_heading_locked": "🔒 العنوان المسؤول عنه: {letter} (مغلق)",
+    "go_to_criterion": "الانتقال إلى المعيار",
+    "pagination_text": "عرض {start}-{end} من أصل {total} سجلات.",
+    "system_user": "النظام / مستخدم محذوف",
     "action_types": {
       "INSERT": "إضافة",
       "UPDATE": "تحديث",
       "DELETE": "حذف",
       "SEAL": "ختم"
+    },
+    "details": {
+      "puko_insert": "تم إدخال تقييم PUKÖ جديد (مرحلة {phase}، الحالة: {status})",
+      "puko_update": "تم تحديث تقييم PUKÖ (مرحلة {phase}، الحالة: {status})",
+      "evidence_delete": "تم حذف ملف الإثبات: {fileName}",
+      "evidence_upload": "تم رفع ملف الإثبات: {fileName}",
+      "self_evaluation_reject": "تم رفض تقرير التقييم الذاتي. السبب: {reason}",
+      "self_evaluation_action": "تقرير التقييم الذاتي {action}",
+      "quality_manual_update": "تم تحديث تفاصيل إعداد تقرير دليل الجودة",
+      "period_seal": "تم ختم / أرشفة الفترة الأكاديمية: {name}",
+      "period_update": "تم تحديث معلومات الفترة: {name}",
+      "generic_action": "تم تنفيذ إجراء في جدول {table} ({action})",
+      "no_reason": "غير محدد",
+      "updated": "تم التحديث",
+      "approved": "تمت الموافقة",
+      "rejected": "تم الرفض",
+      "puko_phases": {
+        "planlama": "التخطيط (P)",
+        "uygulama": "التطبيق (U)",
+        "kontrol": "التحقق (K)",
+        "onlem": "اتخاذ الإجراء (O)",
+        "olgunluk": "مستوى النضج"
+      },
+      "statuses": {
+        "taslak": "مسودة",
+        "beklemede": "قيد الانتظار",
+        "onaylandi": "تمت الموافقة",
+        "reddedildi": "تم الرفض"
+      }
     }
   }
 }

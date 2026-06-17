@@ -25,6 +25,7 @@ export default function SessionTimeout() {
       if (session) {
         await supabase.auth.signOut();
         localStorage.removeItem('lastActivity');
+        sessionStorage.removeItem('sb-session-active');
         toast.error('Oturumunuz inaktiflik nedeniyle sonlandırılmıştır.', {
           duration: 5000,
           position: 'top-center'
@@ -40,15 +41,26 @@ export default function SessionTimeout() {
 
   useEffect(() => {
     const checkInactivityOnMount = async () => {
-      const lastActivity = localStorage.getItem('lastActivity');
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
+        // Tarayıcı kapatılıp açıldıysa (sessionStorage silinmiştir) oturumu sonlandır
+        const isSessionActive = sessionStorage.getItem('sb-session-active');
+        if (!isSessionActive) {
+          await supabase.auth.signOut();
+          localStorage.removeItem('lastActivity');
+          router.refresh();
+          router.push('/login');
+          return;
+        }
+
+        const lastActivity = localStorage.getItem('lastActivity');
         if (lastActivity) {
           const timeDiff = Date.now() - Number(lastActivity);
           if (timeDiff > TIMEOUT_DURATION) {
             await supabase.auth.signOut();
             localStorage.removeItem('lastActivity');
+            sessionStorage.removeItem('sb-session-active');
             toast.error('Oturumunuz inaktiflik nedeniyle sonlandırılmıştır.', {
               duration: 5000,
               position: 'top-center'
@@ -68,12 +80,14 @@ export default function SessionTimeout() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' || session) {
+        sessionStorage.setItem('sb-session-active', 'true');
         resetTimer();
       } else if (event === 'SIGNED_OUT') {
         if (timeoutRef.current) {
           clearTimeout(timeoutRef.current);
         }
         localStorage.removeItem('lastActivity');
+        sessionStorage.removeItem('sb-session-active');
       }
     });
 

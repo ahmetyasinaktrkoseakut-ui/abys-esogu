@@ -113,16 +113,36 @@ export default function KoordinatorlerPage() {
     if (!window.confirm(t('delete_confirm', { baslik }) || `${baslik} koordinatörlüğünü silmek istediğinize emin misiniz?`)) return;
     
     try {
-      const { error } = await supabase.rpc('rpc_v4_remove_koordinator', {
-        p_user_id: kullanici_id,
-        p_baslik: baslik
-      });
-        
-      if (error) throw error;
+      if (baslik === 'Tüm Sistem') {
+        // Gözlemci atamasını silmek için doğrudan tablo işlemleri yapıyoruz (RPC'deki NULL parametre karşılaştırma hatasını aşmak için)
+        const { error: deleteError } = await supabase
+          .from('baslik_koordinatorleri')
+          .delete()
+          .eq('kullanici_id', kullanici_id)
+          .is('baslik', null);
+          
+        if (deleteError) throw deleteError;
+
+        // Profil rolünü BirimSorumlusu yapıyoruz
+        const { error: profileError } = await supabase
+          .from('profiller')
+          .update({ rol: 'BirimSorumlusu' })
+          .eq('id', kullanici_id);
+          
+        if (profileError) throw profileError;
+      } else {
+        const { error } = await supabase.rpc('rpc_v4_remove_koordinator', {
+          p_user_id: kullanici_id,
+          p_baslik: baslik
+        });
+          
+        if (error) throw error;
+      }
       
       setMessage({ type: 'success', text: tCommon('delete_success') || 'Atama silindi.' });
       fetchData();
     } catch (error: any) {
+      console.error('Delete error:', error);
       setMessage({ type: 'error', text: tCommon('delete_error') || 'Silinirken hata oluştu.' });
     }
   };

@@ -208,7 +208,17 @@
       "no_data_short": "No data yet.",
       "approved": "Approved",
       "pending": "Pending",
-      "rejected": "Rejected"
+      "rejected": "Rejected",
+      "maturity_radar": "YÖKAK Maturity Levels (A-E)",
+      "no_maturity_data": "No approved maturity scores yet.",
+      "draft_pending_included": "Draft / Pending Scores Included"
+    },
+    "topics": {
+      "A": "Quality Assurance",
+      "B": "Education & Training",
+      "C": "Research & Development",
+      "D": "Social Contribution",
+      "E": "Management System"
     }
   },
   "Notifications": {

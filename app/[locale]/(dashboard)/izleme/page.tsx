@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Activity, CheckCircle, Clock, XCircle, FileText, BarChart3, TrendingUp } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { Loader2, Activity, CheckCircle, Clock, FileText, BarChart3, TrendingUp } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
 
 import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
@@ -22,6 +22,8 @@ export default function IzlemePage() {
   });
   
   const [pukoDistribution, setPukoDistribution] = useState<any[]>([]);
+  const [radarData, setRadarData] = useState<any[]>([]);
+  const [isRadarFallback, setIsRadarFallback] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export default function IzlemePage() {
         
         const { data: pukoData } = await supabase
           .from('puko_degerlendirmeleri')
-          .select('durum, puko_asamasi, kanit_dosyalari')
+          .select('durum, puko_asamasi, kanit_dosyalari, olgunluk_puani, alt_olcutler(kod)')
           .eq('donem_id', selectedPeriod.id);
 
         let bekleyen = 0;
@@ -55,6 +57,14 @@ export default function IzlemePage() {
         let reddedilen = 0;
         let toplamDokuman = 0;
         const pukoCounts: Record<string, number> = {};
+
+        // Group by A, B, C, D, E for maturity ratings
+        const radarSums: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+        const radarCounts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+
+        // Support draft/pending fallback if there are no approved ones
+        const radarSumsAll: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0 };
+        const radarCountsAll: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0 };
 
         if (pukoData) {
           pukoData.forEach(row => {
@@ -68,6 +78,28 @@ export default function IzlemePage() {
 
             const asama = row.puko_asamasi || t('charts.no_data_short');
             pukoCounts[asama] = (pukoCounts[asama] || 0) + 1;
+
+            if (row.puko_asamasi === 'olgunluk') {
+              const altOlcut = row.alt_olcutler;
+              const rawKod = altOlcut
+                ? (Array.isArray(altOlcut)
+                    ? altOlcut[0]?.kod
+                    : (altOlcut as any).kod)
+                : null;
+              const codePrefix = rawKod ? rawKod.split('.')[0] : null;
+              if (codePrefix && radarSums[codePrefix] !== undefined) {
+                const score = row.olgunluk_puani || 0;
+                if (score > 0) {
+                  radarSumsAll[codePrefix] += score;
+                  radarCountsAll[codePrefix] += 1;
+
+                  if (row.durum === 'Onaylandı') {
+                    radarSums[codePrefix] += score;
+                    radarCounts[codePrefix] += 1;
+                  }
+                }
+              }
+            }
           });
         }
 
@@ -84,6 +116,35 @@ export default function IzlemePage() {
           value: pukoCounts[k]
         }));
         setPukoDistribution(distArray);
+
+        // Determine fallback usage
+        const totalApprovedMaturities = Object.values(radarCounts).reduce((sum, c) => sum + c, 0);
+        const useFallback = totalApprovedMaturities === 0;
+
+        const activeSums = useFallback ? radarSumsAll : radarSums;
+        const activeCounts = useFallback ? radarCountsAll : radarCounts;
+
+        const radarChartData = Object.keys(activeSums).map(key => {
+          const avg = activeCounts[key] > 0 ? (activeSums[key] / activeCounts[key]) : 0;
+          let topicName = key;
+          try {
+            topicName = t(`topics.${key}`);
+          } catch (e) {
+            if (key === 'A') topicName = 'Kalite Güvencesi';
+            if (key === 'B') topicName = 'Eğitim ve Öğretim';
+            if (key === 'C') topicName = 'Araştırma ve Geliştirme';
+            if (key === 'D') topicName = 'Toplumsal Katkı';
+            if (key === 'E') topicName = 'Yönetim Sistemi';
+          }
+          return {
+            subject: topicName,
+            value: parseFloat(avg.toFixed(2)),
+            fullMark: 5
+          };
+        });
+
+        setRadarData(radarChartData);
+        setIsRadarFallback(useFallback && Object.values(radarCountsAll).reduce((sum, c) => sum + c, 0) > 0);
 
       } catch (err) {
         console.error(err);
@@ -104,17 +165,15 @@ export default function IzlemePage() {
     { name: t('charts.rejected'), value: stats.reddedilen, color: '#ef4444' }, // red-500
   ].filter(d => d.value > 0);
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#14b8a6', '#f43f5e'];
-
   return (
-    <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
+    <div className="p-8 max-w-[1400px] mx-auto animate-fade-in-up">
       <div className="mb-8">
         <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{t('title')}</h2>
         <p className="text-slate-500 mt-1 text-sm">{t('description')}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4 hover-card-effect cursor-pointer">
           <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-xl flex items-center justify-center shrink-0">
             <Activity className="w-6 h-6" />
           </div>
@@ -124,7 +183,7 @@ export default function IzlemePage() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4 hover-card-effect cursor-pointer">
           <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center shrink-0">
             <Clock className="w-6 h-6" />
           </div>
@@ -134,7 +193,7 @@ export default function IzlemePage() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4 hover-card-effect cursor-pointer">
           <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center shrink-0">
             <CheckCircle className="w-6 h-6" />
           </div>
@@ -144,7 +203,7 @@ export default function IzlemePage() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm flex items-center gap-4 hover-card-effect cursor-pointer">
           <div className="w-12 h-12 bg-indigo-50 text-indigo-500 rounded-xl flex items-center justify-center shrink-0">
             <FileText className="w-6 h-6" />
           </div>
@@ -155,8 +214,8 @@ export default function IzlemePage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover-card-effect">
           <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-6">
             <BarChart3 className="w-5 h-5 text-blue-600" />
             {t('charts.data_entry_by_phase')}
@@ -165,14 +224,20 @@ export default function IzlemePage() {
             {pukoDistribution.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={pukoDistribution} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} style={{ fontSize: '10px', fill: '#64748b' }} />
-                  <YAxis axisLine={false} tickLine={false} style={{ fontSize: '12px', fill: '#64748b' }} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--card-border)" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} style={{ fontSize: '10px', fill: 'var(--text-muted)' }} />
+                  <YAxis axisLine={false} tickLine={false} style={{ fontSize: '12px', fill: 'var(--text-muted)' }} />
                   <Tooltip 
-                    cursor={{ fill: '#f1f5f9' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                    cursor={{ fill: 'var(--background)' }}
+                    contentStyle={{ 
+                      borderRadius: '8px', 
+                      border: 'none', 
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-main)'
+                    }}
                   />
-                  <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} />
+                  <Bar dataKey="value" fill="#9e7f59" radius={[4, 4, 0, 0]} barSize={40} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -181,7 +246,42 @@ export default function IzlemePage() {
           </div>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover-card-effect relative">
+          <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-2">
+            <Activity className="w-5 h-5 text-indigo-600" />
+            {t('charts.maturity_radar')}
+          </h3>
+          {isRadarFallback && (
+            <span className="inline-block text-[10px] bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full mb-4 font-semibold">
+              ⚠️ {t('charts.draft_pending_included')}
+            </span>
+          )}
+          <div className="h-72 w-full flex items-center justify-center mt-2">
+            {radarData.some(d => d.value > 0) ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart cx="50%" cy="50%" outerRadius="75%" data={radarData}>
+                  <PolarGrid stroke="var(--card-border)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--text-muted)', fontSize: 9 }} />
+                  <PolarRadiusAxis angle={30} domain={[0, 5]} tick={{ fill: 'var(--text-muted)', fontSize: 8 }} />
+                  <Radar name="Skor" dataKey="value" stroke="#9e7f59" fill="#9e7f59" fillOpacity={0.3} />
+                  <Tooltip 
+                    contentStyle={{ 
+                      borderRadius: '8px', 
+                      border: 'none', 
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-main)'
+                    }} 
+                  />
+                </RadarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center text-slate-400 text-center">{t('charts.no_maturity_data')}</div>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hover-card-effect">
           <h3 className="flex items-center gap-2 font-semibold text-slate-700 mb-6">
             <TrendingUp className="w-5 h-5 text-emerald-600" />
             {t('charts.process_approval_status')}
@@ -195,7 +295,7 @@ export default function IzlemePage() {
                       cx="50%"
                       cy="50%"
                       innerRadius={70}
-                      outerRadius={100}
+                      outerRadius={90}
                       paddingAngle={5}
                       dataKey="value"
                       stroke="none"
@@ -204,7 +304,13 @@ export default function IzlemePage() {
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+                    <Tooltip contentStyle={{ 
+                      borderRadius: '8px', 
+                      border: 'none', 
+                      boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                      backgroundColor: 'var(--card-bg)',
+                      color: 'var(--text-main)'
+                    }} />
                   </PieChart>
                 </ResponsiveContainer>
              ) : (
@@ -229,3 +335,4 @@ export default function IzlemePage() {
     </div>
   );
 }
+

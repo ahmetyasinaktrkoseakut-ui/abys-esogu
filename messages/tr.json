@@ -207,7 +207,17 @@
       "no_data_short": "Henüz veri yok.",
       "approved": "Onaylandı",
       "pending": "Beklemede",
-      "rejected": "Reddedildi"
+      "rejected": "Reddedildi",
+      "maturity_radar": "YÖKAK Olgunluk Düzeyleri (A-E)",
+      "no_maturity_data": "Henüz onaylanmış olgunluk puanı bulunmamaktadır.",
+      "draft_pending_included": "Taslak / Bekleyen Puanlar Dahil"
+    },
+    "topics": {
+      "A": "Kalite Güvencesi",
+      "B": "Eğitim ve Öğretim",
+      "C": "Araştırma ve Geliştirme",
+      "D": "Toplumsal Katkı",
+      "E": "Yönetim Sistemi"
     }
   },
   "Notifications": {

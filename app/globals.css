@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -6,25 +7,30 @@
 }
 
 @theme {
-  /* Academic Colors Overrides */
-  --color-blue-500: #1e293b;
-  --color-blue-600: #0f1e36; /* Oxford Blue */
-  --color-blue-700: #0a1324;
+  /* Academic Colors Overrides - Sapphire Blue primary, Emerald success, Amber warning */
+  --color-blue-500: #1e3a8a; /* Sapphire Blue (Primary Accent) */
+  --color-blue-600: #0f172a; /* Deep Sapphire Blue (Primary Dark) */
+  --color-blue-700: #0a1120; /* Very Deep Sapphire Blue */
 
   --color-indigo-500: #bfa17a; /* Academic Gold */
   --color-indigo-600: #9e7f59;
   --color-indigo-700: #7d613e;
 
-  --color-emerald-500: #1e3a2b; /* Muted Sage Green */
-  --color-emerald-600: #14281d;
+  --color-emerald-500: #059669; /* Emerald Green (Success Accent) */
+  --color-emerald-600: #047857;
+  --color-emerald-700: #065f46;
+
+  --color-amber-500: #f59e0b; /* Warm Amber (Warning Accent) */
+  --color-amber-600: #d97706;
+  --color-amber-700: #b45309;
   
-  --color-brand-600: #0f1e36;
+  --color-brand-600: #1e3a8a;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
   --font-mono: var(--font-geist-mono);
 }
 
@@ -89,8 +95,15 @@
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.6;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  font-weight: 600;
+  letter-spacing: -0.02em;
 }
 
 .dark body {

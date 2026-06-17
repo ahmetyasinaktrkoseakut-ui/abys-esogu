@@ -21,7 +21,8 @@
     "data_approval": "Data Approval",
     "survey_management": "Survey Management",
     "coordinators": "Coordinators",
-    "syllabus_data": "Syllabus Data"
+    "syllabus_data": "Syllabus Data",
+    "audit_log": "Activity Log"
   },
   "Common": {
     "save": "Save",
@@ -545,5 +546,24 @@
     "save_assignment": "Save Assignment",
     "current_coordinators": "Current Coordinators",
     "no_coordinators": "No coordinator assigned yet."
+  },
+  "AuditLog": {
+    "title": "Activity Log",
+    "description": "Retrospective tracking of all data addition, update, and approval actions across the system.",
+    "user_search_placeholder": "Search user...",
+    "action_type_placeholder": "Action Type",
+    "heading_placeholder": "Main Heading (A-E)",
+    "timestamp": "Timestamp",
+    "user": "User",
+    "action": "Action",
+    "criterion": "Criterion",
+    "detail": "Detail",
+    "no_logs": "No matching activity logs found.",
+    "action_types": {
+      "INSERT": "Insert",
+      "UPDATE": "Update",
+      "DELETE": "Delete",
+      "SEAL": "Seal"
+    }
   }
 }

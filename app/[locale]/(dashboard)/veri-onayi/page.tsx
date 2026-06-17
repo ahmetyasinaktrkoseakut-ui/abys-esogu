@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { getAssignedLetter } from '@/lib/utils';
 import DOMPurify from 'dompurify';
+import { logAction } from '@/lib/logger';
 
 export default function VeriOnayiPage() {
   const { selectedPeriod } = usePeriod();
@@ -183,6 +184,14 @@ export default function VeriOnayiPage() {
           .eq('alt_olcut_id', report.alt_olcut_id)
           .eq('donem_id', report.donem_id)
           .eq('durum', 'Beklemede');
+
+        await logAction({
+          supabase,
+          islemTipi: 'UPDATE',
+          tabloAdi: 'ozdegerlendirme_raporlari (onay)',
+          kayitId: id,
+          yeniVeri: { durum: 'Onaylandı', alt_olcut_id: report.alt_olcut_id }
+        });
       }
 
       setMessage({ type: 'success', text: 'Rapor ve ilgili PUKÖ kayıtları başarıyla onaylandı.' });
@@ -244,6 +253,14 @@ export default function VeriOnayiPage() {
           .eq('alt_olcut_id', report.alt_olcut_id)
           .eq('donem_id', report.donem_id)
           .eq('durum', 'Beklemede');
+
+        await logAction({
+          supabase,
+          islemTipi: 'UPDATE',
+          tabloAdi: 'ozdegerlendirme_raporlari (red)',
+          kayitId: report.id,
+          yeniVeri: { durum: 'Reddedildi', alt_olcut_id: report.alt_olcut_id, red_nedeni: rejectReason.trim() }
+        });
       }
 
       setMessage({ type: 'success', text: 'Rapor reddedildi ve bildirimler güncellendi.' });

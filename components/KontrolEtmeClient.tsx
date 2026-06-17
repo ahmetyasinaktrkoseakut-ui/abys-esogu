@@ -9,6 +9,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
 import DOMPurify from 'dompurify';
+import { logAction } from '@/lib/logger';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Cell } from 'recharts';
 import {
   DndContext,
@@ -305,10 +306,27 @@ export default function KontrolEtmeClient({ params }: KontrolEtmeClientProps) {
           .eq('id', pukoId)
           .eq('donem_id', selectedPeriod?.id);
         if (error) throw new Error(error.message);
+
+        await logAction({
+          supabase,
+          islemTipi: 'UPDATE',
+          tabloAdi: 'puko_degerlendirmeleri',
+          kayitId: pukoId,
+          yeniVeri: upsertPuko
+        });
       } else {
         const { data: newPuko, error } = await supabase.from('puko_degerlendirmeleri').insert(upsertPuko).select('id').maybeSingle();
         if (error) throw new Error(error.message);
-        if (newPuko) setPukoId(newPuko.id.toString());
+        if (newPuko) {
+          setPukoId(newPuko.id.toString());
+          await logAction({
+            supabase,
+            islemTipi: 'INSERT',
+            tabloAdi: 'puko_degerlendirmeleri',
+            kayitId: newPuko.id,
+            yeniVeri: upsertPuko
+          });
+        }
       }
 
       // 2. Anketleri Kaydet (Sadece yerel anketler)

@@ -21,7 +21,8 @@
     "data_approval": "الموافقة على البيانات",
     "survey_management": "إدارة الاستبيانات",
     "coordinators": "المنسقون",
-    "syllabus_data": "بيانات الخطط"
+    "syllabus_data": "بيانات الخطط",
+    "audit_log": "سجل الأنشطة"
   },
   "Common": {
     "save": "حفظ",
@@ -543,6 +544,25 @@
       "delete_confirm": "هل أنت متأكد أنك تريد حذف هذه الفترة؟ لن يتم حذف البيانات المرتبطة بها (مثل PUKÖ، الأدلة، إلخ)، ولكن قد لا يمكن الوصول إليها.",
       "delete_success": "تم حذف الفترة بنجاح.",
       "active_period_required": "يوصى بوجود فترة نشطة واحدة على الأقل في النظام."
+    }
+  },
+  "AuditLog": {
+    "title": "سجل الأنشطة",
+    "description": "تتبع رجعي لجميع إجراءات إضافة البيانات وتحديثها والموافقة عليها عبر النظام.",
+    "user_search_placeholder": "البحث عن مستخدم...",
+    "action_type_placeholder": "نوع الإجراء",
+    "heading_placeholder": "العنوان الرئيسي (A-E)",
+    "timestamp": "التاريخ / الوقت",
+    "user": "المستخدم",
+    "action": "الإجراء",
+    "criterion": "المعيار",
+    "detail": "التفاصيل",
+    "no_logs": "لم يتم العثور على سجلات نشاط مطابقة.",
+    "action_types": {
+      "INSERT": "إضافة",
+      "UPDATE": "تحديث",
+      "DELETE": "حذف",
+      "SEAL": "ختم"
     }
   }
 }

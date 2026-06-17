@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { Loader2, Info, Save, Settings, Star } from 'lucide-react';
 import StepPanel from '@/components/StepPanel';
+import { logAction } from '@/lib/logger';
 import RichTextEditor from '@/components/RichTextEditor';
 import { useTranslations, useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
@@ -95,11 +96,29 @@ export default function OlgunlukClient({ params }: OlgunlukClientProps) {
           .update(upsertData)
           .eq('id', existingRecord.id);
         if (updateErr) throw updateErr;
+
+        await logAction({
+          supabase,
+          islemTipi: 'UPDATE',
+          tabloAdi: 'puko_degerlendirmeleri',
+          kayitId: existingRecord.id,
+          yeniVeri: upsertData
+        });
       } else {
-        const { error: insertErr } = await supabase
+        const { data: newRec, error: insertErr } = await supabase
           .from('puko_degerlendirmeleri')
-          .insert(upsertData);
+          .insert(upsertData)
+          .select('id')
+          .maybeSingle();
         if (insertErr) throw insertErr;
+
+        await logAction({
+          supabase,
+          islemTipi: 'INSERT',
+          tabloAdi: 'puko_degerlendirmeleri',
+          kayitId: newRec?.id,
+          yeniVeri: upsertData
+        });
       }
 
       alert(t('save_success'));

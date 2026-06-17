@@ -21,7 +21,8 @@
     "data_approval": "Veri Onayı",
     "survey_management": "Anket Yönetimi",
     "coordinators": "Koordinatörler",
-    "syllabus_data": "İzlence Verileri"
+    "syllabus_data": "İzlence Verileri",
+    "audit_log": "Aktivite Günlüğü"
   },
   "Common": {
     "save": "Kaydet",
@@ -544,5 +545,24 @@
     "save_assignment": "Atamayı Kaydet",
     "current_coordinators": "Mevcut Koordinatörler",
     "no_coordinators": "Henüz atanmış bir koordinatör yok."
+  },
+  "AuditLog": {
+    "title": "Aktivite Günlüğü",
+    "description": "Sistem genelinde yapılan tüm veri ekleme, güncelleme ve onaylama işlemlerinin geriye dönük takibi.",
+    "user_search_placeholder": "Hoca / Kullanıcı adı ara...",
+    "action_type_placeholder": "İşlem Tipi",
+    "heading_placeholder": "Ana Başlık (A-E)",
+    "timestamp": "Tarih / Saat",
+    "user": "İşlemi Yapan",
+    "action": "İşlem Tipi",
+    "criterion": "Kriter",
+    "detail": "Detay",
+    "no_logs": "Eşleşen herhangi bir işlem kaydı bulunamadı.",
+    "action_types": {
+      "INSERT": "Ekleme",
+      "UPDATE": "Güncelleme",
+      "DELETE": "Silme",
+      "SEAL": "Mühürleme"
+    }
   }
 }

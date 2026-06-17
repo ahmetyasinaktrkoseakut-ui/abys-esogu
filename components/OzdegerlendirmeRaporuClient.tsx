@@ -8,6 +8,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
 import RichTextEditor, { RichTextEditorRef } from '@/components/RichTextEditor';
+import { logAction } from '@/lib/logger';
 
 interface OzdegerlendirmeRaporuClientProps {
   params: Promise<{ id: string }>;
@@ -335,6 +336,14 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
           .update({ onay_durumu: 'bekliyor', red_nedeni: null })
           .eq('id', currentRecord.id);
         if (rErr) throw rErr;
+
+        await logAction({
+          supabase,
+          islemTipi: 'UPDATE',
+          tabloAdi: 'ozdegerlendirme_raporlari',
+          kayitId: currentRecord.id,
+          yeniVeri: { ...upsertData, onay_durumu: 'bekliyor' }
+        });
 
         if (!isAdmin) {
           // BİLDİRİM SENKRONİZASYONU: Kullanıcı raporu güncellediğinde, puko durumlarını 'Beklemede'ye çek.

@@ -7,6 +7,7 @@ import { useTranslations, useLocale } from 'next-intl';
 import StepPanel from '@/components/StepPanel';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
+import { logAction } from '@/lib/logger';
 
 interface KaliteData {
   sorumlu_birim: string;
@@ -112,6 +113,15 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
         .eq('id', resolvedParams.id);
 
       if (error) throw error;
+
+      await logAction({
+        supabase,
+        islemTipi: 'UPDATE',
+        tabloAdi: 'alt_olcutler (kalite_el_kitabi)',
+        kayitId: resolvedParams.id,
+        yeniVeri: { alt_olcut_id: resolvedParams.id, kalite_el_kitabi: formData }
+      });
+
       alert(t('save_success'));
     } catch (error: any) {
       console.error('Save Error:', error);

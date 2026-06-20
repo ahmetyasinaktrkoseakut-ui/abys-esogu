@@ -48,8 +48,9 @@ const additionsTR = {
   "QualityManualReport": {
     "title": "Kurumsal Kalite El Kitabı",
     "description": "Sistemdeki tüm kalite el kitabı verilerinin toplu görünümü ve raporlanması.",
-    "download_btn": "Raporu İndir (.doc)",
-    "table_prefix": "Tablo 1."
+    "download_btn": "Raporu Excel Olarak İndir (.xls)",
+    "table_prefix": "Tablo 1.",
+    "empty_data": "-"
   },
   "Coordinators": {
     "title": "Başlık Koordinatörleri",
@@ -106,8 +107,9 @@ const additionsEN = {
   "QualityManualReport": {
     "title": "Institutional Quality Manual",
     "description": "Aggregate view and reporting of all quality manual data in the system.",
-    "download_btn": "Download Report (.doc)",
-    "table_prefix": "Table 1."
+    "download_btn": "Download Report as Excel (.xls)",
+    "table_prefix": "Table 1.",
+    "empty_data": "-"
   },
   "Coordinators": {
     "title": "Topic Coordinators",
@@ -164,8 +166,9 @@ const additionsAR = {
   "QualityManualReport": {
     "title": "دليل الجودة المؤسسية",
     "description": "عرض وتجميع تقارير جميع بيانات دليل الجودة في النظام.",
-    "download_btn": "تنزيل التقرير (.doc)",
-    "table_prefix": "الجدول 1."
+    "download_btn": "تنزيل التقرير بصيغة إكسل (.xls)",
+    "table_prefix": "الجدول 1.",
+    "empty_data": "-"
   },
   "Coordinators": {
     "title": "منسقو المواضيع",

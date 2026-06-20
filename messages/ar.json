@@ -503,8 +503,9 @@
   "QualityManualReport": {
     "title": "دليل الجودة المؤسسية",
     "description": "عرض وتجميع تقارير جميع بيانات دليل الجودة في النظام.",
-    "download_btn": "تنزيل التقرير (.doc)",
-    "table_prefix": "الجدول 1."
+    "download_btn": "تنزيل التقرير بصيغة إكسل (.xls)",
+    "table_prefix": "الجدول 1.",
+    "empty_data": "-"
   },
   "Coordinators": {
     "title": "منسقو المواضيع",

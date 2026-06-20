@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, BookOpen, Search, Info, FileText } from 'lucide-react';
+import { Loader2, BookOpen, Search, Info, FileText, FileSpreadsheet } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 
@@ -46,43 +46,62 @@ export default function KaliteElKitabiRaporClient() {
     }
   };
 
-  const handleExportWord = () => {
+  const handleExportExcel = () => {
     if (isObserver) return;
     if (altOlcutler.length === 0) return;
     
     let htmlContent = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>${t('title')}</title>
-      <style>
-        body { font-family: 'Calibri', 'Arial', sans-serif; padding: 20px; color: #334155; }
-        h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 20px; color: #1e40af; font-size: 22px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; page-break-inside: avoid; break-inside: avoid; }
-        th { background-color: #2563eb; color: white; padding: 8px 12px; text-align: left; font-size: 14px; border: 1px solid #1e40af; }
-        td { vertical-align: top; line-height: 1.3; }
-        td.label { background-color: #2563eb; color: white; width: 30%; padding: 6px 10px; font-weight: bold; border: 1px solid #1e40af; font-size: 11px; }
-        td.data { background-color: #f8fafc; width: 70%; padding: 6px 10px; border: 1px solid #e2e8f0; font-size: 11px; color: #1e293b; }
-        .footer { text-align: center; font-size: 10px; color: #64748b; margin-top: 30px; }
-      </style>
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>${t('title').replace(/[:\/\\\?\*\[\]]/g, '').substring(0, 30)}</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: 'Segoe UI', 'Calibri', 'Arial', sans-serif; margin: 0; padding: 20px; color: #1e293b; }
+          h1 { text-align: left; color: #0f172a; font-size: 16pt; font-weight: bold; margin-bottom: 5px; }
+          .subtitle { color: #64748b; font-size: 10pt; margin-bottom: 20px; }
+          table { border-collapse: collapse; width: 100%; margin-bottom: 25px; }
+          th { background-color: #1e3a8a; color: #ffffff; padding: 10px; font-weight: bold; font-size: 11pt; border: 0.5pt solid #475569; text-align: left; }
+          td { padding: 8px 10px; border: 0.5pt solid #cbd5e1; font-size: 10pt; vertical-align: top; mso-number-format: "\\@"; white-space: normal; }
+          td.label { background-color: #f1f5f9; font-weight: bold; width: 250px; color: #334155; }
+          td.data { background-color: #ffffff; color: #0f172a; }
+          td.description { background-color: #f8fafc; font-style: italic; color: #475569; padding: 10px; border: 0.5pt solid #cbd5e1; }
+        </style>
       </head>
       <body>
         <h1>${t('title').toUpperCase()}</h1>
-        <p style='text-align:center; color: #64748b; margin-bottom: 30px;'>Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</p>
+        <div class="subtitle">Oluşturulma Tarihi: ${new Date().toLocaleDateString('tr-TR')}</div>
     `;
 
     altOlcutler.forEach((olcut, index) => {
       const data = olcut.kalite_el_kitabi;
+      const cleanDescription = data.aciklama_metni ? data.aciklama_metni.replace(/\n/g, '<br/>') : '';
+      
       htmlContent += `
-        <div style="margin-top: 30px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #1e40af;">
-          ${index + 1}. ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}
-        </div>
-        ${data.aciklama_metni ? `<div class="description-box"><strong>${tKalite('description_label')}:</strong><br/>${data.aciklama_metni}</div>` : ''}
         <table>
           <thead>
             <tr>
-              <th colspan="2">${t('table_prefix')} ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</th>
+              <th colspan="2" style="background-color: #1e3a8a; color: #ffffff;">${index + 1}. ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</th>
             </tr>
           </thead>
           <tbody>
+            ${data.aciklama_metni ? `
+            <tr>
+              <td colspan="2" class="description"><strong>${tKalite('description_label')}:</strong><br/>${cleanDescription}</td>
+            </tr>
+            ` : ''}
             <tr><td class="label">${tKalite('responsible_unit')}</td><td class="data">${data.sorumlu_birim || t('empty_data')}</td></tr>
             <tr><td class="label">${tKalite('first_planning_date')}</td><td class="data">${data.ilk_planlama_tarihi || t('empty_data')}</td></tr>
             <tr><td class="label">${tKalite('internal_stakeholders')}</td><td class="data">${data.ic_paydaslar || t('empty_data')}</td></tr>
@@ -95,15 +114,16 @@ export default function KaliteElKitabiRaporClient() {
             <tr><td class="label">${tKalite('bgs_location')}</td><td class="data">${data.bgs_yeri || t('empty_data')}</td></tr>
           </tbody>
         </table>
+        <br/>
       `;
     });
 
     htmlContent += `</body></html>`;
-    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/vnd.ms-excel' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Kurumsal_Kalite_El_Kitabi.doc';
+    link.download = 'Kurumsal_Kalite_El_Kitabi.xls';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -124,10 +144,10 @@ export default function KaliteElKitabiRaporClient() {
         </div>
         {!isObserver && (
           <button 
-            onClick={handleExportWord}
+            onClick={handleExportExcel}
             className="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-4 rounded-2xl font-bold transition-all shadow-lg shadow-indigo-500/20 active:scale-95 flex items-center gap-2"
           >
-            <BookOpen className="w-5 h-5" /> {t('download_btn')}
+            <FileSpreadsheet className="w-5 h-5" /> {t('download_btn')}
           </button>
         )}
       </div>

@@ -532,8 +532,9 @@
   "QualityManualReport": {
     "title": "Institutional Quality Manual",
     "description": "Aggregate view and reporting of all quality manual data in the system.",
-    "download_btn": "Download Report (.doc)",
-    "table_prefix": "Table 1."
+    "download_btn": "Download Report as Excel (.xls)",
+    "table_prefix": "Table 1.",
+    "empty_data": "-"
   },
   "Coordinators": {
     "title": "Topic Coordinators",

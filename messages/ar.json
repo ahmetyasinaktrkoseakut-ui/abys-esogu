@@ -504,6 +504,8 @@
     "title": "دليل الجودة المؤسسية",
     "description": "عرض وتجميع تقارير جميع بيانات دليل الجودة في النظام.",
     "download_btn": "تنزيل التقرير بصيغة إكسل (.xls)",
+    "download_excel_btn": "تنزيل بصيغة إكسل (.xls)",
+    "download_word_btn": "تنزيل بصيغة وورد (.doc)",
     "table_prefix": "الجدول 1.",
     "empty_data": "-"
   },

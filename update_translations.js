@@ -49,6 +49,8 @@ const additionsTR = {
     "title": "Kurumsal Kalite El Kitabı",
     "description": "Sistemdeki tüm kalite el kitabı verilerinin toplu görünümü ve raporlanması.",
     "download_btn": "Raporu Excel Olarak İndir (.xls)",
+    "download_excel_btn": "Excel Olarak İndir (.xls)",
+    "download_word_btn": "Word Olarak İndir (.doc)",
     "table_prefix": "Tablo 1.",
     "empty_data": "-"
   },
@@ -108,6 +110,8 @@ const additionsEN = {
     "title": "Institutional Quality Manual",
     "description": "Aggregate view and reporting of all quality manual data in the system.",
     "download_btn": "Download Report as Excel (.xls)",
+    "download_excel_btn": "Download as Excel (.xls)",
+    "download_word_btn": "Download as Word (.doc)",
     "table_prefix": "Table 1.",
     "empty_data": "-"
   },
@@ -165,8 +169,10 @@ const additionsAR = {
   },
   "QualityManualReport": {
     "title": "دليل الجودة المؤسسية",
-    "description": "عرض وتجميع تقارير جميع بيانات دليل الجودة في النظام.",
+    "description": "عرض وتجميع تقارير جميع بيانات دليل الجودة in the system.",
     "download_btn": "تنزيل التقرير بصيغة إكسل (.xls)",
+    "download_excel_btn": "تنزيل بصيغة إكسل (.xls)",
+    "download_word_btn": "تنزيل بصيغة وورد (.doc)",
     "table_prefix": "الجدول 1.",
     "empty_data": "-"
   },

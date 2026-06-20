@@ -532,6 +532,8 @@
     "title": "Kurumsal Kalite El Kitabı",
     "description": "Sistemdeki tüm kalite el kitabı verilerinin toplu görünümü ve raporlanması.",
     "download_btn": "Raporu Excel Olarak İndir (.xls)",
+    "download_excel_btn": "Excel Olarak İndir (.xls)",
+    "download_word_btn": "Word Olarak İndir (.doc)",
     "table_prefix": "Tablo 1.",
     "empty_data": "-"
   },

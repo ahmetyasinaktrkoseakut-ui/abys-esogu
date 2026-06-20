@@ -169,7 +169,7 @@
     "unknown_code": "Bilinmeyen Kod",
     "no_criterion_name": "Ölçüt adı yok",
     "unknown_criterion": "Bilinmeyen Ölçüt",
-    "export_word": "Rapor Oluştur (Word)",
+    "export_excel": "Excel Olarak İndir (.xls)",
     "report_date": "Tarih:"
   },
   "Reports": {

@@ -170,7 +170,7 @@
     "unknown_code": "Unknown Code",
     "unknown_criterion": "Unknown Criterion",
     "no_criterion_name": "No Criterion Name",
-    "export_word": "Create Report (Word)",
+    "export_excel": "Download as Excel (.xls)",
     "report_date": "Date:"
   },
   "Reports": {

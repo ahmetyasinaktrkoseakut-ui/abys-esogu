@@ -112,26 +112,48 @@ export default function TakvimClient() {
     fetchData();
   }, [selectedPeriod, locale, t]);
 
-  const exportToWord = () => {
+  const exportToExcel = () => {
     if (isObserver) return;
     if (!kayitlar || kayitlar.length === 0) return;
 
     let htmlContent = `
-      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>${t('title')}</title>
-      <style>
-        body { font-family: 'Calibri', 'Arial', sans-serif; line-height: 1.5; padding: 20px; }
-        h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid black; padding-bottom: 10px; color: #1a202c; }
-        h2 { background-color: #edf2f7; padding: 10px; border: 1px solid #cbd5e0; margin-top: 30px; color: #2d3748; font-size: 16px; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; font-size: 12px; }
-        th, td { border: 1px solid #cbd5e0; padding: 8px; text-align: left; vertical-align: top; }
-        th { background-color: #f7fafc; color: #4a5568; font-weight: bold; }
-        .footer { text-align: center; font-size: 11px; color: #718096; margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 10px; }
-      </style>
+      <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'>
+      <head>
+        <meta charset='utf-8'>
+        <!--[if gte mso 9]>
+        <xml>
+          <x:ExcelWorkbook>
+            <x:ExcelWorksheets>
+              <x:ExcelWorksheet>
+                <x:Name>Eylem Planları</x:Name>
+                <x:WorksheetOptions>
+                  <x:DisplayGridlines/>
+                </x:WorksheetOptions>
+              </x:ExcelWorksheet>
+            </x:ExcelWorksheets>
+          </x:ExcelWorkbook>
+        </xml>
+        <![endif]-->
+        <style>
+          body { font-family: 'Segoe UI', 'Arial', sans-serif; }
+          table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+          th, td { border: 1px solid #cbd5e0; padding: 10px; text-align: left; vertical-align: top; font-size: 10pt; }
+          th { background-color: #1e3a8a; color: white; font-weight: bold; }
+          .category-header { background-color: #edf2f7; color: #1e3a8a; font-weight: bold; font-size: 11pt; border: 1px solid #cbd5e0; }
+          .title { font-size: 14pt; font-weight: bold; text-align: center; padding: 15px 0; }
+          .date-info { text-align: center; color: #4a5568; font-size: 9pt; padding-bottom: 20px; }
+        </style>
       </head>
       <body>
-        <h1>${t('title')}</h1>
-        <p style='text-align:center; color: #718096;'>${t('report_date')} ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</p>
+        <table>
+          <tr>
+            <td colspan="8" class="title" style="text-align: center; font-weight: bold; font-size: 14pt;">${t('title')}</td>
+          </tr>
+          <tr>
+            <td colspan="8" class="date-info" style="text-align: center; color: #4a5568; font-size: 9pt;">${t('report_date')} ${new Date().toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US')} ${new Date().toLocaleTimeString(locale === 'tr' ? 'tr-TR' : 'en-US')}</td>
+          </tr>
+        </table>
+        <br />
     `;
 
     const groupedData: Record<string, EylemPlani[]> = {};
@@ -142,18 +164,21 @@ export default function TakvimClient() {
     });
 
     Object.entries(groupedData).forEach(([olcutTitle, planlar]) => {
-      htmlContent += `<h2>${olcutTitle}</h2>`;
       htmlContent += `
         <table>
           <thead>
             <tr>
-              <th style="width: 15%;">${t('table.improvement_area')}</th>
-              <th style="width: 20%;">${t('table.findings')}</th>
-              <th style="width: 25%;">${t('table.action_activity')}</th>
-              <th style="width: 15%;">${t('table.responsible')}</th>
-              <th style="width: 15%;">${t('table.success_indicator')}</th>
-              <th style="width: 10%;">${t('table.riskler') || 'Riskler'}</th>
-              <th style="width: 10%;">${t('table.tracking')}</th>
+              <th colspan="8" class="category-header" style="background-color: #edf2f7; color: #1e3a8a; font-weight: bold; font-size: 11pt; border: 1px solid #cbd5e0; padding: 10px;">${olcutTitle}</th>
+            </tr>
+            <tr>
+              <th style="background-color: #1e3a8a; color: white; font-weight: bold; border: 1px solid #cbd5e0; padding: 10px; width: 10%;">${t('table.date') || 'Tarih'}</th>
+              <th style="background-color: #1e3a8a; color: white; font-weight: bold; border: 1px solid #cbd5e0; padding: 10px; width: 15%;">${t('table.improvement_area')}</th>
+              <th style="background-color: #1e3a8a; color: white; font-weight: bold; border: 1px solid #cbd5e0; padding: 10px; width: 20%;">${t('table.findings')}</th>
+              <th style="background-color: #1e3a8a; color: white; font-weight: bold; border: 1px solid #cbd5e0; padding: 10px; width: 20%;">${t('table.action_activity')}</th>
+              <th style="background-color: #1e3a8a; color: white; font-weight: bold; border: 1px solid #cbd5e0; padding: 10px; width: 10%;">${t('table.responsible')}</th>
+              <th style="background-color: #1e3a8a; color: white; font-weight: bold; border: 1px solid #cbd5e0; padding: 10px; width: 10%;">${t('table.success_indicator')}</th>
+              <th style="background-color: #1e3a8a; color: white; font-weight: bold; border: 1px solid #cbd5e0; padding: 10px; width: 10%;">${t('table.riskler') || 'Riskler'}</th>
+              <th style="background-color: #1e3a8a; color: white; font-weight: bold; border: 1px solid #cbd5e0; padding: 10px; width: 10%;">${t('table.tracking')}</th>
             </tr>
           </thead>
           <tbody>
@@ -161,33 +186,34 @@ export default function TakvimClient() {
       planlar.forEach(p => {
         htmlContent += `
           <tr>
-            <td>${p.iyilestirme_alani || '-'}</td>
-            <td>${p.bulgular || '-'}</td>
-            <td>${p.eylem_faaliyet || '-'}</td>
-            <td>${p.sorumlu || '-'}</td>
-            <td>${p.basari_gostergesi || '-'}</td>
-            <td>${p.riskler || '-'}</td>
-            <td>${p.izleme_durumu || '-'}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px; vertical-align: top;">${p.takvim || '-'}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px; vertical-align: top;">${p.iyilestirme_alani || '-'}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px; vertical-align: top;">${p.bulgular || '-'}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px; vertical-align: top;">${p.eylem_faaliyet || '-'}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px; vertical-align: top;">${p.sorumlu || '-'}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px; vertical-align: top;">${p.basari_gostergesi || '-'}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px; vertical-align: top;">${p.riskler || '-'}</td>
+            <td style="border: 1px solid #cbd5e0; padding: 8px; vertical-align: top;">${p.izleme_durumu || '-'}</td>
           </tr>
         `;
       });
       htmlContent += `
           </tbody>
         </table>
+        <br />
       `;
     });
 
     htmlContent += `
-        <div class='footer'>${t('title')} - BKY Sistemi</div>
       </body>
       </html>
     `;
 
-    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/msword' });
+    const blob = new Blob(['\ufeff', htmlContent], { type: 'application/vnd.ms-excel' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = 'Eylem_Planlari_Raporu.doc';
+    link.download = 'Eylem_Planlari_Raporu.xls';
     link.click();
     URL.revokeObjectURL(url);
   };
@@ -215,10 +241,10 @@ export default function TakvimClient() {
         
         {kayitlar.length > 0 && !isObserver && (
           <button 
-            onClick={exportToWord}
+            onClick={exportToExcel}
             className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-bold transition-all shadow-md shrink-0"
           >
-            <Download className="w-5 h-5" /> {t('export_word')}
+            <Download className="w-5 h-5" /> {t('export_excel')}
           </button>
         )}
       </div>

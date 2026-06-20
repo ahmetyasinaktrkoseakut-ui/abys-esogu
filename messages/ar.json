@@ -178,7 +178,7 @@
     "unknown_code": "رمز غير معروف",
     "unknown_criterion": "معيار غير معروف",
     "no_criterion_name": "لا يوجد اسم للمعيار",
-    "export_word": "إنشاء تقرير (Word)",
+    "export_excel": "تحميل بصيغة إكسل (.xls)",
     "report_date": "التاريخ:"
   },
   "Reports": {

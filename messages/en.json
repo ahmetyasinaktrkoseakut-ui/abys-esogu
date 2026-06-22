@@ -497,7 +497,9 @@
   "KaliteElKitabi": {
     "title": "Quality Manual Data Entry",
     "description_label": "QUALITY MANUAL DESCRIPTION",
+    "description_en_label": "QUALITY MANUAL DESCRIPTION (ENGLISH)",
     "placeholder": "Enter detailed explanation text or report regarding this criterion here...",
+    "placeholder_en": "Enter detailed English explanation text or report regarding this criterion here...",
     "table_title": "Table 1.",
     "responsible_unit": "Responsible Unit",
     "first_planning_date": "First Planning Date",

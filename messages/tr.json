@@ -496,7 +496,9 @@
   "KaliteElKitabi": {
     "title": "Kalite El Kitabı Veri Girişi",
     "description_label": "KALİTE EL KİTABI AÇIKLAMASI",
+    "description_en_label": "KALİTE EL KİTABI AÇIKLAMASI (İNGİLİZCE)",
     "placeholder": "Bu ölçüte dair detaylı açıklama metnini veya raporu buraya giriniz...",
+    "placeholder_en": "Bu ölçüte dair detaylı İngilizce açıklama metnini veya raporu buraya giriniz...",
     "table_title": "Tablo 1.",
     "responsible_unit": "Sorumlu Birim",
     "first_planning_date": "İlk Planlama Tarihi",

@@ -13,7 +13,9 @@ const additionsTR = {
   "KaliteElKitabi": {
     "title": "Kalite El Kitabı Veri Girişi",
     "description_label": "KALİTE EL KİTABI AÇIKLAMASI",
+    "description_en_label": "KALİTE EL KİTABI AÇIKLAMASI (İNGİLİZCE)",
     "placeholder": "Bu ölçüte dair detaylı açıklama metnini veya raporu buraya giriniz...",
+    "placeholder_en": "Bu ölçüte dair detaylı İngilizce açıklama metnini veya raporu buraya giriniz...",
     "table_title": "Tablo 1.",
     "responsible_unit": "Sorumlu Birim",
     "first_planning_date": "İlk Planlama Tarihi",
@@ -74,7 +76,9 @@ const additionsEN = {
   "KaliteElKitabi": {
     "title": "Quality Manual Data Entry",
     "description_label": "QUALITY MANUAL DESCRIPTION",
+    "description_en_label": "QUALITY MANUAL DESCRIPTION (ENGLISH)",
     "placeholder": "Enter detailed explanation text or report regarding this criterion here...",
+    "placeholder_en": "Enter detailed English explanation text or report regarding this criterion here...",
     "table_title": "Table 1.",
     "responsible_unit": "Responsible Unit",
     "first_planning_date": "First Planning Date",
@@ -135,7 +139,9 @@ const additionsAR = {
   "KaliteElKitabi": {
     "title": "إدخال بيانات دليل الجودة",
     "description_label": "وصف دليل الجودة",
+    "description_en_label": "وصف دليل الجودة (باللغة الإنجليزية)",
     "placeholder": "أدخل نص الشرح التفصيلي أو التقرير المتعلق بهذا المعيار هنا...",
+    "placeholder_en": "أدخل نص الشرح التفصيلي باللغة الإنجليزية أو التقرير المتعلق بهذا المعيار هنا...",
     "table_title": "الجدول 1.",
     "responsible_unit": "الوحدة المسؤولة",
     "first_planning_date": "تاريخ التخطيط الأول",

@@ -21,6 +21,7 @@ interface KaliteData {
   degerlendirme_iyilestirme_tarihi: string;
   bgs_yeri: string;
   aciklama_metni?: string;
+  aciklama_metni_en?: string;
 }
 
 const initialData: KaliteData = {
@@ -35,6 +36,7 @@ const initialData: KaliteData = {
   degerlendirme_iyilestirme_tarihi: '',
   bgs_yeri: '',
   aciklama_metni: '',
+  aciklama_metni_en: '',
 };
 
 export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id: string }> }) {
@@ -107,7 +109,8 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
             performans_gostergeleri: formData.performans_gostergeleri,
             degerlendirme_iyilestirme_tarihi: formData.degerlendirme_iyilestirme_tarihi,
             bgs_yeri: formData.bgs_yeri,
-            aciklama_metni: formData.aciklama_metni
+            aciklama_metni: formData.aciklama_metni,
+            aciklama_metni_en: formData.aciklama_metni_en || ''
           }
         })
         .eq('id', resolvedParams.id);
@@ -158,20 +161,39 @@ export default function KaliteElKitabiClient({ params }: { params?: Promise<{ id
 
       {resolvedParams?.id && <StepPanel activeStepId="kalite_el_kitabi" altOlcutId={resolvedParams.id} />}
 
-      <div className="mb-8">
-        <label className="block text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
-          <FileText className="w-5 h-5 text-indigo-600" />
-          {t('description_label')}
-        </label>
-        <div className="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
-          <textarea
-            value={formData.aciklama_metni}
-            onChange={(e) => handleInputChange('aciklama_metni', e.target.value)}
-            disabled={isReadOnly}
-            rows={12}
-            className="w-full p-8 text-slate-700 bg-transparent border-none outline-none resize-y min-h-[300px] leading-relaxed font-medium placeholder:text-slate-300"
-            placeholder={t('placeholder')}
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        <div>
+          <label className="block text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-indigo-600" />
+            {t('description_label')}
+          </label>
+          <div className="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+            <textarea
+              value={formData.aciklama_metni}
+              onChange={(e) => handleInputChange('aciklama_metni', e.target.value)}
+              disabled={isReadOnly}
+              rows={12}
+              className="w-full p-8 text-slate-700 bg-transparent border-none outline-none resize-y min-h-[300px] leading-relaxed font-medium placeholder:text-slate-300"
+              placeholder={t('placeholder')}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="block text-lg font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+            <FileText className="w-5 h-5 text-indigo-600" />
+            {t('description_en_label')}
+          </label>
+          <div className="bg-white rounded-3xl shadow-lg border border-slate-200 overflow-hidden focus-within:ring-2 focus-within:ring-indigo-500/20 transition-all">
+            <textarea
+              value={formData.aciklama_metni_en || ''}
+              onChange={(e) => handleInputChange('aciklama_metni_en', e.target.value)}
+              disabled={isReadOnly}
+              rows={12}
+              className="w-full p-8 text-slate-700 bg-transparent border-none outline-none resize-y min-h-[300px] leading-relaxed font-medium placeholder:text-slate-300"
+              placeholder={t('placeholder_en')}
+            />
+          </div>
         </div>
       </div>
 

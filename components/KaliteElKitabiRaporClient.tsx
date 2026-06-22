@@ -88,6 +88,7 @@ export default function KaliteElKitabiRaporClient() {
     altOlcutler.forEach((olcut, index) => {
       const data = olcut.kalite_el_kitabi;
       const cleanDescription = data.aciklama_metni ? data.aciklama_metni.replace(/\n/g, '<br/>') : '';
+      const cleanDescriptionEn = data.aciklama_metni_en ? data.aciklama_metni_en.replace(/\n/g, '<br/>') : '';
       
       htmlContent += `
         <table>
@@ -100,6 +101,11 @@ export default function KaliteElKitabiRaporClient() {
             ${data.aciklama_metni ? `
             <tr>
               <td colspan="2" class="description"><strong>${tKalite('description_label')}:</strong><br/>${cleanDescription}</td>
+            </tr>
+            ` : ''}
+            ${data.aciklama_metni_en ? `
+            <tr>
+              <td colspan="2" class="description"><strong>${tKalite('description_en_label')}:</strong><br/>${cleanDescriptionEn}</td>
             </tr>
             ` : ''}
             <tr><td class="label">${tKalite('responsible_unit')}</td><td class="data">${data.sorumlu_birim || t('empty_data')}</td></tr>
@@ -134,18 +140,22 @@ export default function KaliteElKitabiRaporClient() {
     
     let htmlContent = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
-      <head><meta charset='utf-8'><title>${t('title')}</title>
-      <style>
-        body { font-family: 'Calibri', 'Arial', sans-serif; padding: 20px; color: #334155; }
-        h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 20px; color: #1e40af; font-size: 22px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 25px; page-break-inside: avoid; break-inside: avoid; }
-        th { background-color: #2563eb; color: white; padding: 8px 12px; text-align: left; font-size: 14px; border: 1px solid #1e40af; }
-        td { vertical-align: top; line-height: 1.3; }
-        td.label { background-color: #2563eb; color: white; width: 30%; padding: 6px 10px; font-weight: bold; border: 1px solid #1e40af; font-size: 11px; }
-        td.data { background-color: #f8fafc; width: 70%; padding: 6px 10px; border: 1px solid #e2e8f0; font-size: 11px; color: #1e293b; }
-        .description-box { background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 15px; font-size: 11px; color: #1e293b; border-radius: 6px; }
-        .footer { text-align: center; font-size: 10px; color: #64748b; margin-top: 30px; }
-      </style>
+      <head>
+        <meta charset='utf-8'>
+        <title>${t('title')}</title>
+        <style>
+          body { font-family: 'Calibri', 'Arial', sans-serif; padding: 20px; color: #334155; }
+          h1 { text-align: center; text-transform: uppercase; border-bottom: 2px solid #2563eb; padding-bottom: 8px; margin-bottom: 20px; color: #1e40af; font-size: 22px; }
+          .criterion-header { margin-top: 25px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #1e40af; }
+          .description-box { background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 12px; margin-bottom: 15px; font-size: 11px; color: #1e293b; border-radius: 6px; }
+          table.data-table { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; table-layout: fixed; page-break-inside: avoid; break-inside: avoid; }
+          th.table-header { background-color: #2563eb; color: white; padding: 8px 12px; text-align: left; font-size: 14px; border: 1px solid #1e40af; }
+          tr { page-break-inside: avoid; break-inside: avoid; }
+          td { vertical-align: top; line-height: 1.3; word-wrap: break-word; }
+          td.label { background-color: #2563eb; color: white; width: 30%; padding: 6px 10px; font-weight: bold; border: 1px solid #1e40af; font-size: 11px; }
+          td.data { background-color: #f8fafc; width: 70%; padding: 6px 10px; border: 1px solid #e2e8f0; font-size: 11px; color: #1e293b; }
+          .footer { text-align: center; font-size: 10px; color: #64748b; margin-top: 30px; }
+        </style>
       </head>
       <body>
         <h1>${t('title').toUpperCase()}</h1>
@@ -154,15 +164,30 @@ export default function KaliteElKitabiRaporClient() {
 
     altOlcutler.forEach((olcut, index) => {
       const data = olcut.kalite_el_kitabi;
+      const cleanDescription = data.aciklama_metni ? data.aciklama_metni.replace(/\n/g, '<br/>') : '';
+      const cleanDescriptionEn = data.aciklama_metni_en ? data.aciklama_metni_en.replace(/\n/g, '<br/>') : '';
+      
       htmlContent += `
-        <div style="margin-top: 30px; margin-bottom: 10px; font-weight: bold; font-size: 14px; color: #1e40af;">
+        ${index > 0 ? '<br clear="all" style="page-break-before: always;" />' : ''}
+        <div class="criterion-header">
           ${index + 1}. ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}
         </div>
-        ${data.aciklama_metni ? `<div class="description-box"><strong>${tKalite('description_label')}:</strong><br/>${data.aciklama_metni.replace(/\n/g, '<br/>')}</div>` : ''}
-        <table>
+        ${data.aciklama_metni ? `
+        <div class="description-box">
+          <strong>${tKalite('description_label')}:</strong><br/>
+          ${cleanDescription}
+        </div>
+        ` : ''}
+        ${data.aciklama_metni_en ? `
+        <div class="description-box">
+          <strong>${tKalite('description_en_label')}:</strong><br/>
+          ${cleanDescriptionEn}
+        </div>
+        ` : ''}
+        <table class="data-table">
           <thead>
             <tr>
-              <th colspan="2">${t('table_prefix')} ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</th>
+              <th colspan="2" class="table-header">${t('table_prefix')} ${olcut.kod} - ${getLocalizedField(olcut, 'olcut_adi', locale)}</th>
             </tr>
           </thead>
           <tbody>

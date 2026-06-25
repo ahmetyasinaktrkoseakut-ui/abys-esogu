@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import DOMPurify from 'dompurify';
-import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, ChevronDown, ChevronUp, BarChart2, Pencil, Info, GripVertical, PlusCircle } from 'lucide-react';
+import { Loader2, Save, Activity, Edit3, Trash2, Plus, Link as LinkIcon, ChevronDown, ChevronUp, BarChart2, Pencil, Info, GripVertical, PlusCircle, FileSpreadsheet } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
@@ -441,6 +441,127 @@ export default function AnketYonetimiClient() {
     const link = `${window.location.origin}/anket/${anketId}`;
     navigator.clipboard.writeText(link);
     alert("Anket bağlantısı kopyalandı:\n" + link);
+  };
+
+  const handleExportSurveyExcel = async (anket: Anket) => {
+    if (!anket.id) return;
+    setIsSaving(true);
+    try {
+      let cevaplarData: any[] = [];
+      const { data, error } = await supabase
+        .from('anket_cevaplari')
+        .select('cevaplar, created_at')
+        .eq('anket_id', anket.id);
+
+      if (error) {
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('anket_cevaplari')
+          .select('cevaplar')
+          .eq('anket_id', anket.id);
+        
+        if (fallbackError) throw fallbackError;
+        cevaplarData = fallbackData || [];
+      } else {
+        cevaplarData = data || [];
+      }
+
+      if (cevaplarData.length === 0) {
+        alert("Bu anket için henüz yanıt bulunmuyor.");
+        return;
+      }
+
+      const questions = anket.sorular.filter(s => s.tip !== 'bilgi_kutusu' && s.tip !== 'bolum_basligi');
+      const hasCreatedAt = cevaplarData[0] && 'created_at' in cevaplarData[0];
+
+      let htmlContent = '';
+      htmlContent += `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:x='urn:schemas-microsoft-com:office:excel' xmlns='http://www.w3.org/TR/REC-html40'>`;
+      htmlContent += `<head><meta charset='utf-8'>`;
+      htmlContent += `<!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>Anket Sonuclari</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]-->`;
+      htmlContent += `<style>
+        body { font-family: 'Segoe UI', 'Calibri', 'Arial', sans-serif; margin: 0; padding: 20px; color: #1e293b; }
+        h1 { text-align: left; color: #1e3a8a; font-size: 16pt; font-weight: bold; margin-bottom: 5px; }
+        .subtitle { color: #64748b; font-size: 10pt; margin-bottom: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 25px; }
+        th { background-color: #4f46e5; color: #ffffff; padding: 10px; font-weight: bold; font-size: 11pt; border: 0.5pt solid #cbd5e1; text-align: left; }
+        td { padding: 8px 10px; border: 0.5pt solid #cbd5e1; font-size: 10pt; vertical-align: top; mso-number-format: "\\@"; white-space: normal; }
+      </style></head><body>`;
+      htmlContent += `<h1>` + (anket.baslik || 'Anket Sonuclari') + `</h1>`;
+      htmlContent += `<div class="subtitle">İndirilme Tarihi: ` + new Date().toLocaleDateString('tr-TR') + ` | Toplam Yanıt: ` + cevaplarData.length + `</div>`;
+      htmlContent += `<table><thead><tr>`;
+      htmlContent += `<th style="background-color: #4f46e5; color: #ffffff;">#</th>`;
+      if (hasCreatedAt) {
+        htmlContent += `<th style="background-color: #4f46e5; color: #ffffff;">Tarih</th>`;
+      }
+      questions.forEach((soru) => {
+        htmlContent += `<th style="background-color: #4f46e5; color: #ffffff;">` + soru.soru + `</th>`;
+      });
+      htmlContent += `</tr></thead><tbody>`;
+
+      cevaplarData.forEach((row, rIdx) => {
+        const cevaplar = row.cevaplar || {};
+        htmlContent += `<tr>`;
+        htmlContent += `<td>` + (rIdx + 1) + `</td>`;
+        if (hasCreatedAt) {
+          htmlContent += `<td>` + (row.created_at ? new Date(row.created_at).toLocaleString('tr-TR') : '') + `</td>`;
+        }
+        questions.forEach((soru) => {
+          const answer = cevaplar[soru.id];
+          let formattedAnswer = '';
+          if (answer !== undefined && answer !== null) {
+            if (soru.tip === 'kisa_yanit' || soru.tip === 'uzun_yanit') {
+              formattedAnswer = String(answer);
+            } else if (soru.tip === 'coktan_secmeli' || soru.tip === 'acilir_menu') {
+              formattedAnswer = soru.secenekler?.find((s: any) => s.id === answer)?.metin || String(answer);
+            } else if (soru.tip === 'coklu_secim') {
+              if (Array.isArray(answer)) {
+                formattedAnswer = answer.map((val: any) => soru.secenekler?.find((s: any) => s.id === val)?.metin || String(val)).join(', ');
+              } else {
+                formattedAnswer = String(answer);
+              }
+            } else if (soru.tip === 'likert') {
+              const birimler = soru.birimler || ['Değerlendirme İfadesi'];
+              const subAnswers = birimler.map((ifade: string, iIdx: number) => {
+                const rowId = `row_${iIdx}`;
+                const val = answer[rowId];
+                const optionText = soru.secenekler?.find((s: any) => s.id === val)?.metin || val || '';
+                return `[${ifade}]: ${optionText}`;
+              });
+              formattedAnswer = subAnswers.join('\n');
+            } else if (soru.tip === 'coklu_metin') {
+              const birimler = soru.birimler || [];
+              const subAnswers = birimler.map((birim: string) => {
+                const val = answer[birim] || '';
+                return `[${birim}]: ${val}`;
+              });
+              formattedAnswer = subAnswers.join('\n');
+            } else {
+              formattedAnswer = JSON.stringify(answer);
+            }
+          }
+          const safeText = formattedAnswer
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/\n/g, '<br/>');
+          htmlContent += `<td>` + safeText + `</td>`;
+        });
+        htmlContent += `</tr>`;
+      });
+      htmlContent += `</tbody></table></body></html>`;
+
+      const blob = new Blob(['\ufeff', htmlContent], { type: 'application/vnd.ms-excel' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${anket.baslik.replace(/[:\/\\\?\*\[\]]/g, '')}_Sonuclari.xls`;
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (err: any) {
+      console.error(err);
+      alert("Excel oluşturulurken hata oluştu: " + err.message);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Helper to find olcut codes based on ID
@@ -948,6 +1069,12 @@ export default function AnketYonetimiClient() {
                           className="flex items-center gap-1.5 px-2 py-1 bg-white border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50 transition-colors"
                         >
                           <LinkIcon className="w-3.5 h-3.5" /> {t('copy_link')}
+                        </button>
+                        <button 
+                          onClick={() => handleExportSurveyExcel(anket)}
+                          className="flex items-center gap-1.5 px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition-colors"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5" /> Excel Olarak İndir
                         </button>
 
                         {!isObserver && (

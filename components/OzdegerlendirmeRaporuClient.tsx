@@ -89,14 +89,12 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         cleanIcerik = cleanIcerik.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
         cleanIcerik = cleanIcerik.replace(/(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI/gi, '');
         cleanIcerik = cleanIcerik.replace(/<hr\s*\/?>/gi, '');
-        cleanIcerik = cleanIcerik.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
         cleanIcerik = cleanIcerik.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
 
         let cleanIcerikEn = raporData?.icerik_en ?? '';
         cleanIcerikEn = cleanIcerikEn.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
         cleanIcerikEn = cleanIcerikEn.replace(/(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK)\s+AŞAMASI/gi, '');
         cleanIcerikEn = cleanIcerikEn.replace(/<hr\s*\/?>/gi, '');
-        cleanIcerikEn = cleanIcerikEn.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
         cleanIcerikEn = cleanIcerikEn.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
 
         setRaporMetni(cleanIcerik);

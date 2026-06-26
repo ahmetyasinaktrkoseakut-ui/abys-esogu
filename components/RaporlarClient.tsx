@@ -260,9 +260,7 @@ export default function RaporlarClient() {
             combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK|RAPOR)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
             combinedText = combinedText.replace(/(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK|RAPOR)\s+AŞAMASI/gi, '');
             combinedText = combinedText.replace(/<hr\s*\/?>/gi, '');
-            combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
             combinedText = combinedText.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
-            combinedText = combinedText.replace(/<p[^>]*>.*?Kalite\s+güvencesi.*?<\/p>/gi, '');
             combinedText = combinedText.replace(/<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">.*?<\/p>/gi, '');
             
             (ozdegerlendirme.kanitlar || []).forEach((k: any) => {
@@ -432,9 +430,7 @@ export default function RaporlarClient() {
                           combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>\s*(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK|RAPOR)\s+AŞAMASI\s*<\/(h3|p|strong|b)>/gi, '');
                           combinedText = combinedText.replace(/(PLANLAMA|UYGULAMA|KONTROL|ÖNLEM|ONLEM|OLGUNLUK|RAPOR)\s+AŞAMASI/gi, '');
                           combinedText = combinedText.replace(/<hr\s*\/?>/gi, '');
-                          combinedText = combinedText.replace(/<(h3|p|strong|b)[^>]*>.*?Olgunluk Düzeyi Puanı.*?<\/(h3|p|strong|b)>/gi, '');
                           combinedText = combinedText.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
-                          combinedText = combinedText.replace(/<p[^>]*>.*?Kalite\s+güvencesi.*?<\/p>/gi, '');
                           combinedText = combinedText.replace(/<p style="color: #718096; font-style: italic; margin-top: 5px; font-size: 13px;">.*?<\/p>/gi, '');
                           
                           (ozdegerlendirme.kanitlar || []).forEach((k: any) => {

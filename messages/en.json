@@ -552,7 +552,12 @@
     "select_topic_placeholder": "-- Select Topic --",
     "save_assignment": "Save Assignment",
     "current_coordinators": "Current Coordinators",
-    "no_coordinators": "No coordinator assigned yet."
+    "no_coordinators": "No coordinator assigned yet.",
+    "delete_confirm": "Are you sure you want to delete the coordinator assignment for {baslik}?",
+    "assign_success": "Coordinator successfully assigned.",
+    "assign_error": "Error occurred while saving assignment:",
+    "select_user_topic_error": "Please select a user and a topic.",
+    "fetch_error": "An error occurred while loading data:"
   },
   "AuditLog": {
     "title": "Activity Log",

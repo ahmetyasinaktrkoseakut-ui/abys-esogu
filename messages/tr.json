@@ -551,7 +551,12 @@
     "select_topic_placeholder": "-- Başlık Seç --",
     "save_assignment": "Atamayı Kaydet",
     "current_coordinators": "Mevcut Koordinatörler",
-    "no_coordinators": "Henüz atanmış bir koordinatör yok."
+    "no_coordinators": "Henüz atanmış bir koordinatör yok.",
+    "delete_confirm": "{baslik} koordinatörlüğünü silmek istediğinize emin misiniz?",
+    "assign_success": "Koordinatör başarıyla atandı.",
+    "assign_error": "Atama kaydedilirken hata oluştu:",
+    "select_user_topic_error": "Lütfen kullanıcı ve başlık seçiniz.",
+    "fetch_error": "Veriler yüklenirken bir hata oluştu:"
   },
   "AuditLog": {
     "title": "Aktivite Günlüğü",

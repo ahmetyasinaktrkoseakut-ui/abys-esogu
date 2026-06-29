@@ -13,6 +13,76 @@ const TOPICS = [
   'Yönetim Sistemi'
 ];
 
+const TOPIC_TRANSLATIONS: Record<string, Record<string, string>> = {
+  tr: {
+    'Kalite Güvencesi': 'Kalite Güvencesi',
+    'Eğitim-Öğretim': 'Eğitim-Öğretim',
+    'Araştırma ve Geliştirme': 'Araştırma ve Geliştirme',
+    'Toplumsal Katkı': 'Toplumsal Katkı',
+    'Yönetim Sistemi': 'Yönetim Sistemi',
+    'Tüm Sistem': 'Tüm Sistem'
+  },
+  en: {
+    'Kalite Güvencesi': 'Quality Assurance',
+    'Eğitim-Öğretim': 'Education-Training',
+    'Araştırma ve Geliştirme': 'Research and Development',
+    'Toplumsal Katkı': 'Social Contribution',
+    'Yönetim Sistemi': 'Management System',
+    'Tüm Sistem': 'All System'
+  },
+  ar: {
+    'Kalite Güvencesi': 'ضمان الجودة',
+    'Eğitim-Öğretim': 'التعليم والتدريب',
+    'Araştırma ve Geliştirme': 'البحث والتطوير',
+    'Toplumsal Katkı': 'المساهمة المجتمعية',
+    'Yönetim Sistemi': 'نظام الإدارة',
+    'Tüm Sistem': 'النظام بأكمله'
+  }
+};
+
+const ROLE_TRANSLATIONS: Record<string, Record<string, string>> = {
+  tr: {
+    'Koordinatör': 'Koordinatör',
+    'Gözlemci': 'Gözlemci',
+    'Atanacak Rol': 'Atanacak Rol',
+    'Koordinatör (Veri Girişlerini Onaylayabilir/Düzenleyebilir)': 'Koordinatör (Veri Girişlerini Onaylayabilir/Düzenleyebilir)',
+    'Gözlemci (Tüm Sistemi Görüntüleyebilir, Müdahale Edemez)': 'Gözlemci (Tüm Sistemi Görüntüleyebilir, Müdahale Edemez)',
+    'Gözlemci İçin Başlık Seçilmez': '-- Gözlemci İçin Başlık Seçilmez --',
+    'Başarılı': 'Başarılı',
+    'Hata': 'Hata'
+  },
+  en: {
+    'Koordinatör': 'Coordinator',
+    'Gözlemci': 'Observer',
+    'Atanacak Rol': 'Role to Assign',
+    'Koordinatör (Veri Girişlerini Onaylayabilir/Düzenleyebilir)': 'Coordinator (Can Approve/Edit Data Entries)',
+    'Gözlemci (Tüm Sistemi Görüntüleyebilir, Müdahale Edemez)': 'Observer (Can View All System, Cannot Interfere)',
+    'Gözlemci İçin Başlık Seçilmez': '-- No Topic Selection for Observer --',
+    'Başarılı': 'Success',
+    'Hata': 'Error'
+  },
+  ar: {
+    'Koordinatör': 'منسق',
+    'Gözlemci': 'مراقب',
+    'Atanacak Rol': 'الدور المراد تعيينه',
+    'Koordinatör (Veri Girişlerini Onaylayabilir/Düzenleyebilir)': 'منسق (يمكنه الموافقة/تعديل مدخلات البيانات)',
+    'Gözlemci (Tüm Sistemi Görüntüleyebilir, Müdahale Edemez)': 'مراقب (يمكنه عرض النظام بأكمله، ولا يمكنه التدخل)',
+    'Gözlemci İçin Başlık Seçilmez': '-- لا يتم اختيار عنوان للمراقب --',
+    'Başarılı': 'نجاح',
+    'Hata': 'خطأ'
+  }
+};
+
+const getTopicText = (topic: string, lang: string) => {
+  const translations = TOPIC_TRANSLATIONS[lang] || TOPIC_TRANSLATIONS['tr'];
+  return translations[topic] || topic;
+};
+
+const getRoleText = (role: string, lang: string) => {
+  const translations = ROLE_TRANSLATIONS[lang] || ROLE_TRANSLATIONS['tr'];
+  return translations[role] || role;
+};
+
 export default function KoordinatorlerPage() {
   const [users, setUsers] = useState<any[]>([]);
   const [coordinators, setCoordinators] = useState<any[]>([]);
@@ -29,6 +99,7 @@ export default function KoordinatorlerPage() {
 
   const t = useTranslations('Coordinators');
   const tCommon = useTranslations('Common');
+  const locale = useLocale();
   
   const fetchData = useCallback(async () => {
     try {
@@ -110,7 +181,8 @@ export default function KoordinatorlerPage() {
   };
 
   const handleRemove = async (kullanici_id: string, baslik: string) => {
-    if (!window.confirm(t('delete_confirm', { baslik }) || `${baslik} koordinatörlüğünü silmek istediğinize emin misiniz?`)) return;
+    const translatedBaslik = getTopicText(baslik, locale);
+    if (!window.confirm(t('delete_confirm', { baslik: translatedBaslik }) || `${translatedBaslik} koordinatörlüğünü silmek istediğinize emin misiniz?`)) return;
     
     try {
       if (baslik === 'Tüm Sistem') {
@@ -176,7 +248,7 @@ export default function KoordinatorlerPage() {
         }`}>
           {message.type === 'success' ? <CheckCircle2 className="w-5 h-5 mt-0.5" /> : <AlertCircle className="w-5 h-5 mt-0.5" />}
           <div>
-            <h3 className="text-sm font-semibold">{message.type === 'success' ? 'Başarılı' : 'Hata'}</h3>
+            <h3 className="text-sm font-semibold">{message.type === 'success' ? getRoleText('Başarılı', locale) : getRoleText('Hata', locale)}</h3>
             <p className="text-sm opacity-90">{message.text}</p>
           </div>
         </div>
@@ -226,12 +298,12 @@ export default function KoordinatorlerPage() {
                 className="w-full p-2 border rounded-lg text-sm bg-slate-50 disabled:opacity-70"
               >
                 {selectedRole === 'Gözlemci' ? (
-                  <option value="">-- Gözlemci İçin Başlık Seçilmez --</option>
+                  <option value="">{getRoleText('Gözlemci İçin Başlık Seçilmez', locale)}</option>
                 ) : (
                   <>
                     <option value="">{t('select_topic_placeholder') || '-- Başlık Seç --'}</option>
                     {TOPICS.map(topic => (
-                      <option key={topic} value={topic}>{topic}</option>
+                      <option key={topic} value={topic}>{getTopicText(topic, locale)}</option>
                     ))}
                   </>
                 )}
@@ -239,15 +311,15 @@ export default function KoordinatorlerPage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Atanacak Rol</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">{getRoleText('Atanacak Rol', locale)}</label>
               <select 
                 value={selectedRole} 
                 onChange={(e) => setSelectedRole(e.target.value as any)}
                 disabled={isObserver}
                 className="w-full p-2 border rounded-lg text-sm bg-slate-50 disabled:opacity-75"
               >
-                <option value="Koordinatör">Koordinatör (Veri Girişlerini Onaylayabilir/Düzenleyebilir)</option>
-                <option value="Gözlemci">Gözlemci (Tüm Sistemi Görüntüleyebilir, Müdahale Edemez)</option>
+                <option value="Koordinatör">{getRoleText('Koordinatör (Veri Girişlerini Onaylayabilir/Düzenleyebilir)', locale)}</option>
+                <option value="Gözlemci">{getRoleText('Gözlemci (Tüm Sistemi Görüntüleyebilir, Müdahale Edemez)', locale)}</option>
               </select>
             </div>
 
@@ -305,14 +377,14 @@ export default function KoordinatorlerPage() {
                       </div>
                       <div className="text-xs text-slate-500 font-medium mt-0.5">{user?.email || t('email_not_found') || 'E-posta bulunamadı'}</div>
                       <div className="inline-flex mt-4 px-3 py-1 bg-indigo-50 text-indigo-700 text-[10px] font-black rounded-lg uppercase tracking-widest border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">
-                        {coord.baslik}
+                        {getTopicText(coord.baslik, locale)}
                       </div>
                       <div className={`inline-flex mt-4 ml-2 px-3 py-1 text-[10px] font-black rounded-lg uppercase tracking-widest border transition-all ${
                         coord.isVirtual || user?.rol === 'Gozlemci'
                           ? 'bg-amber-50 text-amber-700 border-amber-100'
                           : 'bg-slate-50 text-slate-700 border-slate-200'
                       }`}>
-                        {coord.isVirtual || user?.rol === 'Gozlemci' ? 'Gözlemci' : 'Koordinatör'}
+                        {coord.isVirtual || user?.rol === 'Gozlemci' ? getRoleText('Gözlemci', locale) : getRoleText('Koordinatör', locale)}
                       </div>
                     </div>
                     {!isObserver && (

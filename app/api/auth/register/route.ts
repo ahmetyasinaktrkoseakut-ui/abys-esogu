@@ -33,13 +33,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized profile sync attempt' }, { status: 403 });
     }
 
+    // Önceden oluşturulmuş profil kaydı var mı kontrol et
+    const { data: existingProfile } = await supabaseAdmin
+      .from('profiller')
+      .select('rol, ad_soyad')
+      .eq('email', email)
+      .maybeSingle();
+
+    let targetRol = 'Beklemede';
+    let targetAdSoyad = ad_soyad;
+
+    if (existingProfile) {
+      targetRol = existingProfile.rol || 'BirimSorumlusu';
+      targetAdSoyad = existingProfile.ad_soyad || ad_soyad;
+    } else {
+      // Sadece @ogu.edu.tr e-postalarına izin ver (yeni kayıtlar otomatik Beklemede olur)
+      if (!email.toLowerCase().endsWith('@ogu.edu.tr')) {
+        return NextResponse.json({ error: 'Kayıt olabilmek için yetkilendirilmiş olmanız veya @ogu.edu.tr e-postasına sahip olmanız gerekmektedir.' }, { status: 403 });
+      }
+    }
+
     const { error } = await supabaseAdmin
       .from('profiller')
       .upsert({
         id,
         email,
-        ad_soyad,
-        rol: 'BirimSorumlusu' // Güvenlik yaması: Dışarıdan rol ataması iptal edildi
+        ad_soyad: targetAdSoyad,
+        rol: targetRol
       });
 
     if (error) {

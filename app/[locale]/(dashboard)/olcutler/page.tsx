@@ -18,6 +18,7 @@ export default function OlcutlerPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>('');
   const locale = useLocale();
 
   const toggleGroup = (groupKey: string) => {
@@ -37,6 +38,7 @@ export default function OlcutlerPage() {
         // 1. Profil ve Rolü Al
         const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
         const role = (profile?.rol || '').toLowerCase().trim();
+        setUserRole(profile?.rol || '');
         const isAdmin = role.includes('yonetici') || role.includes('admin') || role.includes('yönetici') || role.includes('gozlemci') || role.includes('gözlemci');
 
         // 2. Koordinatörlük Tablosunu Kontrol Et (Rolden bağımsız - kesin çözüm)
@@ -99,10 +101,17 @@ export default function OlcutlerPage() {
         </div>
       )}
 
-      {olcutler.length === 0 && !errorStatus && (
-        <div className="p-10 bg-amber-50 border border-amber-200 rounded-3xl text-center">
-          <p className="text-amber-800 font-bold text-lg italic">Şu an için atanmış bir ölçütünüz bulunmuyor.</p>
+      {userRole === 'Beklemede' ? (
+        <div className="p-12 bg-indigo-50 border border-indigo-200 rounded-3xl text-center max-w-2xl mx-auto shadow-sm">
+          <p className="text-indigo-900 font-bold text-lg">Hesabınız Başarıyla Oluşturuldu</p>
+          <p className="text-slate-600 mt-2 text-sm font-medium">Hesabınız şu an bekleme durumundadır. Bir yönetici size bir ölçüt atadığında, sistemdeki birim sorumlusu yetkileriniz otomatik olarak aktifleşecektir.</p>
         </div>
+      ) : (
+        olcutler.length === 0 && !errorStatus && (
+          <div className="p-10 bg-amber-50 border border-amber-200 rounded-3xl text-center">
+            <p className="text-amber-800 font-bold text-lg italic">Şu an için atanmış bir ölçütünüz bulunmuyor.</p>
+          </div>
+        )
       )}
 
       <div className="space-y-4">

@@ -11,22 +11,40 @@ export default function KaliteElKitabiRaporClient() {
   const [isLoading, setIsLoading] = useState(true);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isObserver, setIsObserver] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const locale = useLocale();
   const t = useTranslations('QualityManualReport');
   const tKalite = useTranslations('KaliteElKitabi');
+  const reportsT = useTranslations('Reports');
 
   useEffect(() => {
-    const checkRole = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
-        const role = profile?.rol?.toLowerCase() || '';
-        const userIsObserver = role.includes('gozlemci') || role.includes('gözlemci');
-        setIsObserver(userIsObserver);
+    const checkRoleAndFetch = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase.from('profiller').select('rol').eq('id', user.id).maybeSingle();
+          const role = profile?.rol?.toLowerCase() || '';
+          const userIsAdmin = role.includes('admin') || role.includes('yönetici') || role.includes('yonetici');
+          const userIsObserver = role.includes('gozlemci') || role.includes('gözlemci');
+          const authorized = userIsAdmin || userIsObserver;
+          
+          setIsAuthorized(authorized);
+          setIsObserver(userIsObserver);
+          
+          if (authorized) {
+            await fetchData();
+          } else {
+            setIsLoading(false);
+          }
+        } else {
+          window.location.href = '/login';
+        }
+      } catch (err) {
+        console.error(err);
+        setIsLoading(false);
       }
     };
-    checkRole();
-    fetchData();
+    checkRoleAndFetch();
   }, []);
 
   const fetchData = async () => {
@@ -221,6 +239,17 @@ export default function KaliteElKitabiRaporClient() {
 
   if (isLoading) {
     return <div className="h-full flex items-center justify-center p-20"><Loader2 className="w-10 h-10 animate-spin text-indigo-600" /></div>;
+  }
+
+  if (isAuthorized === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] p-8">
+        <div className="bg-red-50 p-10 rounded-3xl border border-red-200 text-center max-w-md">
+          <h2 className="text-2xl font-bold text-red-700 mb-2">{reportsT('unauthorized_access')}</h2>
+          <p className="text-red-500">{reportsT('unauthorized_desc')}</p>
+        </div>
+      </div>
+    );
   }
 
   return (

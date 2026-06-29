@@ -48,11 +48,11 @@ export default function AtamalarPage() {
         setIsObserver(role.includes('gözlemci') || role.includes('gozlemci'));
       }
 
-      // Hocaları getir (Birim Sorumluları)
+      // Hocaları getir (Birim Sorumluları ve Bekleme Durumundakiler)
       const { data: profillerData, error: profillerError } = await supabase
         .from('profiller')
         .select('*')
-        .ilike('rol', '%Birim%Sorumlusu%'); // BirimSorumlusu veya Birim Sorumlusu
+        .or('rol.ilike.%Birim%Sorumlusu%,rol.eq.Beklemede');
       
       if (profillerError) throw profillerError;
       
@@ -171,6 +171,18 @@ export default function AtamalarPage() {
       });
 
       if (error) throw error;
+
+      // Eğer kullanıcının rolü "Beklemede" ise ve en az 1 ölçüt atandıysa "BirimSorumlusu" yap
+      const hoca = hocalar.find(h => h.id === selectedHoca);
+      if (hoca && hoca.rol === 'Beklemede' && selectedOlcutIds.length > 0) {
+        const { error: roleError } = await supabase
+          .from('profiller')
+          .update({ rol: 'BirimSorumlusu' })
+          .eq('id', selectedHoca);
+        if (roleError) throw roleError;
+        
+        setHocalar(prev => prev.map(h => h.id === selectedHoca ? { ...h, rol: 'BirimSorumlusu' } : h));
+      }
 
       // 3. Alt ölçütlerin erişim tarihlerini güncelle
       if (olcutler.length > 0) {

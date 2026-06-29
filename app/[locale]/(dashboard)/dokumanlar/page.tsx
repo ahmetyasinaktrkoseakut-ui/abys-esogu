@@ -20,13 +20,37 @@ export default function DokumanlarPage() {
   const [documents, setDocuments] = useState<DokumanItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const locale = useLocale();
   const t = useTranslations('Documents');
   const commonT = useTranslations('Common');
+  const reportsT = useTranslations('Reports');
 
   useEffect(() => {
-    async function fetchDocs() {
+    async function checkRoleAndFetchDocs() {
       try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          window.location.href = '/login';
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from('profiller')
+          .select('rol')
+          .eq('id', user.id)
+          .maybeSingle();
+
+        const role = (profile?.rol || '').toLowerCase().trim();
+        const authorized = role.includes('admin') || role.includes('yönetici') || role.includes('yonetici') || role.includes('gözlemci') || role.includes('gozlemci');
+        
+        setIsAuthorized(authorized);
+
+        if (!authorized) {
+          setIsLoading(false);
+          return;
+        }
+
         const { data } = await supabase
           .from('puko_degerlendirmeleri')
           .select('alt_olcut_id, puko_asamasi, kanit_dosyalari, olusturulma_tarihi, alt_olcutler(olcut_adi, olcut_adi_en, olcut_adi_ar, kod)');
@@ -56,13 +80,24 @@ export default function DokumanlarPage() {
         setIsLoading(false);
       }
     }
-    fetchDocs();
-  }, []);
+    checkRoleAndFetchDocs();
+  }, [locale]);
 
   const filteredDocs = documents.filter(doc => 
     doc.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     doc.olcut_id?.toString().toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (isAuthorized === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-100px)] p-8">
+        <div className="bg-red-50 p-10 rounded-3xl border border-red-200 text-center max-w-md">
+          <h2 className="text-2xl font-bold text-red-700 mb-2">{reportsT('unauthorized_access')}</h2>
+          <p className="text-red-500">{reportsT('unauthorized_desc')}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">

@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     // Önceden oluşturulmuş profil kaydı var mı kontrol et
     const { data: existingProfile } = await supabaseAdmin
       .from('profiller')
-      .select('rol, ad_soyad')
+      .select('rol, ad_soyad, olusturulma_tarihi')
       .eq('email', email)
       .maybeSingle();
 
@@ -44,8 +44,20 @@ export async function POST(request: Request) {
     let targetAdSoyad = ad_soyad;
 
     if (existingProfile) {
-      targetRol = existingProfile.rol || 'BirimSorumlusu';
-      targetAdSoyad = existingProfile.ad_soyad || ad_soyad;
+      // Eğer profil tetikleyici (trigger) tarafından milisaniyeler önce oluşturulduysa
+      // bu yeni bir kayıttır ve rolü Beklemede olmalıdır.
+      // Eğer profil daha önceden oluşturulmuşsa (örneğin 15 saniyeden daha eski),
+      // o zaman yöneticinin verdiği rolü (BirimSorumlusu, Yonetici vb.) koruruz.
+      const now = new Date();
+      const profileCreatedAt = new Date(existingProfile.olusturulma_tarihi || now);
+      const diffInSeconds = Math.abs(now.getTime() - profileCreatedAt.getTime()) / 1000;
+
+      if (diffInSeconds > 15) {
+        targetRol = existingProfile.rol || 'BirimSorumlusu';
+        targetAdSoyad = existingProfile.ad_soyad || ad_soyad;
+      } else {
+        targetRol = 'Beklemede';
+      }
     } else {
       // Sadece @ogu.edu.tr e-postalarına izin ver (yeni kayıtlar otomatik Beklemede olur)
       if (!email.toLowerCase().endsWith('@ogu.edu.tr')) {

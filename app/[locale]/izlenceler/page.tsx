@@ -127,20 +127,13 @@ export default async function IzlencelerPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            {user ? (
+            {user && (
               <Link 
                 href="/" 
                 className="group flex items-center gap-3 bg-white/10 hover:bg-white/20 text-white px-8 py-4 rounded-2xl transition-all font-black text-sm border border-white/20 backdrop-blur-xl shadow-lg hover:shadow-white/5 active:scale-95"
               >
                 <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                 ANA SAYFAYA DÖN
-              </Link>
-            ) : (
-              <Link 
-                href="/login" 
-                className="group flex items-center gap-3 bg-blue-500 hover:bg-blue-600 text-white px-8 py-4 rounded-2xl transition-all font-black text-sm shadow-xl shadow-blue-900/20 active:scale-95"
-              >
-                HOCA GİRİŞİ <Edit3 className="w-5 h-5" />
               </Link>
             )}
           </div>

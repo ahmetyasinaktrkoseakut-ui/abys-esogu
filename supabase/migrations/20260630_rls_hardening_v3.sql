@@ -19,8 +19,7 @@ CREATE POLICY "puko_degerlendirmeleri_read_secure" ON public.puko_degerlendirmel
     OR EXISTS (
       SELECT 1 FROM public.baslik_koordinatorleri bk
       JOIN public.alt_olcutler ao ON ao.id = public.puko_degerlendirmeleri.alt_olcut_id
-      JOIN public.olcutler o ON o.id = ao.olcut_id
-      JOIN public.ana_basliklar ab ON ab.id = o.ana_baslik_id
+      JOIN public.ana_basliklar ab ON ab.id = ao.ana_baslik_id
       WHERE bk.kullanici_id = auth.uid()
       AND (
         (bk.baslik = 'Kalite Güvencesi' AND ab.baslik_adi = 'KALİTE GÜVENCESİ SİSTEMİ') OR
@@ -55,8 +54,7 @@ CREATE POLICY "ozdegerlendirme_raporlari_read_secure" ON public.ozdegerlendirme_
     OR EXISTS (
       SELECT 1 FROM public.baslik_koordinatorleri bk
       JOIN public.alt_olcutler ao ON ao.id = public.ozdegerlendirme_raporlari.alt_olcut_id
-      JOIN public.olcutler o ON o.id = ao.olcut_id
-      JOIN public.ana_basliklar ab ON ab.id = o.ana_baslik_id
+      JOIN public.ana_basliklar ab ON ab.id = ao.ana_baslik_id
       WHERE bk.kullanici_id = auth.uid()
       AND (
         (bk.baslik = 'Kalite Güvencesi' AND ab.baslik_adi = 'KALİTE GÜVENCESİ SİSTEMİ') OR
@@ -91,8 +89,7 @@ CREATE POLICY "dokumanlar_read_secure" ON public.dokumanlar
     OR EXISTS (
       SELECT 1 FROM public.baslik_koordinatorleri bk
       JOIN public.alt_olcutler ao ON ao.id = public.dokumanlar.alt_olcut_id
-      JOIN public.olcutler o ON o.id = ao.olcut_id
-      JOIN public.ana_basliklar ab ON ab.id = o.ana_baslik_id
+      JOIN public.ana_basliklar ab ON ab.id = ao.ana_baslik_id
       WHERE bk.kullanici_id = auth.uid()
       AND (
         (bk.baslik = 'Kalite Güvencesi' AND ab.baslik_adi = 'KALİTE GÜVENCESİ SİSTEMİ') OR

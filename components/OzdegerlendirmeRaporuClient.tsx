@@ -9,6 +9,7 @@ import { getLocalizedField } from '@/lib/i18n-utils';
 import { usePeriod } from '@/contexts/PeriodContext';
 import RichTextEditor, { RichTextEditorRef } from '@/components/RichTextEditor';
 import { logAction } from '@/lib/logger';
+import { validateFileSize } from '@/lib/utils';
 
 interface OzdegerlendirmeRaporuClientProps {
   params: Promise<{ id: string }>;
@@ -508,6 +509,14 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     if (!event.target.files || event.target.files.length === 0 || !newEvidenceName.trim()) return;
     
     const file = event.target.files[0];
+    
+    const validation = validateFileSize(file);
+    if (!validation.valid) {
+      alert(validation.error);
+      event.target.value = '';
+      return;
+    }
+
     setIsUploadingInText(true);
     
     try {

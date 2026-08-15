@@ -13,7 +13,30 @@ interface RichTextEditorProps {
 
 export interface RichTextEditorRef {
   insertContent: (content: string) => void;
+  getHTML: () => string;
+  insertContentAndGetHTML: (content: string) => string;
+  setHTML: (html: string) => void;
 }
+
+const CustomLink = Link.extend({
+  addAttributes() {
+    return {
+      ...this.parent?.(),
+      'data-evidence-id': {
+        default: null,
+        parseHTML: element => element.getAttribute('data-evidence-id'),
+        renderHTML: attributes => {
+          if (!attributes['data-evidence-id']) {
+            return {};
+          }
+          return {
+            'data-evidence-id': attributes['data-evidence-id'],
+          };
+        },
+      },
+    };
+  },
+});
 
 const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
   ({ content, onChange, readOnly = false, minHeight = '160px' }, ref) => {
@@ -21,8 +44,12 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
       editable: !readOnly,
       extensions: [
         StarterKit,
-        Link.configure({
+        CustomLink.configure({
           openOnClick: false,
+          HTMLAttributes: {
+            rel: 'noopener noreferrer',
+            target: '_blank',
+          },
         }),
       ],
       content: content,
@@ -36,6 +63,21 @@ const RichTextEditor = forwardRef<RichTextEditorRef, RichTextEditorProps>(
       insertContent: (html: string) => {
         if (editor) {
           editor.chain().focus().insertContent(html).run();
+        }
+      },
+      getHTML: () => {
+        return editor ? editor.getHTML() : '';
+      },
+      insertContentAndGetHTML: (html: string) => {
+        if (editor) {
+          editor.chain().focus().insertContent(html).run();
+          return editor.getHTML();
+        }
+        return '';
+      },
+      setHTML: (html: string) => {
+        if (editor) {
+          editor.commands.setContent(html);
         }
       },
     }));

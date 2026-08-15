@@ -262,22 +262,69 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         let phaseText = row.aciklama;
         if (phaseText && phaseText.trim() !== '' && phaseText !== '<p></p>') {
           if (row.kanit_dosyalari && Array.isArray(row.kanit_dosyalari) && row.kanit_dosyalari.length > 0) {
-            const phaseEvidenceStrings: string[] = [];
+            const unplacedEvidenceStrings: string[] = [];
             row.kanit_dosyalari.forEach((k: any) => {
               let ev = birlesikKanitlar.find(e => e.url === k.url);
               if (!ev) {
                 ev = { ...k, no: localEvidenceCounter++ };
                 birlesikKanitlar.push(ev);
               }
-              phaseEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
+              // Re-number inline evidence link text to match report-wide global ev.no using DOMParser
+              if (typeof window !== 'undefined' && window.DOMParser) {
+                try {
+                  const parser = new DOMParser();
+                  const docParsed = parser.parseFromString(phaseText, 'text/html');
+
+                  let anchor: HTMLAnchorElement | null = null;
+
+                  // 1. Primary: Find anchor by data-evidence-id
+                  if (k.evidence_id) {
+                    anchor = docParsed.querySelector(`a[data-evidence-id="${k.evidence_id}"]`);
+                  }
+
+                  // 2. Secondary: Match by normalized href
+                  if (!anchor && k.url) {
+                    const normalizeUrl = (u: string) => u.split('#')[0].split('?')[0];
+                    const targetBaseUrl = normalizeUrl(k.url);
+                    const targetAnnoBaseUrl = k.annotated_url ? normalizeUrl(k.annotated_url) : null;
+
+                    const allAnchors = Array.from(docParsed.querySelectorAll('a'));
+                    anchor = allAnchors.find(a => {
+                      const href = a.getAttribute('href');
+                      if (!href) return false;
+                      const normHref = normalizeUrl(href);
+                      return normHref === targetBaseUrl || (targetAnnoBaseUrl && normHref === targetAnnoBaseUrl);
+                    }) || null;
+                  }
+
+                  if (anchor) {
+                    if (k.evidence_id && !anchor.getAttribute('data-evidence-id')) {
+                      anchor.setAttribute('data-evidence-id', k.evidence_id);
+                    }
+                    anchor.textContent = `[Kanıt ${ev.no}]`;
+                  }
+
+                  phaseText = docParsed.body.innerHTML;
+                } catch (e) {
+                  console.error('DOMParser ÖDR error:', e);
+                }
+              }
+
+              const isAlreadyInline = (k.url && phaseText.includes(k.url)) || 
+                                      (k.annotated_url && phaseText.includes(k.annotated_url)) ||
+                                      (k.evidence_id && phaseText.includes(k.evidence_id));
+              if (!isAlreadyInline) {
+                unplacedEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
+              }
             });
             
-            const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${phaseEvidenceStrings.join(' ')}</span>`;
-            
-            if (phaseText.trim().endsWith('</p>')) {
-              phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
-            } else {
-              phaseText += evidenceHtml;
+            if (unplacedEvidenceStrings.length > 0) {
+              const evidenceHtml = ` <span style="font-weight: bold; font-size: 0.9em; margin-left: 6px;">${unplacedEvidenceStrings.join(' ')}</span>`;
+              if (phaseText.trim().endsWith('</p>')) {
+                phaseText = phaseText.trim().replace(/<\/p>$/, `${evidenceHtml}</p>`);
+              } else {
+                phaseText += evidenceHtml;
+              }
             }
           }
           birlesikMetin += (birlesikMetin ? '<br/><br/>' : '') + phaseText;

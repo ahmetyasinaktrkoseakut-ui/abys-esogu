@@ -2,15 +2,17 @@
 
 import { useState, useEffect, use } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Plus, Info, Save, Link as LinkIcon, Settings, CalendarDays, ExternalLink, Trash2 } from 'lucide-react';
+import { Loader2, Plus, Info, Save, Link as LinkIcon, Settings, CalendarDays, ExternalLink, Trash2, Pencil, Eye } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { logAction } from '@/lib/logger';
 import StepPanel from '@/components/StepPanel';
-import RichTextEditor from '@/components/RichTextEditor';
+import RichTextEditor, { RichTextEditorRef } from '@/components/RichTextEditor';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { validateFileSize, getAssignedLetter } from '@/lib/utils';
 import { usePeriod } from '@/contexts/PeriodContext';
+import EvidenceAnnotatorModal from '@/components/EvidenceAnnotatorModal';
+import { useRef } from 'react';
 
 interface Eylem {
   id?: number;
@@ -53,6 +55,257 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
   // Onay / Ret Sistematiği
   const [pukoId, setPukoId] = useState<string | null>(null);
   const [onayDurumu, setOnayDurumu] = useState<string>('');
+
+  // Rich Text Editor Ref for Cursor Position Evidence Tag Insertion
+  const editorRef = useRef<RichTextEditorRef>(null);
+
+  // Global Evidence Counter offset from preceding PUKO stages
+  const [previousDocsCount, setPreviousDocsCount] = useState<number>(0);
+
+  // Evidence Annotator Modal State
+  const [annotatorModalOpen, setAnnotatorModalOpen] = useState(false);
+  const [annotatorReadOnly, setAnnotatorReadOnly] = useState(false);
+  const [selectedDocForAnnotation, setSelectedDocForAnnotation] = useState<{ doc: any; index: number } | null>(null);
+
+  // Direct fresh database persistence to prevent React stale closure bugs
+  const persistData = async (updatedDocs: any[], updatedAciklama: string) => {
+    if (!selectedPeriod) return;
+
+    const upsertData: Record<string, any> = {
+      alt_olcut_id: resolvedParams.id,
+      puko_asamasi: phaseId,
+      donem_id: selectedPeriod.id,
+      aciklama: updatedAciklama,
+      kanit_dosyalari: updatedDocs,
+      durum: onayDurumu || 'Taslak',
+    };
+
+    const { data, error } = await supabase
+      .from('puko_degerlendirmeleri')
+      .upsert(upsertData, {
+        onConflict: 'alt_olcut_id,puko_asamasi,donem_id',
+      })
+      .select();
+
+    if (error) throw error;
+    if (data && data[0]?.id && !pukoId) {
+      setPukoId(data[0].id);
+    }
+  };
+
+  // DOMParser helper to cleanly update inline evidence links and data-evidence-id attributes
+  const updateHtmlEvidenceLinks = (html: string, docs: any[]) => {
+    if (!html || typeof window === 'undefined' || !window.DOMParser) return html;
+    try {
+      const parser = new DOMParser();
+      const docParsed = parser.parseFromString(html, 'text/html');
+
+      docs.forEach((d: any) => {
+        if (!d.evidence_id && !d.url) return;
+
+        const evNo = d.evidence_no;
+        const targetText = `[Kanıt ${evNo}]`;
+
+        let anchor: HTMLAnchorElement | null = null;
+
+        // 1. Primary: Find anchor by data-evidence-id
+        if (d.evidence_id) {
+          anchor = docParsed.querySelector(`a[data-evidence-id="${d.evidence_id}"]`);
+        }
+
+        // 2. Secondary: Match by normalized href (stripping query & #page hash)
+        if (!anchor && d.url) {
+          const normalizeUrl = (u: string) => u.split('#')[0].split('?')[0];
+          const targetBaseUrl = normalizeUrl(d.url);
+          const targetAnnoBaseUrl = d.annotated_url ? normalizeUrl(d.annotated_url) : null;
+
+          const allAnchors = Array.from(docParsed.querySelectorAll('a'));
+          anchor = allAnchors.find(a => {
+            const href = a.getAttribute('href');
+            if (!href) return false;
+            const normHref = normalizeUrl(href);
+            return normHref === targetBaseUrl || (targetAnnoBaseUrl && normHref === targetAnnoBaseUrl);
+          }) || null;
+        }
+
+        // 3. Update textContent & attach data-evidence-id attribute if missing
+        if (anchor) {
+          if (d.evidence_id && !anchor.getAttribute('data-evidence-id')) {
+            anchor.setAttribute('data-evidence-id', d.evidence_id);
+          }
+          anchor.textContent = targetText;
+        }
+      });
+
+      return docParsed.body.innerHTML;
+    } catch (err) {
+      console.error('DOMParser HTML update error:', err);
+      return html;
+    }
+  };
+
+  // Re-index all PUKO stage evidences sequentially 1..N across all stages
+  const reindexProjectEvidences = async () => {
+    try {
+      if (!selectedPeriod) return [];
+      const orderMap: Record<string, number> = { planlama: 1, uygulama: 2, kontrol: 3, onlem: 4, olgunluk: 5 };
+
+      const { data: allRows, error: fetchError } = await supabase
+        .from('puko_degerlendirmeleri')
+        .select('*')
+        .eq('alt_olcut_id', resolvedParams.id)
+        .eq('donem_id', selectedPeriod.id);
+
+      if (fetchError) throw fetchError;
+      if (!allRows || allRows.length === 0) return [];
+
+      const sortedRows = [...allRows].sort((a, b) => (orderMap[a.puko_asamasi] || 99) - (orderMap[b.puko_asamasi] || 99));
+
+      let globalCounter = 1;
+      let currentStagePrevCount = 0;
+      const currentOrder = orderMap[phaseId] || 1;
+
+      const rowsToUpdate: any[] = [];
+
+      for (const row of sortedRows) {
+        const rowOrder = orderMap[row.puko_asamasi] || 99;
+        if (rowOrder < currentOrder && Array.isArray(row.kanit_dosyalari)) {
+          currentStagePrevCount += row.kanit_dosyalari.length;
+        }
+
+        if (Array.isArray(row.kanit_dosyalari) && row.kanit_dosyalari.length > 0) {
+          const updatedRowDocs = row.kanit_dosyalari.map((doc: any) => {
+            const evId = doc.evidence_id || (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev_${Math.random().toString(36).substring(2, 9)}`);
+            const assignedNo = globalCounter++;
+            return { ...doc, evidence_id: evId, evidence_no: assignedNo };
+          });
+
+          // Use DOMParser to update HTML link texts cleanly
+          const updatedHtml = updateHtmlEvidenceLinks(row.aciklama || '', updatedRowDocs);
+
+          rowsToUpdate.push({
+            id: row.id,
+            alt_olcut_id: row.alt_olcut_id,
+            puko_asamasi: row.puko_asamasi,
+            donem_id: row.donem_id,
+            kanit_dosyalari: updatedRowDocs,
+            aciklama: updatedHtml,
+            durum: row.durum || 'Taslak',
+          });
+        }
+      }
+
+      // Persist all updated rows in a single bulk upsert request without id field
+      if (rowsToUpdate.length > 0) {
+        const bulkPayload = rowsToUpdate.map(({ id, ...payload }) => payload);
+
+        const { error: bulkUpdateError } = await supabase
+          .from('puko_degerlendirmeleri')
+          .upsert(bulkPayload, {
+            onConflict: 'alt_olcut_id,puko_asamasi,donem_id',
+          });
+
+        if (bulkUpdateError) throw bulkUpdateError;
+      }
+
+      setPreviousDocsCount(currentStagePrevCount);
+
+      // Force update live React state and TipTap editor instance for active stage
+      const currentActiveRow = rowsToUpdate.find(r => r.puko_asamasi === phaseId);
+      if (currentActiveRow) {
+        setDokumanlar(currentActiveRow.kanit_dosyalari);
+        setAciklama(currentActiveRow.aciklama);
+        editorRef.current?.setHTML(currentActiveRow.aciklama);
+      }
+
+      return rowsToUpdate;
+    } catch (err) {
+      console.error('Reindexing error:', err);
+      throw err;
+    }
+  };
+
+  const handleOpenAnnotator = (index: number, readOnly: boolean = false) => {
+    setSelectedDocForAnnotation({ doc: dokumanlar[index], index });
+    setAnnotatorReadOnly(readOnly);
+    setAnnotatorModalOpen(true);
+  };
+
+  const handleSaveAnnotatedDoc = async (updatedDoc: any, oldUrlToDelete?: string) => {
+    if (selectedDocForAnnotation !== null) {
+      const oldDoc = dokumanlar[selectedDocForAnnotation.index];
+      const newDocs = [...dokumanlar];
+      newDocs[selectedDocForAnnotation.index] = updatedDoc;
+
+      let freshAciklama = aciklama;
+      if (oldDoc?.url && updatedDoc?.url && oldDoc.url !== updatedDoc.url && typeof window !== 'undefined' && window.DOMParser) {
+        try {
+          const parser = new DOMParser();
+          const docParsed = parser.parseFromString(freshAciklama, 'text/html');
+
+          let anchor: HTMLAnchorElement | null = null;
+          if (updatedDoc.evidence_id) {
+            anchor = docParsed.querySelector(`a[data-evidence-id="${updatedDoc.evidence_id}"]`);
+          }
+          if (!anchor && oldDoc.url) {
+            const normalizeUrl = (u: string) => u.split('#')[0].split('?')[0];
+            const targetBaseUrl = normalizeUrl(oldDoc.url);
+            const allAnchors = Array.from(docParsed.querySelectorAll('a'));
+            anchor = allAnchors.find(a => {
+              const href = a.getAttribute('href');
+              return href ? normalizeUrl(href) === targetBaseUrl : false;
+            }) || null;
+          }
+
+          if (anchor) {
+            anchor.setAttribute('href', updatedDoc.url);
+            freshAciklama = docParsed.body.innerHTML;
+          }
+        } catch (e) {
+          console.error('DOMParser annotation URL update error:', e);
+        }
+      }
+
+      setDokumanlar(newDocs);
+      setAciklama(freshAciklama);
+      if (editorRef.current) {
+        editorRef.current.setHTML(freshAciklama);
+      }
+
+      // 1. Save database FIRST
+      try {
+        await persistData(newDocs, freshAciklama);
+        await reindexProjectEvidences();
+      } catch (err: any) {
+        console.error('DB Update Error:', err);
+        alert(`Veritabanı güncellenirken hata oluştu: ${err?.message || err}. Eski dosya silinmedi.`);
+        return;
+      }
+
+      // 2. Delete old storage file ONLY AFTER successful DB persist
+      if (oldUrlToDelete) {
+        try {
+          let bucketPath = '';
+          if (oldUrlToDelete.includes('/dokumanlar/')) {
+            bucketPath = oldUrlToDelete.split('/dokumanlar/')[1]?.split('?')[0]?.split('#')[0];
+          } else {
+            const urlParts = oldUrlToDelete.split('/');
+            bucketPath = urlParts[urlParts.length - 1]?.split('?')[0]?.split('#')[0];
+          }
+          if (bucketPath) {
+            const decodedPath = decodeURIComponent(bucketPath);
+            const { error: remErr } = await supabase.storage.from('dokumanlar').remove([decodedPath]);
+            if (remErr) {
+              alert(`Uyarı: Dosya veritabanından güncellendi ancak eski depolama dosyası silinirken uyarı alındı: ${remErr.message}`);
+            }
+          }
+        } catch (err: any) {
+          console.error('Old file deletion error:', err);
+          alert(`Eski depolama dosyası silinirken hata oluştu: ${err?.message || err}`);
+        }
+      }
+    }
+  };
 
   const fetchData = async () => {
     if (!selectedPeriod) return;
@@ -124,6 +377,27 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
         setOnayDurumu('');
         setUstBirimOnerileri([]);
       }
+
+      // Calculate previous documents count from preceding PUKO stages for global continuous evidence numbering
+      const orderMap: Record<string, number> = { planlama: 1, uygulama: 2, kontrol: 3, onlem: 4, olgunluk: 5 };
+      const currentOrder = orderMap[phaseId] || 1;
+
+      const { data: allPukoRows } = await supabase
+        .from('puko_degerlendirmeleri')
+        .select('puko_asamasi, kanit_dosyalari')
+        .eq('alt_olcut_id', resolvedParams.id)
+        .eq('donem_id', selectedPeriod?.id);
+
+      let prevCount = 0;
+      if (allPukoRows) {
+        allPukoRows.forEach((row: any) => {
+          const rowOrder = orderMap[row.puko_asamasi] || 99;
+          if (rowOrder < currentOrder && Array.isArray(row.kanit_dosyalari)) {
+            prevCount += row.kanit_dosyalari.length;
+          }
+        });
+      }
+      setPreviousDocsCount(prevCount);
 
       if (showEylemPlanTablosu) {
         const { data: eylemlerData } = await supabase
@@ -294,10 +568,10 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
           if (doc.url) {
             let bucketPath = '';
             if (doc.url.includes('/dokumanlar/')) {
-              bucketPath = doc.url.split('/dokumanlar/')[1]?.split('?')[0];
+              bucketPath = doc.url.split('/dokumanlar/')[1]?.split('?')[0]?.split('#')[0];
             } else {
               const urlParts = doc.url.split('/');
-              bucketPath = urlParts[urlParts.length - 1]?.split('?')[0];
+              bucketPath = urlParts[urlParts.length - 1]?.split('?')[0]?.split('#')[0];
             }
             if (bucketPath) {
               const decodedPath = decodeURIComponent(bucketPath);
@@ -361,13 +635,34 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
 
       const { data: publicUrlData } = supabase.storage.from('dokumanlar').getPublicUrl(filePath);
 
+      const evId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `ev_${Math.random().toString(36).substring(2, 9)}`;
+      const newDocNo = previousDocsCount + dokumanlar.length + 1;
+
       const newDoc = {
+        evidence_id: evId,
+        evidence_no: newDocNo,
         name: file.name,
         url: publicUrlData.publicUrl,
         size: Math.round(file.size / 1024)
       };
 
-      setDokumanlar(prev => [...prev, newDoc]);
+      const updatedDocs = [...dokumanlar, newDoc];
+      setDokumanlar(updatedDocs);
+      
+      const tagHtml = `<a data-evidence-id="${evId}" href="${newDoc.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; font-weight: bold; text-decoration: underline; margin: 0 4px;">[Kanıt ${newDocNo}]</a>&nbsp;`;
+      
+      let freshAciklama = aciklama;
+      if (editorRef.current) {
+        freshAciklama = editorRef.current.insertContentAndGetHTML(tagHtml) || editorRef.current.getHTML() || (aciklama + tagHtml);
+      } else {
+        freshAciklama += tagHtml;
+      }
+
+      setAciklama(freshAciklama);
+
+      // Save fresh data to DB FIRST
+      await persistData(updatedDocs, freshAciklama);
+      await reindexProjectEvidences();
 
     } catch (error: any) {
       console.error('File upload error:', error);
@@ -383,10 +678,72 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
     if (confirm(t('delete_confirm'))) {
       const docToRemove = dokumanlar[index];
       
-      setDeletedDocs(prev => [...prev, docToRemove]);
-      
+      // 1. Remove ONLY the specific evidence link matching evidence_id or URL from aciklama
+      let newAciklama = aciklama;
+      if (docToRemove) {
+        const escapeRegExp = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        if (docToRemove.evidence_id) {
+          const escapedEvId = escapeRegExp(docToRemove.evidence_id);
+          const idTagRegex = new RegExp(`<a\\s+[^>]*data-evidence-id=["']${escapedEvId}["'][^>]*>.*?<\\/a>`, 'gi');
+          newAciklama = newAciklama.replace(idTagRegex, '');
+        }
+        if (docToRemove.url) {
+          const escapedUrl = escapeRegExp(docToRemove.url);
+          const urlTagRegex = new RegExp(`<a\\s+[^>]*href=["']${escapedUrl}["'][^>]*>.*?<\\/a>`, 'gi');
+          newAciklama = newAciklama.replace(urlTagRegex, '');
+        }
+      }
+
+      setAciklama(newAciklama);
+
       const newDocs = dokumanlar.filter((_, i) => i !== index);
       setDokumanlar(newDocs);
+
+      // 2. Persist fresh DB state FIRST and trigger gapless reindexing across all stages
+      try {
+        await persistData(newDocs, newAciklama);
+        await reindexProjectEvidences();
+      } catch (err: any) {
+        console.error('DB Update Error:', err);
+        alert(`Veritabanı güncellenirken hata oluştu: ${err?.message || err}. Dosya silinmedi.`);
+        return;
+      }
+
+      // 3. Delete physical files from Storage ONLY AFTER DB persistence and reindexing succeeds
+      if (docToRemove?.url) {
+        try {
+          let bucketPath = '';
+          if (docToRemove.url.includes('/dokumanlar/')) {
+            bucketPath = docToRemove.url.split('/dokumanlar/')[1]?.split('?')[0]?.split('#')[0];
+          } else {
+            const urlParts = docToRemove.url.split('/');
+            bucketPath = urlParts[urlParts.length - 1]?.split('?')[0]?.split('#')[0];
+          }
+          if (bucketPath) {
+            const decodedPath = decodeURIComponent(bucketPath);
+            const { error: remErr } = await supabase.storage.from('dokumanlar').remove([decodedPath]);
+            if (remErr) alert(`Uyarı: Depolama dosyası silinirken uyarı alındı: ${remErr.message}`);
+          }
+
+          if (docToRemove.annotated_url && docToRemove.annotated_url !== docToRemove.url) {
+            let annoPath = '';
+            if (docToRemove.annotated_url.includes('/dokumanlar/')) {
+              annoPath = docToRemove.annotated_url.split('/dokumanlar/')[1]?.split('?')[0]?.split('#')[0];
+            } else {
+              const urlParts = docToRemove.annotated_url.split('/');
+              annoPath = urlParts[urlParts.length - 1]?.split('?')[0]?.split('#')[0];
+            }
+            if (annoPath) {
+              const decodedAnnoPath = decodeURIComponent(annoPath);
+              const { error: annoRemErr } = await supabase.storage.from('dokumanlar').remove([decodedAnnoPath]);
+              if (annoRemErr) alert(`Uyarı: İşaretli depolama dosyası silinirken uyarı alındı: ${annoRemErr.message}`);
+            }
+          }
+        } catch (err: any) {
+          console.error('Storage deletion error:', err);
+          alert(`Depolama temizleme hatası: ${err?.message || err}`);
+        }
+      }
     }
   };
 
@@ -398,25 +755,33 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
 
   return (
     <>
-      <div className="p-8 max-w-[1400px] mx-auto animate-in fade-in duration-500">
-        <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex flex-col gap-2">
-            <div className="text-sm text-slate-700 flex items-center gap-2 font-medium">
-              <span className="cursor-pointer hover:text-blue-600">{t('home')}</span> &gt; 
-              <span className="cursor-pointer hover:text-blue-600">{t('criteria')}</span> &gt;
-              <span className="text-slate-800">{[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold text-slate-800">
-                {[olcutDetay?.kod, getLocalizedField(olcutDetay, 'olcut_adi', locale)].filter(Boolean).join(' ') || `Ölçüt #${resolvedParams.id}`}
-              </h2>
-              <Info className="w-4 h-4 text-slate-400 cursor-pointer" />
-            </div>
-            <p className="text-sm text-slate-800">{t('process_management_desc', { phaseTitle: tStepPanel(`${phaseId}_title`) })}</p>
+      <div className="p-8 max-w-7xl mx-auto space-y-6">
+      
+      {/* Dynamic Header Banner */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-100">
+              {olcutDetay?.kod}
+            </span>
+            <h1 className="text-xl font-bold text-slate-800">{getLocalizedField(olcutDetay, 'olcut_adi', locale)}</h1>
           </div>
-          
-          {/* Eski Onay/Ret butonları ve durum rozeti Stage 7'ye taşındı */}
+          <p className="text-sm text-slate-500">{t('process_management_desc', { phaseTitle: tStepPanel(`${phaseId}_title`) })}</p>
         </div>
+
+        <div className="flex items-center gap-3">
+          {!isReadOnly && (
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl transition-all shadow-sm shadow-blue-200 disabled:opacity-50"
+          >
+            {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+            {isSaving ? t('saving') : t('save')}
+          </button>
+          )}
+        </div>
+      </div>
 
       <StepPanel activeStepId={phaseId} altOlcutId={resolvedParams.id} />
 
@@ -430,7 +795,7 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
               {isReadOnly && <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-700 text-[10px] rounded border border-amber-200">{t('readOnly')}</span>}
             </h3>
             <div className="w-full">
-              <RichTextEditor content={aciklama} onChange={setAciklama} readOnly={isReadOnly} />
+              <RichTextEditor ref={editorRef} content={aciklama} onChange={setAciklama} readOnly={isReadOnly} />
             </div>
             <div className="flex justify-end mt-2 text-xs text-slate-400">
               {t('word_count')} {aciklama.replace(/<[^>]*>?/gm, '').split(/\s+/).filter(w => w.length > 0).length}
@@ -468,21 +833,51 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
                 </div>
               ) : (
                 dokumanlar.map((doc, idx) => (
-                  <div key={idx} className="flex items-start gap-3 p-3 bg-white border border-slate-200 rounded-lg shadow-sm group">
-                    <div className="flex-1 overflow-hidden">
-                      <p className="text-sm font-medium text-slate-700 truncate" title={doc.name}>{doc.name}</p>
-                      <p className="text-[11px] text-slate-500">{doc.size ? `${doc.size} KB` : t('unknown_size')}</p>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <a href={doc.url} target="_blank" rel="noopener noreferrer" className="p-1.5 bg-blue-50 text-blue-600 rounded flex-shrink-0 hover:bg-blue-100" title="İndir/Gör">
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                      {!isReadOnly && (
-                        <button onClick={(e) => { e.preventDefault(); handleRemoveDoc(idx); }} className="p-1.5 bg-red-50 text-red-600 rounded flex-shrink-0 hover:bg-red-100" title="Sil">
-                          <Trash2 className="w-3.5 h-3.5" />
+                  <div key={idx} className="flex flex-col gap-2 p-3 bg-white border border-slate-200 rounded-lg shadow-sm group relative">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 overflow-hidden">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-bold rounded border border-orange-200">
+                            {doc.evidence_no ? `[Kanıt ${doc.evidence_no}]` : 'Numaralandırılıyor...'}
+                          </span>
+                          {doc.is_annotated && (
+                            <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">
+                              ✓ İşaretli
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm font-medium text-slate-700 truncate" title={doc.name}>{doc.name}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{doc.size ? `${doc.size} KB` : t('unknown_size')}</p>
+                        {doc.highlight_note && (
+                          <p className="text-[11px] text-amber-700 font-medium italic truncate mt-1" title={doc.highlight_note}>
+                            📌 {doc.highlight_note}
+                          </p>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={(e) => { e.preventDefault(); handleOpenAnnotator(idx, false); }} 
+                          className="p-1.5 bg-amber-50 text-amber-600 rounded flex-shrink-0 hover:bg-amber-100 transition-colors" 
+                          title="İşaretle / Düzelt"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                        <button 
+                          onClick={(e) => { e.preventDefault(); handleOpenAnnotator(idx, true); }} 
+                          className="p-1.5 bg-blue-50 text-blue-600 rounded flex-shrink-0 hover:bg-blue-100 transition-colors" 
+                          title="Site İçi Görüntüle"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </button>
+                        {!isReadOnly && (
+                          <button onClick={(e) => { e.preventDefault(); handleRemoveDoc(idx); }} className="p-1.5 bg-red-50 text-red-600 rounded flex-shrink-0 hover:bg-red-100" title="Sil">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
+
                   </div>
                 ))
               )}
@@ -656,8 +1051,19 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
 
       </div>
     </div>
-      
-      {/* Reject Modal Stage 7'ye taşındı */}
-    </>
-  );
+
+    {/* Evidence Annotator Modal */}
+    <EvidenceAnnotatorModal
+      isOpen={annotatorModalOpen}
+      onClose={() => {
+        setAnnotatorModalOpen(false);
+        setSelectedDocForAnnotation(null);
+      }}
+      doc={selectedDocForAnnotation?.doc || null}
+      docIndex={selectedDocForAnnotation?.index ?? -1}
+      onSaveAnnotatedDoc={handleSaveAnnotatedDoc}
+      isReadOnly={isReadOnly || annotatorReadOnly}
+    />
+  </>
+);
 }

@@ -135,12 +135,23 @@ export default function BildirimlerTableClient({ initialData, isApprover = false
   const handleRevizeSubmit = async () => {
     if (!file || !selectedRow) return;
     
+    // Güvenlik: Dosya uzantı ve boyut denetimi
+    const fileExt = file.name.split('.').pop()?.toLowerCase();
+    const allowedExtensions = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'docx', 'xlsx'];
+    if (!fileExt || !allowedExtensions.includes(fileExt)) {
+      setModalError('Geçersiz dosya formatı! Sadece PDF, Görsel veya Office belgesi seçebilirsiniz.');
+      return;
+    }
+    if (file.size > 25 * 1024 * 1024) {
+      setModalError('Dosya boyutu 25MB sınırını aşamaz.');
+      return;
+    }
+
     setIsSubmitting(true);
     setModalError(null);
 
     try {
       // 1. Upload new file
-      const fileExt = file.name.split('.').pop();
       const fileName = `${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
       
       const { error: uploadError } = await supabase.storage
@@ -352,7 +363,33 @@ export default function BildirimlerTableClient({ initialData, isApprover = false
                     <div className="flex text-sm text-slate-600 justify-center">
                       <label htmlFor="file-upload-revize" className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-blue-500 px-2 py-1 shadow-sm border border-slate-200">
                         <span>{t('modal.select_file')}</span>
-                        <input id="file-upload-revize" name="file-upload-revize" type="file" className="sr-only" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                        <input 
+                          id="file-upload-revize" 
+                          name="file-upload-revize" 
+                          type="file" 
+                          accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.xlsx"
+                          className="sr-only" 
+                          onChange={(e) => {
+                            const selFile = e.target.files?.[0] || null;
+                            if (selFile) {
+                              const ext = selFile.name.split('.').pop()?.toLowerCase();
+                              const allowed = ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'docx', 'xlsx'];
+                              if (!ext || !allowed.includes(ext)) {
+                                alert('Geçersiz dosya formatı! Sadece PDF, Görsel veya Office belgesi seçebilirsiniz.');
+                                e.target.value = '';
+                                setFile(null);
+                                return;
+                              }
+                              if (selFile.size > 25 * 1024 * 1024) {
+                                alert('Dosya boyutu 25MB sınırını aşamaz.');
+                                e.target.value = '';
+                                setFile(null);
+                                return;
+                              }
+                            }
+                            setFile(selFile);
+                          }} 
+                        />
                       </label>
                     </div>
                     <p className="text-xs text-slate-500 mt-2">

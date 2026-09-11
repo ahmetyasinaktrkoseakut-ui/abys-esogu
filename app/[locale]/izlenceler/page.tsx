@@ -18,10 +18,10 @@ export default async function IzlencelerPage() {
     
     const profile = profileData?.[0];
     const email = user.email?.toLowerCase() || '';
-    const userRole = (profile?.rol || user.user_metadata?.role || '').toLowerCase();
+    const userRole = (profile?.rol || '').toLowerCase();
     
     // Daha kapsayıcı Regex kontrolü (Türkçe karakter ve farklı yazım türleri için)
-    const isYonetici = /admin|yonetici|yönetici|manager/i.test(userRole) || user.user_metadata?.isAdmin === true;
+    const isYonetici = /admin|yonetici|yönetici|manager/i.test(userRole);
 
     const isKurumsalPersonel = (
       email.endsWith('@ogu.edu.tr') || 

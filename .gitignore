@@ -55,3 +55,10 @@ fetch-db.mjs
 scratch-db.mjs
 final_lint*.txt
 lint_errors.txt
+
+# Backups and encrypted dumps
+backups_secure/
+storage_backup*/
+*.dump
+*.enc
+manifest*.json

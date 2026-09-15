@@ -40,7 +40,31 @@ async function handleStorageProxy(
 
     // Yetkisiz erisimi kesinlikle engelle
     if (!user) {
-      return NextResponse.json({ error: 'Yetkisiz erisim. Lutfen once giris yapiniz.' }, { status: 401 });
+      if (isHead) {
+        return NextResponse.json({ error: 'Yetkisiz erisim. Lutfen once giris yapiniz.' }, { status: 401 });
+      }
+
+      // Oturumsuz GET isteğinde:
+      // JSON 401 döndürme; kullanıcıyı mevcut locale ile /${locale}/login?redirect=... adresine yönlendir.
+      const localeCookie = cookieStore.get('NEXT_LOCALE')?.value;
+      const supportedLocales = ['tr', 'en', 'ar'];
+      const locale = (localeCookie && supportedLocales.includes(localeCookie)) ? localeCookie : 'tr';
+
+      const pathname = request.nextUrl.pathname;
+      // redirect yalnızca /api/storage/ ile başlayan dahili yolları kabul etsin.
+      // Harici URL, // ile başlayan adres veya javascript/data URL kabul edilmesin.
+      const isInternalStoragePath =
+        pathname.startsWith('/api/storage/') &&
+        !pathname.startsWith('//') &&
+        !pathname.includes('\\') &&
+        !pathname.toLowerCase().startsWith('/api/storage/javascript:') &&
+        !pathname.toLowerCase().startsWith('/api/storage/data:');
+
+      const loginUrl = new URL(`/${locale}/login`, request.url);
+      if (isInternalStoragePath) {
+        loginUrl.searchParams.set('redirect', pathname);
+      }
+      return NextResponse.redirect(loginUrl, 307);
     }
 
     const supabaseAdmin = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -124,7 +148,9 @@ async function handleStorageProxy(
     const headers = new Headers();
     headers.set('Content-Type', fileBlob.type || 'application/octet-stream');
     headers.set('Content-Length', fileBlob.size.toString());
-    headers.set('Cache-Control', 'private, max-age=3600');
+    headers.set('Cache-Control', 'private, no-cache, no-store, max-age=0, must-revalidate, proxy-revalidate');
+    headers.set('Pragma', 'no-cache');
+    headers.set('Expires', '0');
     headers.set('Content-Disposition', 'inline');
 
     // HEAD istegi icin yalnizca basliklar ve 200 status donulur

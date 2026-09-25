@@ -7,7 +7,8 @@ const handleI18nRouting = createIntlMiddleware(routing);
 
 export async function updateSession(request: NextRequest) {
   const host = request.headers.get('x-forwarded-host') || request.nextUrl.host;
-  const proto = request.headers.get('x-forwarded-proto') || 'https';
+  const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
+  const proto = request.headers.get('x-forwarded-proto') || (isLocalhost ? 'http' : 'https');
   const publicBaseUrl = `${proto}://${host}`;
 
   let supabaseResponse = handleI18nRouting(request);
@@ -17,7 +18,9 @@ export async function updateSession(request: NextRequest) {
     const location = supabaseResponse.headers.get('location');
     if (location && (location.includes('localhost') || location.includes(':8080'))) {
       const url = new URL(location, publicBaseUrl);
-      url.port = '';
+      if (!isLocalhost) {
+        url.port = '';
+      }
       supabaseResponse.headers.set('location', url.toString());
     }
   }
@@ -54,7 +57,9 @@ export async function updateSession(request: NextRequest) {
     const finalPath = `/${currentLocale}${targetPath}`;
     
     const url = new URL(finalPath, publicBaseUrl);
-    url.port = '';
+    if (!isLocalhost) {
+      url.port = '';
+    }
     return NextResponse.redirect(url);
   };
 
@@ -88,7 +93,9 @@ export async function updateSession(request: NextRequest) {
     const location = supabaseResponse.headers.get('location');
     if (location && (location.includes('localhost') || location.includes(':8080'))) {
       const url = new URL(location, publicBaseUrl);
-      url.port = '';
+      if (!isLocalhost) {
+        url.port = '';
+      }
       supabaseResponse.headers.set('location', url.toString());
     }
   }

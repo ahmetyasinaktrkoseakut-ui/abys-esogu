@@ -18,6 +18,7 @@ export default function DuyurularClient({ currentUserId, isAdmin }: { currentUse
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newAnnouncement, setNewAnnouncement] = useState({ baslik: '', icerik: '' });
+  const [sendEmail, setSendEmail] = useState(false);
 
   useEffect(() => {
     async function fetchAnnouncements() {
@@ -86,6 +87,7 @@ export default function DuyurularClient({ currentUserId, isAdmin }: { currentUse
         body: JSON.stringify({
           baslik: newAnnouncement.baslik.trim(),
           icerik: newAnnouncement.icerik.trim(),
+          sendEmail,
         }),
       });
 
@@ -93,6 +95,7 @@ export default function DuyurularClient({ currentUserId, isAdmin }: { currentUse
 
       if (response.ok && result.success) {
         setNewAnnouncement({ baslik: '', icerik: '' });
+        setSendEmail(false);
         setShowModal(false);
         alert(t('save_success'));
       } else {
@@ -178,6 +181,20 @@ export default function DuyurularClient({ currentUserId, isAdmin }: { currentUse
                   onChange={(e) => setNewAnnouncement({ ...newAnnouncement, icerik: e.target.value })}
                 />
               </div>
+
+              <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                <input
+                  type="checkbox"
+                  id="sendEmailCheckbox"
+                  checked={sendEmail}
+                  onChange={(e) => setSendEmail(e.target.checked)}
+                  className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                />
+                <label htmlFor="sendEmailCheckbox" className="text-xs font-semibold text-slate-700 cursor-pointer select-none">
+                  Bu duyuruyu öğretim elemanlarına e-posta ile de bildir
+                </label>
+              </div>
+
               <button
                 type="submit"
                 disabled={isSubmitting}

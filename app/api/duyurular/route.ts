@@ -103,8 +103,7 @@ export async function POST(request: Request) {
       .maybeSingle();
 
     // 5. Hedef Alıcıları Belirleme
-    let targetInstructors: { email: string; ad_soyad: string }[] = [];
-    let displayTitle = trimmedBaslik;
+    let targetInstructors: { id: string; email: string; ad_soyad: string }[] = [];
 
     if (hedefKitle === 'hoca' && hedefHocaId) {
       const { data: hocaProf } = await supabaseAdmin
@@ -114,12 +113,10 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       if (hocaProf?.email && hocaProf.email.includes('@')) {
-        targetInstructors = [{ email: hocaProf.email, ad_soyad: hocaProf.ad_soyad || 'Öğretim Elemanı' }];
-        displayTitle = `[Özel: ${hocaProf.ad_soyad || 'Hoca'}] ${trimmedBaslik}`;
+        targetInstructors = [{ id: hocaProf.id, email: hocaProf.email, ad_soyad: hocaProf.ad_soyad || 'Öğretim Elemanı' }];
       }
     } else if (hedefKitle === 'baslik' && hedefBaslikKod) {
       const cleanBaslikKod = hedefBaslikKod.toUpperCase().trim();
-      displayTitle = `[${cleanBaslikKod} Başlığı] ${trimmedBaslik}`;
 
       // İlgili ana başlığın altındaki alt ölçütleri bul
       const { data: altOlcutler } = await supabaseAdmin
@@ -145,7 +142,9 @@ export async function POST(request: Request) {
             .in('id', userIds)
             .not('email', 'is', null);
 
-          targetInstructors = (profs || []).filter(p => p.email && p.email.includes('@'));
+          targetInstructors = (profs || [])
+            .filter(p => p.email && p.email.includes('@'))
+            .map(p => ({ id: p.id, email: p.email, ad_soyad: p.ad_soyad || 'Öğretim Elemanı' }));
         }
       }
     } else if (hedefKitle === 'tum' && isAdmin) {
@@ -155,25 +154,54 @@ export async function POST(request: Request) {
         .neq('rol', 'Beklemede')
         .not('email', 'is', null);
 
-      targetInstructors = (allProf || []).filter(p => p.email && p.email.includes('@'));
+      targetInstructors = (allProf || [])
+        .filter(p => p.email && p.email.includes('@'))
+        .map(p => ({ id: p.id, email: p.email, ad_soyad: p.ad_soyad || 'Öğretim Elemanı' }));
     }
 
-    // 6. Duyuruyu Veritabanına Ekle
-    const { data, error } = await supabaseAdmin
-      .from('duyurular')
-      .insert({
-        baslik: displayTitle,
-        icerik: trimmedIcerik,
-      })
-      .select()
-      .single();
+    // 6. Kayıt Yönetimi:
+    // YALNIZCA 'tum' (Tüm Fakülte Genel Duyurusu) duyurular panosuna eklenir!
+    // 'hoca' veya 'baslik' gibi özel mesajlar GENEL PANODA ASLA YER ALMAZ!
+    let announcementData = null;
 
-    if (error) {
-      console.error('Database announcement insert error:', error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+    if (hedefKitle === 'tum') {
+      const { data, error } = await supabaseAdmin
+        .from('duyurular')
+        .insert({
+          baslik: trimmedBaslik,
+          icerik: trimmedIcerik,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Database announcement insert error:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+      }
+      announcementData = data;
+    } else {
+      // Kişiye veya gruba özel mesaj: bildirimler tablosuna ilgili hocalar için özel bildirim eklenir
+      const targetUserIds = targetInstructors.map(t => t.id).filter(Boolean);
+      if (targetUserIds.length > 0) {
+        try {
+          const notifInserts = targetUserIds.map(uid => ({
+            gonderen_id: user.id,
+            alici_id: uid,
+            mesaj: `${trimmedBaslik}: ${trimmedIcerik}`,
+            tip: 'duyuru',
+            okundu: false,
+          }));
+          await supabaseAdmin.from('bildirimler').insert(notifInserts);
+        } catch (notifErr: any) {
+          console.warn('[NOTIF INSERT WARN]:', notifErr?.message || notifErr);
+        }
+      }
     }
 
-    // 7. E-Posta Bildirimi (İsteğe Bağlı & Fail-Safe)
+    // 7. E-Posta Bildirimi:
+    // 'tum' için: SADECE sendEmail === true ise e-posta atılır.
+    // 'hoca' ve 'baslik' için: sendEmail === true ise e-posta atılır.
+    let isEmailSent = false;
     if (sendEmail === true && targetInstructors.length > 0) {
       try {
         const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://esogu-akreditasyon.vercel.app').replace(/\/+$/, '');
@@ -190,9 +218,8 @@ export async function POST(request: Request) {
           html,
         }));
 
-        await sendBatchEmails(batchItems).catch(err => {
-          console.warn('[ANNOUNCEMENT EMAIL] Toplu e-posta gönderiminde hata:', err);
-        });
+        const result = await sendBatchEmails(batchItems);
+        isEmailSent = result.success;
       } catch (emailErr) {
         console.warn('[ANNOUNCEMENT EMAIL] E-posta tetikleme adımı atlandı/hata:', emailErr);
       }
@@ -200,9 +227,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      data,
+      data: announcementData,
       recipientCount: targetInstructors.length,
-      emailSent: sendEmail === true && targetInstructors.length > 0,
+      emailSent: isEmailSent,
+      isPrivate: hedefKitle !== 'tum',
     });
 
   } catch (error: any) {

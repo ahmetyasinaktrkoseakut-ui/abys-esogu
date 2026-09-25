@@ -143,12 +143,19 @@ export default function DuyurularClient({
 
       if (response.ok && result.success) {
         setNewAnnouncement({ baslik: '', icerik: '' });
-        setSendEmail(false);
+        setSendEmail(hedefKitle !== 'tum');
         setHedefHocaId('');
         setShowModal(false);
-        const msg = result.emailSent
-          ? `Duyuru kaydedildi ve ${result.recipientCount || 0} kişiye e-posta gönderildi.`
-          : 'Duyuru başarıyla kaydedildi.';
+        let msg = '';
+        if (result.isPrivate) {
+          msg = result.emailSent
+            ? `Özel bildirim ve e-posta (${result.recipientCount || 0} kişi) başarıyla iletildi.`
+            : 'Özel bildirim başarıyla iletildi (genel panoda görünmez).';
+        } else {
+          msg = result.emailSent
+            ? `Duyuru panoya eklendi ve tüm hocalara (${result.recipientCount || 0} kişi) e-posta gönderildi.`
+            : 'Duyuru başarıyla genel panoya kaydedildi.';
+        }
         alert(msg);
       } else {
         alert(result.error || 'Duyuru kaydedilirken bir hata oluştu.');
@@ -225,7 +232,10 @@ export default function DuyurularClient({
                   {isAdmin && (
                     <button
                       type="button"
-                      onClick={() => setHedefKitle('tum')}
+                      onClick={() => {
+                        setHedefKitle('tum');
+                        setSendEmail(false);
+                      }}
                       className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-semibold transition-all ${
                         hedefKitle === 'tum'
                           ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
@@ -238,7 +248,10 @@ export default function DuyurularClient({
                   )}
                   <button
                     type="button"
-                    onClick={() => setHedefKitle('baslik')}
+                    onClick={() => {
+                      setHedefKitle('baslik');
+                      setSendEmail(true);
+                    }}
                     className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-semibold transition-all ${
                       hedefKitle === 'baslik'
                         ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
@@ -250,7 +263,10 @@ export default function DuyurularClient({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setHedefKitle('hoca')}
+                    onClick={() => {
+                      setHedefKitle('hoca');
+                      setSendEmail(true);
+                    }}
                     className={`flex flex-col items-center justify-center p-2.5 rounded-xl border text-xs font-semibold transition-all ${
                       hedefKitle === 'hoca'
                         ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
@@ -340,16 +356,25 @@ export default function DuyurularClient({
                     className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
                   />
                   <span className="text-xs font-bold text-slate-800">
-                    Bu duyuruyu öğretim elemanlarına e-posta ile de bildir
+                    {hedefKitle === 'tum'
+                      ? 'Bu duyuruyu öğretim elemanlarına e-posta ile de bildir'
+                      : 'Bu bildirimi e-posta ile ilet'}
                   </span>
                 </label>
-                {sendEmail && (
-                  <p className="text-[11px] text-slate-500 pl-6.5 mt-0.5">
-                    {hedefKitle === 'tum' && 'Fakültedeki tüm aktif öğretim elemanlarına resmi e-posta gönderilecektir.'}
-                    {hedefKitle === 'baslik' && `[${hedefBaslikKod}] başlığında görevli olan hocalara resmi e-posta gönderilecektir.`}
-                    {hedefKitle === 'hoca' && 'Yalnızca seçilen öğretim elemanının e-posta adresine bildirim gönderilecektir.'}
-                  </p>
-                )}
+                <p className="text-[11px] text-slate-500 pl-6.5 mt-0.5">
+                  {hedefKitle === 'tum' &&
+                    (sendEmail
+                      ? 'Duyuru genel panoya eklenecek ve tüm fakülte öğretim elemanlarına resmi e-posta da gönderilecektir.'
+                      : 'Yalnızca sistem içi genel duyuru panosuna eklenecektir (e-posta gönderilmez).')}
+                  {hedefKitle === 'baslik' &&
+                    (sendEmail
+                      ? `[${hedefBaslikKod}] başlığındaki hocalara doğrudan e-posta ve dahili bildirim iletilecektir (genel panoda görünmez).`
+                      : `Yalnızca [${hedefBaslikKod}] başlığındaki hocalara dahili bildirim iletilir (e-posta gönderilmez).`)}
+                  {hedefKitle === 'hoca' &&
+                    (sendEmail
+                      ? 'Yalnızca seçilen öğretim elemanının e-posta adresine ve bildirim paneline iletilecektir (genel panoda görünmez).'
+                      : 'Yalnızca seçilen öğretim elemanının bildirim paneline iletilir (e-posta gönderilmez).')}
+                </p>
               </div>
 
               <button

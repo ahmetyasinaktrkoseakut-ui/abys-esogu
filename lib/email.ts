@@ -1,11 +1,13 @@
 /**
  * ESOGÜ İlahiyat Fakültesi Akreditasyon Sistemi (ABYS)
- * Kurumsal E-Posta Gönderim Modülü (Resend REST API)
- * - Sıfır ek npm bağımlılığı (Yerel fetch ve AbortController)
+ * Kurumsal E-Posta Gönderim Modülü
+ * - Gmail SMTP (nodemailer) & Resend REST API Fallback
  * - XSS / HTML sanitization
  * - 8 saniye zaman aşımı (Timeout)
  * - Fail-Safe / Graceful Degradation
  */
+
+import nodemailer from 'nodemailer';
 
 interface SendSingleEmailParams {
   to: string;
@@ -44,77 +46,106 @@ export function escapeHtml(str: string): string {
 }
 
 function getEmailConfig() {
+  const gmailUser = process.env.GMAIL_USER?.trim();
+  const gmailPass = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, '');
   const apiKey = process.env.RESEND_API_KEY?.trim();
-  const from = process.env.EMAIL_FROM?.trim() || 'ESOGÜ İlahiyat Akreditasyon <onboarding@resend.dev>';
+  const from = process.env.EMAIL_FROM?.trim() || (gmailUser ? `"ESOGÜ İlahiyat ABYS" <${gmailUser}>` : 'ESOGÜ İlahiyat Akreditasyon <onboarding@resend.dev>');
   const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://esogu-akreditasyon.vercel.app').replace(/\/+$/, '');
-  return { apiKey, from, appUrl };
+  return { gmailUser, gmailPass, apiKey, from, appUrl };
+}
+
+function getGmailTransporter() {
+  const { gmailUser, gmailPass } = getEmailConfig();
+  if (!gmailUser || !gmailPass) return null;
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: gmailUser,
+      pass: gmailPass,
+    },
+  });
 }
 
 /**
  * Tekil E-Posta Gönderici (Özdeğerlendirme Raporu Ret/Revizyon Bildirimi)
  */
 export async function sendSingleEmail({ to, subject, html }: SendSingleEmailParams): Promise<SendEmailResult> {
-  const { apiKey, from } = getEmailConfig();
-
-  if (!apiKey) {
-    console.warn('[EMAIL] RESEND_API_KEY tanımlanmamış. E-posta gönderimi güvenli şekilde atlandı.');
-    return { success: false, skipped: true, error: 'RESEND_API_KEY missing' };
-  }
+  const { gmailUser, apiKey, from } = getEmailConfig();
+  const transporter = getGmailTransporter();
 
   if (!to || !to.includes('@')) {
     return { success: false, error: 'Geçersiz alıcı e-posta adresi.' };
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-  try {
-    const response = await fetch(RESEND_API_URL, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
+  // 1. Öncelik: Gmail SMTP (nodemailer)
+  if (transporter && gmailUser) {
+    try {
+      const info = await transporter.sendMail({
         from,
-        to: [to.trim()],
+        to: to.trim(),
         subject: subject.trim(),
         html,
-      }),
-      signal: controller.signal,
-    });
-
-    clearTimeout(timeoutId);
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      console.warn('[EMAIL] Resend API hatası:', data);
-      return { success: false, error: data?.message || 'E-posta gönderilemedi.' };
+      });
+      return { success: true, id: info.messageId };
+    } catch (err: any) {
+      console.warn('[EMAIL] Gmail SMTP gönderim hatası:', err?.message || err);
+      if (!apiKey) {
+        return { success: false, error: err?.message || 'Gmail SMTP hatası' };
+      }
     }
-
-    return { success: true, id: data?.id };
-  } catch (err: any) {
-    clearTimeout(timeoutId);
-    if (err?.name === 'AbortError') {
-      console.warn('[EMAIL] İstek zaman aşımına uğradı (8 saniye).');
-      return { success: false, error: 'Zaman aşımı' };
-    }
-    console.warn('[EMAIL] E-posta gönderiminde hata:', err?.message || err);
-    return { success: false, error: err?.message || 'Ağ hatası' };
   }
+
+  // 2. Öncelik: Resend API (Fallback)
+  if (apiKey) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+    try {
+      const response = await fetch(RESEND_API_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from,
+          to: [to.trim()],
+          subject: subject.trim(),
+          html,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        console.warn('[EMAIL] Resend API hatası:', data);
+        return { success: false, error: data?.message || 'E-posta gönderilemedi.' };
+      }
+
+      return { success: true, id: data?.id };
+    } catch (err: any) {
+      clearTimeout(timeoutId);
+      if (err?.name === 'AbortError') {
+        console.warn('[EMAIL] İstek zaman aşımına uğradı (8 saniye).');
+        return { success: false, error: 'Zaman aşımı' };
+      }
+      console.warn('[EMAIL] E-posta gönderiminde hata:', err?.message || err);
+      return { success: false, error: err?.message || 'Ağ hatası' };
+    }
+  }
+
+  console.warn('[EMAIL] Ne GMAIL ne de RESEND yapılandırması bulundu. E-posta gönderimi güvenli şekilde atlandı.');
+  return { success: false, skipped: true, error: 'E-posta sağlayıcı yapılandırılmamış' };
 }
 
 /**
- * Toplu E-Posta Gönderici (Resend Batch API - Duyurular için)
- * Resend tek seferde en fazla 100 alıcı kabul eder; gerekirse parçalayarak gönderir.
+ * Toplu E-Posta Gönderici (Duyurular için)
  */
 export async function sendBatchEmails(items: BatchEmailItem[]): Promise<{ success: boolean; count: number; error?: string }> {
-  const { apiKey, from } = getEmailConfig();
-
-  if (!apiKey) {
-    console.warn('[EMAIL] RESEND_API_KEY tanımlanmamış. Toplu e-posta gönderimi atlandı.');
-    return { success: false, count: 0, error: 'RESEND_API_KEY missing' };
-  }
+  const { gmailUser, apiKey, from } = getEmailConfig();
+  const transporter = getGmailTransporter();
 
   if (!items || items.length === 0) {
     return { success: true, count: 0 };
@@ -125,46 +156,71 @@ export async function sendBatchEmails(items: BatchEmailItem[]): Promise<{ succes
     return { success: false, count: 0, error: 'Geçerli alıcı bulunamadı.' };
   }
 
-  let totalSent = 0;
-  const CHUNK_SIZE = 100;
-
-  for (let i = 0; i < validItems.length; i += CHUNK_SIZE) {
-    const chunk = validItems.slice(i, i + CHUNK_SIZE).map(item => ({
-      from,
-      to: [item.to.trim()],
-      subject: item.subject.trim(),
-      html: item.html,
-    }));
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
-
-    try {
-      const response = await fetch(RESEND_BATCH_URL, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(chunk),
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      if (response.ok) {
-        totalSent += chunk.length;
-      } else {
-        const errData = await response.json().catch(() => ({}));
-        console.warn(`[EMAIL] Batch gönderim hatası (parça ${i / CHUNK_SIZE + 1}):`, errData);
+  // 1. Öncelik: Gmail SMTP (Sıralı / kontrollü gönderim)
+  if (transporter && gmailUser) {
+    let totalSent = 0;
+    for (const item of validItems) {
+      try {
+        await transporter.sendMail({
+          from,
+          to: item.to.trim(),
+          subject: item.subject.trim(),
+          html: item.html,
+        });
+        totalSent++;
+      } catch (err: any) {
+        console.warn(`[EMAIL] Gmail toplu gönderim hatası (${item.to}):`, err?.message || err);
       }
-    } catch (err: any) {
-      clearTimeout(timeoutId);
-      console.warn(`[EMAIL] Batch gönderim hatası:`, err?.message || err);
     }
+    return { success: totalSent > 0, count: totalSent };
   }
 
-  return { success: totalSent > 0, count: totalSent };
+  // 2. Öncelik: Resend Batch API
+  if (apiKey) {
+    let totalSent = 0;
+    const CHUNK_SIZE = 100;
+
+    for (let i = 0; i < validItems.length; i += CHUNK_SIZE) {
+      const chunk = validItems.slice(i, i + CHUNK_SIZE).map(item => ({
+        from,
+        to: [item.to.trim()],
+        subject: item.subject.trim(),
+        html: item.html,
+      }));
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
+
+      try {
+        const response = await fetch(RESEND_BATCH_URL, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(chunk),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          totalSent += chunk.length;
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          console.warn(`[EMAIL] Resend batch gönderim hatası (parça ${i / CHUNK_SIZE + 1}):`, errData);
+        }
+      } catch (err: any) {
+        clearTimeout(timeoutId);
+        console.warn(`[EMAIL] Resend batch gönderim hatası:`, err?.message || err);
+      }
+    }
+
+    return { success: totalSent > 0, count: totalSent };
+  }
+
+  console.warn('[EMAIL] Ne GMAIL ne de RESEND yapılandırması bulundu. Toplu e-posta gönderimi atlandı.');
+  return { success: false, count: 0, error: 'E-posta sağlayıcı yapılandırılmamış' };
 }
 
 /**

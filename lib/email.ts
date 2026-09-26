@@ -240,6 +240,9 @@ export function createRejectionEmailHtml({
   appUrl: string;
 }): string {
   const loginUrl = `${appUrl}/tr/login`;
+  const logoUrl = appUrl.startsWith('http://localhost')
+    ? 'https://abys-ivory.vercel.app/esogu-abys-logo.png'
+    : `${appUrl}/esogu-abys-logo.png`;
   const safeHocaAdi = escapeHtml(hocaAdi);
   const safeOlcutKodu = escapeHtml(olcutKodu);
   const safeOlcutAdi = escapeHtml(olcutAdi);
@@ -261,13 +264,22 @@ export function createRejectionEmailHtml({
           
           <!-- Kurumsal Üst Bant -->
           <tr>
-            <td style="background-color: #0f172a; padding: 24px 30px; text-align: left; border-bottom: 3px solid #0284c7;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
-                Eskişehir Osmangazi Üniversitesi
-              </h1>
-              <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12.5px; font-weight: 500;">
-                İlahiyat Fakültesi Akreditasyon Bilgi Yönetim Sistemi (ABYS)
-              </p>
+            <td style="background-color: #0f172a; padding: 20px 28px; text-align: left; border-bottom: 3px solid #0284c7;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
+                <tr>
+                  <td style="vertical-align: middle; text-align: left;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.3;">
+                      Eskişehir Osmangazi Üniversitesi
+                    </h1>
+                    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px; font-weight: 500; line-height: 1.4;">
+                      İlahiyat Fakültesi Akreditasyon Bilgi Yönetim Sistemi (ABYS)
+                    </p>
+                  </td>
+                  <td style="width: 60px; vertical-align: middle; text-align: right; padding-left: 16px;">
+                    <img src="${logoUrl}" alt="ESOGÜ İlahiyat ABYS" width="56" height="56" style="display: block; width: 56px; height: 56px; border-radius: 50%; border: 0; outline: none; text-decoration: none;" />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 
@@ -341,6 +353,9 @@ export function createAnnouncementEmailHtml({
   appUrl: string;
 }): string {
   const loginUrl = `${appUrl}/tr/login`;
+  const logoUrl = appUrl.startsWith('http://localhost')
+    ? 'https://abys-ivory.vercel.app/esogu-abys-logo.png'
+    : `${appUrl}/esogu-abys-logo.png`;
   const safeBaslik = escapeHtml(baslik);
   const formattedContent = (icerik || '')
     .split(/\r?\n/)
@@ -365,13 +380,22 @@ export function createAnnouncementEmailHtml({
           
           <!-- Kurumsal Üst Bant -->
           <tr>
-            <td style="background-color: #0f172a; padding: 24px 30px; text-align: left; border-bottom: 3px solid #0284c7;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase;">
-                Eskişehir Osmangazi Üniversitesi
-              </h1>
-              <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12.5px; font-weight: 500;">
-                İlahiyat Fakültesi Akreditasyon Bilgi Yönetim Sistemi (ABYS)
-              </p>
+            <td style="background-color: #0f172a; padding: 20px 28px; text-align: left; border-bottom: 3px solid #0284c7;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="border-collapse: collapse;">
+                <tr>
+                  <td style="vertical-align: middle; text-align: left;">
+                    <h1 style="margin: 0; color: #ffffff; font-size: 16px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; line-height: 1.3;">
+                      Eskişehir Osmangazi Üniversitesi
+                    </h1>
+                    <p style="margin: 4px 0 0 0; color: #94a3b8; font-size: 12px; font-weight: 500; line-height: 1.4;">
+                      İlahiyat Fakültesi Akreditasyon Bilgi Yönetim Sistemi (ABYS)
+                    </p>
+                  </td>
+                  <td style="width: 60px; vertical-align: middle; text-align: right; padding-left: 16px;">
+                    <img src="${logoUrl}" alt="ESOGÜ İlahiyat ABYS" width="56" height="56" style="display: block; width: 56px; height: 56px; border-radius: 50%; border: 0; outline: none; text-decoration: none;" />
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
 

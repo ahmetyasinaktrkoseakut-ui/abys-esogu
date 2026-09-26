@@ -204,7 +204,7 @@ export async function POST(request: Request) {
     let isEmailSent = false;
     if (sendEmail === true && targetInstructors.length > 0) {
       try {
-        const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://esogu-akreditasyon.vercel.app').replace(/\/+$/, '');
+        const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://abys-ivory.vercel.app').replace(/\/+$/, '');
         const html = createAnnouncementEmailHtml({
           baslik: trimmedBaslik,
           icerik: trimmedIcerik,

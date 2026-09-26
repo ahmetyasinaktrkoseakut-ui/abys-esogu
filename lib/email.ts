@@ -50,7 +50,7 @@ function getEmailConfig() {
   const gmailPass = process.env.GMAIL_APP_PASSWORD?.replace(/\s+/g, '');
   const apiKey = process.env.RESEND_API_KEY?.trim();
   const from = process.env.EMAIL_FROM?.trim() || (gmailUser ? `"ESOGÜ İlahiyat ABYS" <${gmailUser}>` : 'ESOGÜ İlahiyat Akreditasyon <onboarding@resend.dev>');
-  const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://esogu-akreditasyon.vercel.app').replace(/\/+$/, '');
+  const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://abys-ivory.vercel.app').replace(/\/+$/, '');
   return { gmailUser, gmailPass, apiKey, from, appUrl };
 }
 
@@ -239,7 +239,7 @@ export function createRejectionEmailHtml({
   redNedeni: string;
   appUrl: string;
 }): string {
-  const loginUrl = `${appUrl}/olcutler`;
+  const loginUrl = `${appUrl}/tr/login`;
   const safeHocaAdi = escapeHtml(hocaAdi);
   const safeOlcutKodu = escapeHtml(olcutKodu);
   const safeOlcutAdi = escapeHtml(olcutAdi);
@@ -340,7 +340,7 @@ export function createAnnouncementEmailHtml({
   icerik: string;
   appUrl: string;
 }): string {
-  const loginUrl = `${appUrl}/duyurular`;
+  const loginUrl = `${appUrl}/tr/login`;
   const safeBaslik = escapeHtml(baslik);
   const formattedContent = (icerik || '')
     .split(/\r?\n/)

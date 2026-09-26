@@ -205,7 +205,7 @@ export async function POST(request: Request) {
         .maybeSingle();
 
       if (targetProfile?.email && targetProfile.email.includes('@')) {
-        const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://esogu-akreditasyon.vercel.app').replace(/\/+$/, '');
+        const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://abys-ivory.vercel.app').replace(/\/+$/, '');
         const emailHtml = createRejectionEmailHtml({
           hocaAdi: targetProfile.ad_soyad || 'Öğretim Elemanımız',
           olcutKodu: altOlcut?.kod || 'Alt Ölçüt',

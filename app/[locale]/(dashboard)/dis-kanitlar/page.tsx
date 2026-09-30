@@ -22,7 +22,8 @@ import {
   Eye, 
   Download,
   Share2,
-  Sparkles
+  Sparkles,
+  Trash2
 } from 'lucide-react';
 import { usePeriod } from '@/contexts/PeriodContext';
 import { useLocale } from 'next-intl';
@@ -263,6 +264,38 @@ export default function DisKanitlarPage() {
       alert('Faaliyet bildirimi reddedildi.');
     } catch (err: any) {
       console.error('Reddet hatası:', err);
+      alert(err.message || 'Bir hata oluştu.');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  // Kalıcı Silme Eylemi
+  const handleSil = async (item: FaaliyetKaydi) => {
+    if (!confirm(`"${item.faaliyet_adi}" başlıklı faaliyet bildirimini ve yüklenen belgeyi KALICI OLARAK silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
+      return;
+    }
+
+    setActionLoadingId(item.id);
+    try {
+      const res = await fetch('/api/faaliyet-bildirimi/sil', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ faaliyetId: item.id }),
+      });
+
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || 'Silme işlemi gerçekleştirilemedi.');
+      }
+
+      await loadData();
+      if (isDetailOpen && selectedItem?.id === item.id) {
+        setIsDetailOpen(false);
+      }
+      alert('Faaliyet kaydı ve dosyası kalıcı olarak silindi.');
+    } catch (err: any) {
+      console.error('Silme hatası:', err);
       alert(err.message || 'Bir hata oluştu.');
     } finally {
       setActionLoadingId(null);
@@ -596,6 +629,16 @@ export default function DisKanitlarPage() {
                             </button>
                           </>
                         )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleSil(item)}
+                          disabled={actionLoadingId === item.id}
+                          className="p-1.5 rounded-lg bg-slate-100 hover:bg-rose-50 text-slate-400 hover:text-rose-600 transition-colors"
+                          title="Kaydı ve Belgeyi Kalıcı Olarak Sil"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -712,13 +755,25 @@ export default function DisKanitlarPage() {
 
             {/* Modal Footer */}
             <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
-              <button
-                type="button"
-                onClick={() => setIsDetailOpen(false)}
-                className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-100"
-              >
-                Kapat
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsDetailOpen(false)}
+                  className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-100"
+                >
+                  Kapat
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleSil(selectedItem)}
+                  disabled={actionLoadingId === selectedItem.id}
+                  className="flex items-center gap-1.5 px-3 py-2 bg-white border border-rose-200 text-rose-600 hover:bg-rose-50 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
+                  title="Kaydı ve Belgeyi Kalıcı Olarak Sil"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  Kalıcı Sil
+                </button>
+              </div>
 
               {selectedItem.durum === 'beklemede' && (
                 <div className="flex items-center gap-2">

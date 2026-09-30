@@ -60,30 +60,64 @@ const AKTS_ROWS = [
   'Yarıyıl Sonu Sınavı Hazırlık'
 ];
 
+/**
+ * ZIP dosyasının Central Directory (Merkezi Dizin) yapısını okuyarak
+ * akışlı (streaming/data descriptor - flags & 8) dahil TÜM Word (.docx)
+ * belgelerinden hedef XML dosyasını sıfır harici paketle çıkarır.
+ */
 function extractFileFromZip(buffer: Buffer, targetName: string): string | null {
-  let offset = 0;
-  while (offset < buffer.length - 30) {
-    if (buffer.readUInt32LE(offset) !== 0x04034b50) {
-      offset++;
-      continue;
+  // 1. End of Central Directory (EOCD) kaydını bul (0x06054b50)
+  let eocdOffset = -1;
+  for (let i = buffer.length - 22; i >= 0; i--) {
+    if (buffer.readUInt32LE(i) === 0x06054b50) {
+      eocdOffset = i;
+      break;
     }
-    const compression = buffer.readUInt16LE(offset + 8);
-    const compressedSize = buffer.readUInt32LE(offset + 18);
-    const nameLen = buffer.readUInt16LE(offset + 26);
-    const extraLen = buffer.readUInt16LE(offset + 28);
-    const fileName = buffer.toString('utf8', offset + 30, offset + 30 + nameLen);
-    const dataOffset = offset + 30 + nameLen + extraLen;
+  }
+
+  if (eocdOffset === -1) {
+    throw new Error('Geçersiz Word (.docx) belgesi (ZIP EOCD kaydı bulunamadı).');
+  }
+
+  const totalEntries = buffer.readUInt16LE(eocdOffset + 10);
+  const cdOffset = buffer.readUInt32LE(eocdOffset + 16);
+
+  // 2. Central Directory kayıtlarını tara
+  let offset = cdOffset;
+  for (let i = 0; i < totalEntries && offset < buffer.length - 46; i++) {
+    if (buffer.readUInt32LE(offset) !== 0x02014b50) {
+      break;
+    }
+
+    const compression = buffer.readUInt16LE(offset + 10);
+    const compressedSize = buffer.readUInt32LE(offset + 20);
+    const nameLen = buffer.readUInt16LE(offset + 28);
+    const extraLen = buffer.readUInt16LE(offset + 30);
+    const commentLen = buffer.readUInt16LE(offset + 32);
+    const localHeaderOffset = buffer.readUInt32LE(offset + 42);
+
+    const fileName = buffer.toString('utf8', offset + 46, offset + 46 + nameLen);
 
     if (fileName === targetName) {
-      const data = buffer.subarray(dataOffset, dataOffset + compressedSize);
-      if (compression === 0) return data.toString('utf8');
+      // Yerel başlığı oku ve veri başlangıç ofsetini hesapla
+      if (buffer.readUInt32LE(localHeaderOffset) !== 0x04034b50) {
+        throw new Error('Yerel başlık imzası geçersiz.');
+      }
+      const localNameLen = buffer.readUInt16LE(localHeaderOffset + 26);
+      const localExtraLen = buffer.readUInt16LE(localHeaderOffset + 28);
+      const dataOffset = localHeaderOffset + 30 + localNameLen + localExtraLen;
+
+      const compressedData = buffer.subarray(dataOffset, dataOffset + compressedSize);
+      if (compression === 0) return compressedData.toString('utf8');
       if (compression === 8) {
-        return zlib.inflateRawSync(data).toString('utf8');
+        return zlib.inflateRawSync(compressedData).toString('utf8');
       }
       throw new Error(`Desteklenmeyen sıkıştırma algoritması: ${compression}`);
     }
-    offset = dataOffset + compressedSize;
+
+    offset += 46 + nameLen + extraLen + commentLen;
   }
+
   return null;
 }
 
@@ -146,6 +180,10 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
       const p = paras[i];
       if (p.toLowerCase().startsWith(label.toLowerCase())) {
         let val = p.substring(label.length).replace(/^[\s:]+/, '').trim();
+        // Aynı satırda başka bir etiket varsa (örn. "Ofis:")
+        if (label.toLowerCase().includes('görüşme') && val.toLowerCase().includes('ofis:')) {
+          val = val.split(/ofis:/i)[0].trim();
+        }
         if (!val && i + 1 < paras.length && !paras[i + 1].includes(':')) {
           val = paras[i + 1].trim();
         }
@@ -169,8 +207,21 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
   // 1. Künye Bilgileri
   const ogretimElemani = findParaVal('Öğretim Elemanı');
   const eposta = findParaVal('E-Posta');
-  const gorusmeGunSaat = findParaVal('Görüşme Gün ve Saatleri') || findParaVal('Görüşme Gün/Saat') || findParaVal('Görüşme Saatleri');
-  const ofis = findParaVal('Ofis');
+  const gorusmeGunSaat =
+    findParaVal('Görüşme Gün ve Saatleri') ||
+    findParaVal('Görüşme Gün/Saat') ||
+    findParaVal('Görüşme Saatleri');
+
+  let ofis = findParaVal('Ofis');
+  if (!ofis) {
+    for (const p of paras) {
+      if (p.toLowerCase().includes('ofis:')) {
+        ofis = p.split(/ofis:/i)[1].trim();
+        break;
+      }
+    }
+  }
+
   const donem = findParaVal('Dönem');
   const gunSaat = findParaVal('Gün ve Saat');
   const egitimDili = findParaVal('Eğitim Dili') || 'Türkçe';
@@ -304,6 +355,21 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
         harfNotu = row.slice(1).join(' ').trim();
       }
     });
+  } else {
+    // Paragraflarda ara
+    for (const p of paras) {
+      if (p.toLowerCase().startsWith('harf notu')) {
+        harfNotu = p.replace(/^harf notu\s*/i, '').trim();
+      }
+      if (p.toLowerCase().includes('ara sınav') && (p.includes('%') || p.includes('40'))) {
+        const match = p.match(/(\d+)\s*%/);
+        if (match) degerlendirme[0].yuzde = parseInt(match[1], 10);
+      }
+      if (p.toLowerCase().includes('final') && (p.includes('%') || p.includes('60'))) {
+        const match = p.match(/(\d+)\s*%/);
+        if (match) degerlendirme[4].yuzde = parseInt(match[1], 10);
+      }
+    }
   }
 
   // 7. AKTS - İş Yükü Tablosu

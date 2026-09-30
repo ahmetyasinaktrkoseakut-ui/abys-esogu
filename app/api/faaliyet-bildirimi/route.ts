@@ -227,3 +227,41 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error?.message || 'Beklenmeyen bir hata oluştu.' }, { status: 500 });
   }
 }
+
+export async function GET() {
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return NextResponse.json({ error: 'Sunucu yapılandırması eksik.' }, { status: 500 });
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    const [periodRes, abRes, aoRes] = await Promise.all([
+      supabaseAdmin
+        .from('donemler')
+        .select('id, donem_adi, is_active')
+        .eq('is_active', true)
+        .maybeSingle(),
+      supabaseAdmin
+        .from('ana_basliklar')
+        .select('id, kod, baslik_adi')
+        .order('id'),
+      supabaseAdmin
+        .from('alt_olcutler')
+        .select('id, kod, olcut_adi, ana_baslik_id')
+        .order('id'),
+    ]);
+
+    return NextResponse.json({
+      activePeriod: periodRes.data || null,
+      anaBasliklar: abRes.data || [],
+      altOlcutler: aoRes.data || [],
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message || 'Veriler yüklenemedi.' }, { status: 500 });
+  }
+}
+

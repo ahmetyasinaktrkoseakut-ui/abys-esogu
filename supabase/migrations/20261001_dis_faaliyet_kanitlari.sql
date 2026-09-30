@@ -71,6 +71,10 @@ USING (
 -- İstemciden doğrudan UPDATE ve DELETE izinleri kaldırılır
 REVOKE UPDATE, DELETE ON public.dis_faaliyet_kanitlari FROM PUBLIC, anon, authenticated;
 
+-- Dış formun aktif dönemi görebilmesi için donemler tablosuna genel okuma izni
+DROP POLICY IF EXISTS "donemler_read_all" ON public.donemler;
+CREATE POLICY "donemler_read_all" ON public.donemler FOR SELECT USING (true);
+
 -- 3. ATOMİK KANITA AKTARMA FONKSİYONU (RPC)
 CREATE OR REPLACE FUNCTION public.faaliyet_kaniti_aktar_atomic(
   p_faaliyet_id UUID,

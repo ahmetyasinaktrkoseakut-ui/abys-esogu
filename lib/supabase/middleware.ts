@@ -69,6 +69,7 @@ export async function updateSession(request: NextRequest) {
     !pathWithoutLocale.startsWith('/anket/') &&
     !pathWithoutLocale.startsWith('/sifre-yenile') &&
     !pathWithoutLocale.startsWith('/izlenceler') &&
+    !pathWithoutLocale.startsWith('/faaliyet-bildirimi') &&
     !pathname.startsWith('/_next') &&
     !pathname.startsWith('/favicon.ico') &&
     !pathname.startsWith('/public')

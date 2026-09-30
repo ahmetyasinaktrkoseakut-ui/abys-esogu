@@ -70,36 +70,48 @@ export default function FaaliyetBildirimiPage() {
       try {
         setInitialLoading(true);
 
-        // 1. Aktif Dönemi Sorgula
-        const { data: periodData } = await supabase
-          .from('donemler')
-          .select('id, donem_adi, is_active')
-          .eq('is_active', true)
-          .maybeSingle();
-
-        if (periodData) {
-          const pName = (periodData.donem_adi || '').trim();
-          setActivePeriodName(pName);
-          const pYear = parseInt(pName.slice(0, 4), 10);
-          if (pName.includes('2026') || (!isNaN(pYear) && pYear <= 2026)) {
-            setIsPeriodLocked(true);
+        const res = await fetch('/api/faaliyet-bildirimi');
+        if (res.ok) {
+          const json = await res.json();
+          if (json.activePeriod) {
+            const pName = (json.activePeriod.donem_adi || '').trim();
+            setActivePeriodName(pName);
+            const pYear = parseInt(pName.slice(0, 4), 10);
+            if (pName.includes('2026') || (!isNaN(pYear) && pYear <= 2026)) {
+              setIsPeriodLocked(true);
+            }
           }
+          if (Array.isArray(json.anaBasliklar)) setAnaBasliklar(json.anaBasliklar);
+          if (Array.isArray(json.altOlcutler)) setAltOlcutler(json.altOlcutler);
+        } else {
+          // İstemci taraflı yedek sorgu
+          const { data: periodData } = await supabase
+            .from('donemler')
+            .select('id, donem_adi, is_active')
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (periodData) {
+            const pName = (periodData.donem_adi || '').trim();
+            setActivePeriodName(pName);
+            const pYear = parseInt(pName.slice(0, 4), 10);
+            if (pName.includes('2026') || (!isNaN(pYear) && pYear <= 2026)) {
+              setIsPeriodLocked(true);
+            }
+          }
+
+          const { data: abData } = await supabase
+            .from('ana_basliklar')
+            .select('id, kod, baslik_adi')
+            .order('id');
+          if (abData) setAnaBasliklar(abData);
+
+          const { data: aoData } = await supabase
+            .from('alt_olcutler')
+            .select('id, kod, olcut_adi, ana_baslik_id')
+            .order('id');
+          if (aoData) setAltOlcutler(aoData);
         }
-
-        // 2. Ana Başlıklar ve Alt Ölçütleri Yükle
-        const { data: abData } = await supabase
-          .from('ana_basliklar')
-          .select('id, kod, baslik_adi')
-          .order('id');
-
-        if (abData) setAnaBasliklar(abData);
-
-        const { data: aoData } = await supabase
-          .from('alt_olcutler')
-          .select('id, kod, olcut_adi, ana_baslik_id')
-          .order('id');
-
-        if (aoData) setAltOlcutler(aoData);
       } catch (err) {
         console.error('Veri yükleme hatası:', err);
       } finally {

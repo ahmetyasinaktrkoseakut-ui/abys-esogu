@@ -7,7 +7,8 @@ import {
   Save, ArrowLeft, Plus, Trash2, 
   BookOpen, Clock, Target, ListChecks, 
   FileText, BarChart3, Settings, ShieldCheck,
-  ChevronRight, ChevronLeft, GraduationCap, Check
+  ChevronRight, ChevronLeft, GraduationCap, Check,
+  FileUp, Loader2
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -92,6 +93,7 @@ export default function DersIzlencesiClient({
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [formData, setFormData] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [isParsingDocx, setIsParsingDocx] = useState(false);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -206,6 +208,101 @@ export default function DersIzlencesiClient({
     }
   };
 
+  const handleDocxUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      toast.error('Lütfen geçerli bir Word (.docx) dosyası seçin.');
+      return;
+    }
+
+    setIsParsingDocx(true);
+    const uploadToast = toast.loading('Word belgesi okunuyor ve form dolduruluyor...');
+
+    try {
+      const uploadData = new FormData();
+      uploadData.append('file', file);
+
+      const res = await fetch('/api/izlenceler/parse-docx', {
+        method: 'POST',
+        body: uploadData
+      });
+
+      const result = await res.json();
+      if (!res.ok || !result.success) {
+        throw new Error(result.error || 'Dosya ayrıştırılamadı.');
+      }
+
+      const parsed = result.data;
+
+      setFormData((prev: any) => {
+        const updated = { ...prev };
+
+        // Künye Bilgileri
+        if (parsed.ogretimElemani) updated.ogretimElemani = parsed.ogretimElemani;
+        if (parsed.eposta) updated.eposta = parsed.eposta;
+        if (parsed.gorusmeGunSaat) updated.gorusmeGunSaat = parsed.gorusmeGunSaat;
+        if (parsed.ofis) updated.ofis = parsed.ofis;
+        if (parsed.donem) updated.donem = parsed.donem;
+        if (parsed.gunSaat) updated.gunSaat = parsed.gunSaat;
+        if (parsed.egitimDili) updated.egitimDili = parsed.egitimDili;
+        if (parsed.ogretimTuru) updated.ogretimTuru = parsed.ogretimTuru;
+        if (parsed.derslik) updated.derslik = parsed.derslik;
+        if (parsed.onkosul) updated.onkosul = parsed.onkosul;
+        if (parsed.amac) updated.amac = parsed.amac;
+        if (parsed.temelKaynaklar) updated.temelKaynaklar = parsed.temelKaynaklar;
+        if (parsed.yardimciKaynaklar) updated.yardimciKaynaklar = parsed.yardimciKaynaklar;
+        if (parsed.politikalar) updated.politikalar = parsed.politikalar;
+        if (parsed.harfNotu) updated.harfNotu = parsed.harfNotu;
+
+        // Öğrenim Çıktıları (10 satır)
+        if (parsed.ogrenimCiktilari && parsed.ogrenimCiktilari.length > 0) {
+          const newOC = Array(10).fill(0).map((_, i) => {
+            if (parsed.ogrenimCiktilari[i] && parsed.ogrenimCiktilari[i].cikti) {
+              return parsed.ogrenimCiktilari[i];
+            }
+            return prev?.ogrenimCiktilari?.[i] || {
+              cikti: '', bilgi: false, beceri: false, yetkinlik: false, ogretim: '', olcme: ''
+            };
+          });
+          updated.ogrenimCiktilari = newOC;
+        }
+
+        // Haftalık İçerik (16 satır)
+        if (parsed.haftalikIcerik && parsed.haftalikIcerik.length > 0) {
+          updated.haftalikIcerik = parsed.haftalikIcerik;
+        }
+
+        // Değerlendirme Sistemi
+        if (parsed.degerlendirme && parsed.degerlendirme.length > 0) {
+          updated.degerlendirme = parsed.degerlendirme;
+        }
+
+        // AKTS - İş Yükü Tablosu
+        if (parsed.aktsIsYuku && parsed.aktsIsYuku.length > 0) {
+          updated.aktsIsYuku = parsed.aktsIsYuku.map((r: any) => ({
+            ...r,
+            toplam: ((parseFloat(r.sayisi) || 0) * (parseFloat(r.suresi) || 0)).toString() || r.toplam || ''
+          }));
+        }
+
+        return updated;
+      });
+
+      toast.success(
+        'Word belgesindeki tüm veriler aktarıldı! Formu kontrol edip "KAYDET" butonuna basınız.',
+        { id: uploadToast, duration: 6000 }
+      );
+    } catch (err: any) {
+      console.error('Docx parse error:', err);
+      toast.error(err.message || 'Word belgesi işlenirken bir hata oluştu.', { id: uploadToast });
+    } finally {
+      setIsParsingDocx(false);
+      e.target.value = '';
+    }
+  };
+
   if (!selectedCourse || !formData) {
     return (
       <div className="p-8 text-center bg-slate-50 min-h-screen flex flex-col items-center justify-center">
@@ -249,9 +346,41 @@ export default function DersIzlencesiClient({
           ))}
         </div>
 
-        <button onClick={handleSave} disabled={loading} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-6 py-3 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50">
-          <Save className="w-4 h-4" /> {loading ? 'KAYDEDİLİYOR...' : 'KAYDET'}
-        </button>
+        <div className="flex items-center gap-2 sm:gap-3">
+          <label 
+            title="Bilgisayarınızdaki Word (.docx) şablonundaki tüm verileri forma aktarır"
+            className={`flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs px-4 py-3 rounded-xl border border-blue-200 shadow-sm transition-all cursor-pointer active:scale-95 ${
+              isParsingDocx ? 'opacity-70 pointer-events-none' : ''
+            }`}
+          >
+            {isParsingDocx ? (
+              <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
+            ) : (
+              <FileUp className="w-4 h-4 text-blue-600" />
+            )}
+            <span className="hidden sm:inline">
+              {isParsingDocx ? 'AKTARIYOR...' : 'WORD’DEN AKTAR (.DOCX)'}
+            </span>
+            <span className="sm:hidden">
+              {isParsingDocx ? '...' : 'WORD YÜKLE'}
+            </span>
+            <input
+              type="file"
+              accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              className="hidden"
+              onChange={handleDocxUpload}
+              disabled={isParsingDocx || loading}
+            />
+          </label>
+
+          <button 
+            onClick={handleSave} 
+            disabled={loading || isParsingDocx} 
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs px-5 sm:px-6 py-3 rounded-xl shadow-lg transition-all active:scale-95 disabled:opacity-50"
+          >
+            <Save className="w-4 h-4" /> {loading ? 'KAYDEDİLİYOR...' : 'KAYDET'}
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 max-w-6xl mx-auto w-full px-4 py-10">

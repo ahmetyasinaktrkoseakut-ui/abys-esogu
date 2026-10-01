@@ -128,8 +128,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         cleanIcerikEn = cleanIcerikEn.replace(/<hr\s*\/?>/gi, '');
         cleanIcerikEn = cleanIcerikEn.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
 
-        setRaporMetni(cleanIcerik);
-        setRaporMetniEn(cleanIcerikEn);
+        const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+        setRaporMetni(sanitizeReportHtmlLinks(cleanIcerik, currentOrigin));
+        setRaporMetniEn(sanitizeReportHtmlLinks(cleanIcerikEn, currentOrigin));
         setKanitlar(raporData?.kanitlar ?? []);
         setRaporOlusturuldu(true);
         setOnayDurumu(raporData?.onay_durumu || 'bekliyor');
@@ -331,7 +332,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                                       (k.annotated_url && phaseText.includes(k.annotated_url)) ||
                                       (k.evidence_id && phaseText.includes(k.evidence_id));
               if (!isAlreadyInline) {
-                unplacedEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
+                const origin = typeof window !== 'undefined' ? window.location.origin : '';
+                const safeUrl = toProxyStorageUrl(ev.url, origin);
+                unplacedEvidenceStrings.push(`<a href="${safeUrl}" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
               }
             });
             
@@ -365,9 +368,11 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       }
 
       const uniqueKanitlar = birlesikKanitlar;
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+      const safeBirlesik = sanitizeReportHtmlLinks(birlesikMetin ?? '', currentOrigin);
 
-      setRaporMetni(birlesikMetin ?? '');
-      setRaporMetniEn(birlesikMetin ?? '');
+      setRaporMetni(safeBirlesik);
+      setRaporMetniEn(safeBirlesik);
       setKanitlar(uniqueKanitlar ?? []);
       setRaporOlusturuldu(true);
       
@@ -562,7 +567,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
     // Hedef 'en' ise [Evidence X], 'tr' ise [Kanıt X]
     const label = target === 'en' ? `[Evidence ${index + 1}]` : `[Kanıt ${index + 1}]`;
-    const anchorHTML = `&nbsp;<a href="${doc.url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">${label}</a>&nbsp;`;
+    const origin = typeof window !== 'undefined' ? window.location.origin : '';
+    const safeUrl = toProxyStorageUrl(doc.url, origin);
+    const anchorHTML = `&nbsp;<a href="${safeUrl}" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">${label}</a>&nbsp;`;
     
     if (target === 'tr') {
       if (editorRef.current) {
@@ -628,7 +635,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       
       // Metin içine ekle - [Kanıt X] formatında
       const newIndex = updatedKanitlar.length;
-      const anchorHTML = `&nbsp;<a href="${publicUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[Kanıt ${newIndex}]</a>&nbsp;`;
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const safeUrl = toProxyStorageUrl(publicUrl, origin);
+      const anchorHTML = `&nbsp;<a href="${safeUrl}" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[Kanıt ${newIndex}]</a>&nbsp;`;
       
       if (editorRef.current) {
         editorRef.current.insertContent(anchorHTML);

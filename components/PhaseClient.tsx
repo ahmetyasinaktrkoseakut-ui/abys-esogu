@@ -9,7 +9,7 @@ import { logAction } from '@/lib/logger';
 import StepPanel from '@/components/StepPanel';
 import RichTextEditor, { RichTextEditorRef } from '@/components/RichTextEditor';
 import { getLocalizedField } from '@/lib/i18n-utils';
-import { validateFileSize, getAssignedLetter } from '@/lib/utils';
+import { validateFileSize, getAssignedLetter, toProxyStorageUrl } from '@/lib/utils';
 import { validateUploadedFile } from '@/lib/fileValidation';
 import { usePeriod } from '@/contexts/PeriodContext';
 import EvidenceAnnotatorModal from '@/components/EvidenceAnnotatorModal';
@@ -697,7 +697,9 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       const updatedDocs = [...dokumanlar, newDoc];
       setDokumanlar(updatedDocs);
       
-      const tagHtml = `<a data-evidence-id="${evId}" href="${newDoc.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; font-weight: bold; text-decoration: underline; margin: 0 4px;">[Kanıt ${newDocNo}]</a>&nbsp;`;
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const safeUrl = toProxyStorageUrl(newDoc.url, origin);
+      const tagHtml = `<a data-evidence-id="${evId}" href="${safeUrl}" rel="noopener noreferrer" style="color: #ea580c; font-weight: bold; text-decoration: underline; margin: 0 4px;">[Kanıt ${newDocNo}]</a>&nbsp;`;
       
       let freshAciklama = aciklama;
       if (editorRef.current) {
@@ -815,7 +817,9 @@ export default function PhaseClient({ params, phaseId, phaseTitle, showEylemPlan
       }
 
       // 1. Yeni eklenen kanıt tag'ini editöre ekle
-      const tagHtml = `<a data-evidence-id="${result.evidence_id}" href="${result.dosya.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; font-weight: bold; text-decoration: underline; margin: 0 4px;">[Kanıt ${result.evidence_no}]</a>&nbsp;`;
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const safeUrl = toProxyStorageUrl(result.dosya.url, origin);
+      const tagHtml = `<a data-evidence-id="${result.evidence_id}" href="${safeUrl}" rel="noopener noreferrer" style="color: #ea580c; font-weight: bold; text-decoration: underline; margin: 0 4px;">[Kanıt ${result.evidence_no}]</a>&nbsp;`;
 
       let freshAciklama = aciklama;
       if (editorRef.current) {

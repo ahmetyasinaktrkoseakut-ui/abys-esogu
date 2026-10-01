@@ -58,16 +58,57 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Girdi Doğrulama
-    const body = await request.json().catch(() => ({}));
-    const {
-      baslik,
-      icerik,
-      sendEmail = false,
-      hedefKitle = 'tum', // 'tum' | 'baslik' | 'hoca'
-      hedefBaslikKod,    // e.g. 'A', 'B', 'C', 'D', 'E'
-      hedefHocaId,       // UUID
-    } = body;
+    // 3. Girdi Doğrulama & Dosya Eki Desteği
+    let baslik = '';
+    let icerik = '';
+    let sendEmail = false;
+    let hedefKitle = 'tum';
+    let hedefBaslikKod: string | undefined = undefined;
+    let hedefHocaId: string | undefined = undefined;
+    let emailAttachment: { filename: string; content: Buffer; contentType?: string } | undefined = undefined;
+
+    const contentType = request.headers.get('content-type') || '';
+    if (contentType.includes('multipart/form-data')) {
+      const formData = await request.formData();
+      baslik = (formData.get('baslik') as string) || '';
+      icerik = (formData.get('icerik') as string) || '';
+      sendEmail = formData.get('sendEmail') === 'true';
+      hedefKitle = (formData.get('hedefKitle') as string) || 'tum';
+      hedefBaslikKod = (formData.get('hedefBaslikKod') as string) || undefined;
+      hedefHocaId = (formData.get('hedefHocaId') as string) || undefined;
+
+      const file = formData.get('file') as File | null;
+      if (file && file.size > 0) {
+        if (file.size > 15 * 1024 * 1024) {
+          return NextResponse.json(
+            { error: 'Dosya boyutu çok büyük. E-posta eki için maksimum boyut 15 MB olmalıdır.' },
+            { status: 400 }
+          );
+        }
+        const ab = await file.arrayBuffer();
+        emailAttachment = {
+          filename: file.name,
+          content: Buffer.from(ab),
+          contentType: file.type || 'application/octet-stream',
+        };
+      }
+    } else {
+      const body = await request.json().catch(() => ({}));
+      baslik = body.baslik || '';
+      icerik = body.icerik || '';
+      sendEmail = body.sendEmail || false;
+      hedefKitle = body.hedefKitle || 'tum';
+      hedefBaslikKod = body.hedefBaslikKod;
+      hedefHocaId = body.hedefHocaId;
+
+      if (body.attachment && body.attachment.filename && body.attachment.content) {
+        emailAttachment = {
+          filename: body.attachment.filename,
+          content: Buffer.from(body.attachment.content, body.attachment.encoding || 'base64'),
+          contentType: body.attachment.contentType,
+        };
+      }
+    }
 
     const trimmedBaslik = (baslik || '').trim();
     const trimmedIcerik = (icerik || '').trim();
@@ -164,12 +205,16 @@ export async function POST(request: Request) {
     // 'hoca' veya 'baslik' gibi özel mesajlar GENEL PANODA ASLA YER ALMAZ!
     let announcementData = null;
 
+    const savedIcerik = emailAttachment
+      ? `${trimmedIcerik}\n\n📎 Ekli Dosya: ${emailAttachment.filename}`
+      : trimmedIcerik;
+
     if (hedefKitle === 'tum') {
       const { data, error } = await supabaseAdmin
         .from('duyurular')
         .insert({
           baslik: trimmedBaslik,
-          icerik: trimmedIcerik,
+          icerik: savedIcerik,
         })
         .select()
         .single();
@@ -187,7 +232,7 @@ export async function POST(request: Request) {
           const notifInserts = targetUserIds.map(uid => ({
             gonderen_id: user.id,
             alici_id: uid,
-            mesaj: `${trimmedBaslik}: ${trimmedIcerik}`,
+            mesaj: `${trimmedBaslik}: ${savedIcerik}`,
             tip: 'duyuru',
             okundu: false,
           }));
@@ -209,6 +254,7 @@ export async function POST(request: Request) {
           baslik: trimmedBaslik,
           icerik: trimmedIcerik,
           appUrl,
+          attachmentName: emailAttachment?.filename,
         });
 
         const subject = `[ESOGÜ ABYS Duyuru] ${trimmedBaslik}`;
@@ -218,7 +264,10 @@ export async function POST(request: Request) {
           html,
         }));
 
-        const result = await sendBatchEmails(batchItems);
+        const result = await sendBatchEmails(
+          batchItems,
+          emailAttachment ? [emailAttachment] : undefined
+        );
         isEmailSent = result.success;
       } catch (emailErr) {
         console.warn('[ANNOUNCEMENT EMAIL] E-posta tetikleme adımı atlandı/hata:', emailErr);
@@ -231,6 +280,7 @@ export async function POST(request: Request) {
       recipientCount: targetInstructors.length,
       emailSent: isEmailSent,
       isPrivate: hedefKitle !== 'tum',
+      hasAttachment: !!emailAttachment,
     });
 
   } catch (error: any) {

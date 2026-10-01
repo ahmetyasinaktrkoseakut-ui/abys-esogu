@@ -9,16 +9,25 @@
 
 import nodemailer from 'nodemailer';
 
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer | string;
+  contentType?: string;
+  encoding?: string;
+}
+
 interface SendSingleEmailParams {
   to: string;
   subject: string;
   html: string;
+  attachments?: EmailAttachment[];
 }
 
 interface BatchEmailItem {
   to: string;
   subject: string;
   html: string;
+  attachments?: EmailAttachment[];
 }
 
 export interface SendEmailResult {
@@ -69,7 +78,7 @@ function getGmailTransporter() {
 /**
  * Tekil E-Posta Gönderici (Özdeğerlendirme Raporu Ret/Revizyon Bildirimi)
  */
-export async function sendSingleEmail({ to, subject, html }: SendSingleEmailParams): Promise<SendEmailResult> {
+export async function sendSingleEmail({ to, subject, html, attachments }: SendSingleEmailParams): Promise<SendEmailResult> {
   const { gmailUser, apiKey, from } = getEmailConfig();
   const transporter = getGmailTransporter();
 
@@ -85,6 +94,7 @@ export async function sendSingleEmail({ to, subject, html }: SendSingleEmailPara
         to: to.trim(),
         subject: subject.trim(),
         html,
+        attachments: attachments && attachments.length > 0 ? attachments : undefined,
       });
       return { success: true, id: info.messageId };
     } catch (err: any) {
@@ -100,6 +110,17 @@ export async function sendSingleEmail({ to, subject, html }: SendSingleEmailPara
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
 
+    const resendAtts = attachments && attachments.length > 0
+      ? attachments.map(att => ({
+          filename: att.filename,
+          content: Buffer.isBuffer(att.content)
+            ? att.content.toString('base64')
+            : typeof att.content === 'string' && att.encoding === 'base64'
+            ? att.content
+            : Buffer.from(att.content).toString('base64'),
+        }))
+      : undefined;
+
     try {
       const response = await fetch(RESEND_API_URL, {
         method: 'POST',
@@ -112,6 +133,7 @@ export async function sendSingleEmail({ to, subject, html }: SendSingleEmailPara
           to: [to.trim()],
           subject: subject.trim(),
           html,
+          ...(resendAtts ? { attachments: resendAtts } : {}),
         }),
         signal: controller.signal,
       });
@@ -143,7 +165,10 @@ export async function sendSingleEmail({ to, subject, html }: SendSingleEmailPara
 /**
  * Toplu E-Posta Gönderici (Duyurular için)
  */
-export async function sendBatchEmails(items: BatchEmailItem[]): Promise<{ success: boolean; count: number; error?: string }> {
+export async function sendBatchEmails(
+  items: BatchEmailItem[],
+  globalAttachments?: EmailAttachment[]
+): Promise<{ success: boolean; count: number; error?: string }> {
   const { gmailUser, apiKey, from } = getEmailConfig();
   const transporter = getGmailTransporter();
 
@@ -160,12 +185,18 @@ export async function sendBatchEmails(items: BatchEmailItem[]): Promise<{ succes
   if (transporter && gmailUser) {
     let totalSent = 0;
     for (const item of validItems) {
+      const activeAttachments = (item.attachments && item.attachments.length > 0)
+        ? item.attachments
+        : (globalAttachments && globalAttachments.length > 0)
+        ? globalAttachments
+        : undefined;
       try {
         await transporter.sendMail({
           from,
           to: item.to.trim(),
           subject: item.subject.trim(),
           html: item.html,
+          attachments: activeAttachments,
         });
         totalSent++;
       } catch (err: any) {
@@ -181,12 +212,29 @@ export async function sendBatchEmails(items: BatchEmailItem[]): Promise<{ succes
     const CHUNK_SIZE = 100;
 
     for (let i = 0; i < validItems.length; i += CHUNK_SIZE) {
-      const chunk = validItems.slice(i, i + CHUNK_SIZE).map(item => ({
-        from,
-        to: [item.to.trim()],
-        subject: item.subject.trim(),
-        html: item.html,
-      }));
+      const chunk = validItems.slice(i, i + CHUNK_SIZE).map(item => {
+        const activeAtts = (item.attachments && item.attachments.length > 0)
+          ? item.attachments
+          : globalAttachments;
+        const resendAtts = activeAtts && activeAtts.length > 0
+          ? activeAtts.map(att => ({
+              filename: att.filename,
+              content: Buffer.isBuffer(att.content)
+                ? att.content.toString('base64')
+                : typeof att.content === 'string' && att.encoding === 'base64'
+                ? att.content
+                : Buffer.from(att.content).toString('base64'),
+            }))
+          : undefined;
+
+        return {
+          from,
+          to: [item.to.trim()],
+          subject: item.subject.trim(),
+          html: item.html,
+          ...(resendAtts ? { attachments: resendAtts } : {}),
+        };
+      });
 
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), TIMEOUT_MS);
@@ -347,10 +395,12 @@ export function createAnnouncementEmailHtml({
   baslik,
   icerik,
   appUrl,
+  attachmentName,
 }: {
   baslik: string;
   icerik: string;
   appUrl: string;
+  attachmentName?: string;
 }): string {
   const loginUrl = `${appUrl}/tr/login`;
   const logoUrl = appUrl.startsWith('http://localhost')
@@ -363,6 +413,13 @@ export function createAnnouncementEmailHtml({
     .filter(Boolean)
     .map(p => `<p style="margin: 0 0 12px 0; font-size: 14px; color: #334155; line-height: 1.6;">${escapeHtml(p)}</p>`)
     .join('');
+
+  const safeAttachmentName = attachmentName ? escapeHtml(attachmentName) : '';
+  const attachmentBox = safeAttachmentName ? `
+              <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px; margin: 18px 0; font-size: 13px; color: #166534;">
+                <span style="font-weight: 700;">📎 Ekli Dosya:</span>&nbsp;<span>${safeAttachmentName}</span>&nbsp;<span style="color: #15803d; font-size: 11.5px;">(E-posta ekinde yer almaktadır)</span>
+              </div>
+  ` : '';
 
   return `
 <!DOCTYPE html>
@@ -412,6 +469,7 @@ export function createAnnouncementEmailHtml({
 
               <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-bottom: 24px;">
                 ${formattedContent}
+                ${attachmentBox}
               </div>
 
               <!-- Buton -->

@@ -8,7 +8,7 @@ import {
   BookOpen, Clock, Target, ListChecks, 
   FileText, BarChart3, Settings, ShieldCheck,
   ChevronRight, ChevronLeft, GraduationCap, Check,
-  FileUp, Loader2
+  FileUp, Loader2, Download
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -317,6 +317,17 @@ export default function DersIzlencesiClient({
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <a
+            href="/guncel_izlence_sablonu.docx"
+            download="güncel izlence şablonu.docx"
+            title="Boş güncel ESOGÜ Ders İzlencesi Word şablonunu bilgisayarınıza indirin"
+            className="flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs px-3 sm:px-4 py-3 rounded-xl border border-slate-300 shadow-sm transition-all active:scale-95"
+          >
+            <Download className="w-4 h-4 text-slate-600" />
+            <span className="hidden sm:inline">ŞABLONU İNDİR</span>
+            <span className="sm:hidden">ŞABLON</span>
+          </a>
+
           <label 
             title="Bilgisayarınızdaki Word (.docx) şablonundaki tüm verileri forma aktarır"
             className={`flex items-center gap-2 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs px-4 py-3 rounded-xl border border-blue-200 shadow-sm transition-all cursor-pointer active:scale-95 ${

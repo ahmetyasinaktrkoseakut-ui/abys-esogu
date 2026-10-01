@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase/client';
 import { useTranslations } from 'next-intl';
-import { Megaphone, Plus, X, Loader2, Users, BookOpen, User } from 'lucide-react';
+import { Megaphone, Plus, X, Loader2, Users, BookOpen, User, Paperclip, FileText } from 'lucide-react';
 
 interface Announcement {
   id: number;
@@ -46,6 +46,7 @@ export default function DuyurularClient({
   const [showModal, setShowModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newAnnouncement, setNewAnnouncement] = useState({ baslik: '', icerik: '' });
+  const [attachmentFile, setAttachmentFile] = useState<File | null>(null);
   const [sendEmail, setSendEmail] = useState(false);
 
   // Hedef Kitle Durumu: 'tum' (Tüm Fakülte), 'baslik' (Başlığa Göre), 'hoca' (Tek Bir Hoca)
@@ -124,37 +125,40 @@ export default function DuyurularClient({
 
     setIsSubmitting(true);
     try {
+      const formData = new FormData();
+      formData.append('baslik', newAnnouncement.baslik.trim());
+      formData.append('icerik', newAnnouncement.icerik.trim());
+      formData.append('sendEmail', String(sendEmail));
+      formData.append('hedefKitle', hedefKitle);
+      if (hedefBaslikKod) formData.append('hedefBaslikKod', hedefBaslikKod);
+      if (hedefKitle === 'hoca' && hedefHocaId) formData.append('hedefHocaId', hedefHocaId);
+      if (attachmentFile) {
+        formData.append('file', attachmentFile);
+      }
+
       const response = await fetch('/api/duyurular', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          baslik: newAnnouncement.baslik.trim(),
-          icerik: newAnnouncement.icerik.trim(),
-          sendEmail,
-          hedefKitle,
-          hedefBaslikKod,
-          hedefHocaId: hedefKitle === 'hoca' ? hedefHocaId : undefined,
-        }),
+        body: formData,
       });
 
       const result = await response.json();
 
       if (response.ok && result.success) {
         setNewAnnouncement({ baslik: '', icerik: '' });
+        setAttachmentFile(null);
         setSendEmail(hedefKitle !== 'tum');
         setHedefHocaId('');
         setShowModal(false);
         let msg = '';
+        const attText = result.hasAttachment ? ' (Dosya eki dahil)' : '';
         if (result.isPrivate) {
           msg = result.emailSent
-            ? `Özel bildirim ve e-posta (${result.recipientCount || 0} kişi) başarıyla iletildi.`
-            : 'Özel bildirim başarıyla iletildi (genel panoda görünmez).';
+            ? `Özel bildirim ve e-posta (${result.recipientCount || 0} kişi)${attText} başarıyla iletildi.`
+            : `Özel bildirim başarıyla iletildi (genel panoda görünmez).${attText}`;
         } else {
           msg = result.emailSent
-            ? `Duyuru panoya eklendi ve tüm hocalara (${result.recipientCount || 0} kişi) e-posta gönderildi.`
-            : 'Duyuru başarıyla genel panoya kaydedildi.';
+            ? `Duyuru panoya eklendi ve tüm hocalara (${result.recipientCount || 0} kişi)${attText} e-posta gönderildi.`
+            : `Duyuru başarıyla genel panoya kaydedildi.${attText}`;
         }
         alert(msg);
       } else {
@@ -343,6 +347,62 @@ export default function DuyurularClient({
                   value={newAnnouncement.icerik}
                   onChange={(e) => setNewAnnouncement({ ...newAnnouncement, icerik: e.target.value })}
                 />
+              </div>
+
+              {/* Dosya Eki (Attachment) */}
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                    <Paperclip className="w-3.5 h-3.5 text-blue-600" />
+                    Dosya Eki (Word / PDF / Belge)
+                  </label>
+                  <span className="text-[10px] text-slate-400 font-medium">Maks. 15 MB</span>
+                </div>
+
+                {attachmentFile ? (
+                  <div className="flex items-center justify-between p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-xs">
+                    <div className="flex items-center gap-2 overflow-hidden mr-2">
+                      <FileText className="w-4 h-4 text-blue-600 flex-shrink-0" />
+                      <span className="font-semibold text-blue-900 truncate" title={attachmentFile.name}>
+                        {attachmentFile.name}
+                      </span>
+                      <span className="text-blue-500 text-[10px] whitespace-nowrap">
+                        ({(attachmentFile.size / 1024 / 1024).toFixed(2)} MB)
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAttachmentFile(null)}
+                      className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
+                      title="Dosyayı kaldır"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex items-center justify-center gap-2 p-2.5 bg-white border border-dashed border-slate-300 hover:border-blue-400 hover:bg-blue-50/30 rounded-lg text-xs font-semibold text-slate-600 cursor-pointer transition-all">
+                    <Paperclip className="w-4 h-4 text-slate-400" />
+                    <span>Duyuruya / E-Postaya Dosya Ekle</span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          if (file.size > 15 * 1024 * 1024) {
+                            alert("Dosya boyutu 15 MB'tan büyük olamaz.");
+                            e.target.value = '';
+                            return;
+                          }
+                          setAttachmentFile(file);
+                        }
+                      }}
+                    />
+                  </label>
+                )}
+                <p className="text-[10px] text-slate-500 mt-1.5">
+                  Eklenen dosya hem sistem içi duyuruda belirtilir hem de e-posta gönderilirken doğrudan ek (attachment) olarak iletilir.
+                </p>
               </div>
 
               {/* E-Posta Gönderim Onay Kutusu */}

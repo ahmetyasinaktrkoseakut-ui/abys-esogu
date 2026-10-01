@@ -496,7 +496,7 @@ export default function RaporlarClient() {
                                         {evidencesWithNumbers.map((k) => (
                                           <a 
                                             key={k.url}
-                                            href={k.url} 
+                                            href={toProxyStorageUrl(k.url, typeof window !== 'undefined' ? window.location.origin : '') || k.url} 
                                             target="_blank" 
                                             rel="noopener noreferrer" 
                                             className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"
@@ -531,7 +531,7 @@ export default function RaporlarClient() {
                                       {evidencesWithNumbers.map((k) => (
                                         <a 
                                           key={k.url}
-                                          href={k.url} 
+                                          href={toProxyStorageUrl(k.url, typeof window !== 'undefined' ? window.location.origin : '') || k.url} 
                                           target="_blank" 
                                           rel="noopener noreferrer" 
                                           className="text-sm font-medium text-blue-600 hover:text-blue-800 hover:underline transition-colors"

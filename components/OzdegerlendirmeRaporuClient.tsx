@@ -848,7 +848,12 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                             Kanıt {idx + 1}
                           </td>
                           <td className="py-3 px-4">
-                            <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-slate-700 hover:text-blue-600 font-medium flex items-center gap-2">
+                            <a 
+                              href={toProxyStorageUrl(doc.url, typeof window !== 'undefined' ? window.location.origin : '') || doc.url} 
+                              target="_blank" 
+                              rel="noopener noreferrer" 
+                              className="text-slate-700 hover:text-blue-600 font-medium flex items-center gap-2"
+                            >
                               <LinkIcon className="w-4 h-4 text-slate-400" />
                               : ({doc.name})
                             </a>

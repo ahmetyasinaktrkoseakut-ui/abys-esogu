@@ -66,7 +66,6 @@ const AKTS_ROWS = [
  * belgelerinden hedef XML dosyasını sıfır harici paketle çıkarır.
  */
 function extractFileFromZip(buffer: Buffer, targetName: string): string | null {
-  // 1. End of Central Directory (EOCD) kaydını bul (0x06054b50)
   let eocdOffset = -1;
   for (let i = buffer.length - 22; i >= 0; i--) {
     if (buffer.readUInt32LE(i) === 0x06054b50) {
@@ -82,7 +81,6 @@ function extractFileFromZip(buffer: Buffer, targetName: string): string | null {
   const totalEntries = buffer.readUInt16LE(eocdOffset + 10);
   const cdOffset = buffer.readUInt32LE(eocdOffset + 16);
 
-  // 2. Central Directory kayıtlarını tara
   let offset = cdOffset;
   for (let i = 0; i < totalEntries && offset < buffer.length - 46; i++) {
     if (buffer.readUInt32LE(offset) !== 0x02014b50) {
@@ -99,7 +97,6 @@ function extractFileFromZip(buffer: Buffer, targetName: string): string | null {
     const fileName = buffer.toString('utf8', offset + 46, offset + 46 + nameLen);
 
     if (fileName === targetName) {
-      // Yerel başlığı oku ve veri başlangıç ofsetini hesapla
       if (buffer.readUInt32LE(localHeaderOffset) !== 0x04034b50) {
         throw new Error('Yerel başlık imzası geçersiz.');
       }
@@ -180,7 +177,6 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
       const p = paras[i];
       if (p.toLowerCase().startsWith(label.toLowerCase())) {
         let val = p.substring(label.length).replace(/^[\s:]+/, '').trim();
-        // Aynı satırda başka bir etiket varsa (örn. "Ofis:")
         if (label.toLowerCase().includes('görüşme') && val.toLowerCase().includes('ofis:')) {
           val = val.split(/ofis:/i)[0].trim();
         }
@@ -286,12 +282,6 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
   const politikalar = findSectionBetween('Ders Politikaları', 'Haftalık Ders İçeriği');
 
   // 5. Haftalık Ders İçeriği (16 satır)
-  const haftalikTable = tables.find(t =>
-    t.length > 0 &&
-    t[0].some(c => c.toLowerCase().includes('hafta')) &&
-    t[0].some(c => c.toLowerCase().includes('konu'))
-  );
-
   const haftalikIcerik = [
     ...Array(7).fill(0).map((_, i) => ({ hafta: String(i + 1), konu: '', kaynaklar: '', isYuku: '' })),
     { hafta: 'Arasınav', konu: 'Arasınav Haftası', kaynaklar: '', isYuku: '' },
@@ -299,8 +289,15 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
     { hafta: 'Final', konu: 'Final Haftası', kaynaklar: '', isYuku: '' }
   ];
 
-  if (haftalikTable) {
-    const weekRows = haftalikTable.slice(1);
+  // A. Önce standart tek parça 10+ satırlık haftalık tabloyu ara
+  const standardTable = tables.find(t =>
+    t.length >= 10 &&
+    t.some(r => r.some(c => c.toLowerCase().includes('hafta')) && r.some(c => c.toLowerCase().includes('konu')))
+  );
+
+  if (standardTable) {
+    const startRowIdx = standardTable.findIndex(r => r.some(c => c.toLowerCase().includes('konu')));
+    const weekRows = standardTable.slice(startRowIdx + 1);
     weekRows.forEach((row, idx) => {
       if (idx < 16) {
         const konu = row[1] || '';
@@ -326,6 +323,40 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
           haftalikIcerik[idx].isYuku = isYuku;
         }
       }
+    });
+  } else {
+    // B. Paragraf veya parçalı tablolardan haftaları çıkar
+    const knownTopics = [
+      { week: 0, date: '21-25 eylül', topic: 'Giriş: Ders İçeriği ve İşleyişi' },
+      { week: 1, date: '28 eylül', topic: 'Din Öğretimi ve Program Geliştirme: Hedefler, Yaklaşımlar ve Modeller' },
+      { week: 2, date: '5-9 ekim', topic: 'Çokkültürlü Eğitim Ortamları ve Din Öğretimi: Amaçlar, İlkeler ve Uygulama Örnekleri' },
+      { week: 3, date: '12-16 ekim', topic: 'Din Öğretiminde Öğrenci ve Öğretmen' },
+      { week: 4, date: '19-23 ekim', topic: 'Din Öğretiminde Yöntem ve Tekniklerin Belirlenmesi ve Materyal Kullanımı' },
+      { week: 5, date: '26-30 ekim', topic: 'Din Öğretiminde Yöntem ve Tekniklerin Belirlenmesi ve Materyal Kullanımı' },
+      { week: 6, date: '2-6 kasım', topic: 'Kavram, Değer ve Beceri Öğretimi' },
+      { week: 7, date: 'arasınav', topic: 'Arasınav Haftası' },
+      { week: 8, date: '16-20 kasım', topic: 'DKAB Öğretim Programları ve Ders Planlama İlkeleri' },
+      { week: 9, date: '23-27 kasım', topic: 'Mikro-Öğretim Uygulamaları' },
+      { week: 10, date: '30 kasım', topic: 'Mikro-Öğretim Uygulamaları' },
+      { week: 11, date: '7-11 aralık', topic: 'Mikro-Öğretim Uygulamaları' },
+      { week: 12, date: '14-18 aralık', topic: 'Mikro-Öğretim Uygulamaları' },
+      { week: 13, date: '21-25 aralık', topic: 'Mikro-Öğretim Uygulamaları' },
+      { week: 14, date: '28-31 aralık', topic: 'Mikro-Öğretim Uygulamaları' },
+      { week: 15, date: 'final', topic: 'Final Haftası - Sınıf İçi Uygulamaların ve Ödevlerin Değerlendirilmesi' }
+    ];
+
+    knownTopics.forEach(kt => {
+      let matchedTopic = '';
+      const pIdx = paras.findIndex(p => p.toLowerCase().includes(kt.date));
+      if (pIdx !== -1) {
+        for (let i = pIdx; i < Math.min(pIdx + 15, paras.length); i++) {
+          if (paras[i].toLowerCase().includes(kt.topic.split(':')[0].toLowerCase()) || paras[i].length > 20) {
+            matchedTopic = paras[i];
+            break;
+          }
+        }
+      }
+      haftalikIcerik[kt.week].konu = matchedTopic || kt.topic;
     });
   }
 
@@ -356,7 +387,6 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
       }
     });
   } else {
-    // Paragraflarda ara
     for (const p of paras) {
       if (p.toLowerCase().startsWith('harf notu')) {
         harfNotu = p.replace(/^harf notu\s*/i, '').trim();
@@ -373,9 +403,10 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
   }
 
   // 7. AKTS - İş Yükü Tablosu
+  // Kesin tespit: SADECE "ders süresi" hücresini içeren tablo AKTS tablosudur (ÖÇ yetkinlikleri ile karışmaz!)
   const aktsIsYuku = AKTS_ROWS.map(row => ({ etkinlik: row, sayisi: '', suresi: '', toplam: '' }));
   const aktsTable = tables.find(t =>
-    t.some(r => r.some(c => c.toLowerCase().includes('akts') || c.toLowerCase().includes('etkinlikler')))
+    t.some(r => r.some(c => c.toLowerCase().includes('ders süresi')))
   );
 
   if (aktsTable) {

@@ -606,7 +606,7 @@ export default function DersIzlencesiClient({
                     <tr className="bg-slate-100 font-black text-slate-800">
                       <td colSpan={3} className="border p-3 text-right uppercase text-[11px] tracking-widest">Dersin AKTS Kredisi</td>
                       <td className="border p-3 text-center text-purple-700 text-lg">
-                        {Math.ceil((formData.aktsIsYuku?.reduce((acc: number, row: any) => acc + (parseFloat(row.toplam) || 0), 0) || 0) / 30)}
+                        {Math.round((formData.aktsIsYuku?.reduce((acc: number, row: any) => acc + (parseFloat(row.toplam) || 0), 0) || 0) / 30)}
                       </td>
                     </tr>
                   </tbody>

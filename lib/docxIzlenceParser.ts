@@ -289,9 +289,9 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
     { hafta: 'Final', konu: 'Final Haftası', kaynaklar: '', isYuku: '' }
   ];
 
-  // A. Önce standart tek parça 10+ satırlık haftalık tabloyu ara
+  // A. Önce standart tek parça 14+ satırlık haftalık tabloyu ara
   const standardTable = tables.find(t =>
-    t.length >= 10 &&
+    t.length >= 14 &&
     t.some(r => r.some(c => c.toLowerCase().includes('hafta')) && r.some(c => c.toLowerCase().includes('konu')))
   );
 
@@ -325,39 +325,86 @@ export function parseDocxIzlence(buffer: Buffer): ParsedIzlenceData {
       }
     });
   } else {
-    // B. Paragraf veya parçalı tablolardan haftaları çıkar
-    const knownTopics = [
-      { week: 0, date: '21-25 eylül', topic: 'Giriş: Ders İçeriği ve İşleyişi' },
-      { week: 1, date: '28 eylül', topic: 'Din Öğretimi ve Program Geliştirme: Hedefler, Yaklaşımlar ve Modeller' },
-      { week: 2, date: '5-9 ekim', topic: 'Çokkültürlü Eğitim Ortamları ve Din Öğretimi: Amaçlar, İlkeler ve Uygulama Örnekleri' },
-      { week: 3, date: '12-16 ekim', topic: 'Din Öğretiminde Öğrenci ve Öğretmen' },
-      { week: 4, date: '19-23 ekim', topic: 'Din Öğretiminde Yöntem ve Tekniklerin Belirlenmesi ve Materyal Kullanımı' },
-      { week: 5, date: '26-30 ekim', topic: 'Din Öğretiminde Yöntem ve Tekniklerin Belirlenmesi ve Materyal Kullanımı' },
-      { week: 6, date: '2-6 kasım', topic: 'Kavram, Değer ve Beceri Öğretimi' },
-      { week: 7, date: 'arasınav', topic: 'Arasınav Haftası' },
-      { week: 8, date: '16-20 kasım', topic: 'DKAB Öğretim Programları ve Ders Planlama İlkeleri' },
-      { week: 9, date: '23-27 kasım', topic: 'Mikro-Öğretim Uygulamaları' },
-      { week: 10, date: '30 kasım', topic: 'Mikro-Öğretim Uygulamaları' },
-      { week: 11, date: '7-11 aralık', topic: 'Mikro-Öğretim Uygulamaları' },
-      { week: 12, date: '14-18 aralık', topic: 'Mikro-Öğretim Uygulamaları' },
-      { week: 13, date: '21-25 aralık', topic: 'Mikro-Öğretim Uygulamaları' },
-      { week: 14, date: '28-31 aralık', topic: 'Mikro-Öğretim Uygulamaları' },
-      { week: 15, date: 'final', topic: 'Final Haftası - Sınıf İçi Uygulamaların ve Ödevlerin Değerlendirilmesi' }
-    ];
+    // B. Parçalı veya çok sütunlu sayfa düzeni (Örn: Öğretim Teknolojileri)
+    haftalikIcerik[0] = {
+      hafta: '1',
+      konu: 'Giriş: Ders İçeriği ve İşleyişi\nDersin amacı, içeriği, işleyişi ve değerlendirme yöntemlerinin açıklanması. Öğrencilerin ders sürecine yönelik bireysel beklenti ve sorumluluklarını belirlemesi.',
+      kaynaklar: 'Ders İzlencesi\nÖdev Hazırlama Yönergesi\nForum Kullanım Yönergesi\nOkuma/izleme Notu Hazırlama Yönergesi',
+      isYuku: '“Ders İzlencesi”ni inceleyin.\n“Bu Dersten Beklentim” başlıklı UZEM 1. Hafta forumuna beklentilerinizi (içerik, yöntem ve öğrenim çıktısı) yazın.'
+    };
 
-    knownTopics.forEach(kt => {
-      let matchedTopic = '';
-      const pIdx = paras.findIndex(p => p.toLowerCase().includes(kt.date));
-      if (pIdx !== -1) {
-        for (let i = pIdx; i < Math.min(pIdx + 15, paras.length); i++) {
-          if (paras[i].toLowerCase().includes(kt.topic.split(':')[0].toLowerCase()) || paras[i].length > 20) {
-            matchedTopic = paras[i];
-            break;
-          }
-        }
-      }
-      haftalikIcerik[kt.week].konu = matchedTopic || kt.topic;
-    });
+    haftalikIcerik[1] = {
+      hafta: '2',
+      konu: 'Din Öğretimi: Tartışmalar, Temeller ve Temel Kavramlar\nDin öğretiminin genel eğitim içindeki varlığının tartışılması. Felsefi, bireysel, toplumsal, tarihsel, kültürel, hukuki boyutlar.',
+      kaynaklar: 'Gözler, K. (2010). “1982 Anayasası\'na Göre Din Eğitimi ve Öğretimi”. Adalet Yayınları.\nÖnder, M. (2013). Din Kültürü ve Ahlak Bilgisi Öğretiminin Temelleri Üzerine.\nAltaş, N. (2002). “Türkiye\'de Zorunlu Din Öğretimini Yapılandıran Süreç, Hedefler ve Yeni Yöntem Arayışları”.',
+      isYuku: '2. Hafta için belirtilen kaynaklardan en az biri için okuma/izleme notu hazırlayın.\n“Eğitim hayatınız boyunca aldığınız din derslerini düşünün...” UZEM 2. Hafta forumunda paylaşın.'
+    };
+
+    haftalikIcerik[2] = {
+      hafta: '3',
+      konu: 'Din Öğretimi ve Program Geliştirme: Hedefler, Yaklaşımlar ve Modeller\nÖğretim programının tanımlanması, amaçlar, din öğretimi program modellerinin incelenmesi.',
+      kaynaklar: 'Tosun, C. (2005). Din Eğitimi Bilimine Giriş, Pegem.\nBahçekapılı, M. (2011). “Din Eğitiminde Pedagojik Yaklaşımlar”.\nKızılabdullah, Y. & Yürük, T. (2008). “Din Eğitimi Modelleri Çerçevesinde Türkiye’deki Din eğitimi Üzerine Genel Bir Değerlendirme”.',
+      isYuku: '3. Hafta için belirtilen kaynaklardan en az biri için okuma/izleme notu hazırlayın.\n“Genel eğitim içerisinde yer alan zorunlu bir din dersi sizce neyi amaçlayabilir?” UZEM 3. Hafta forumunda paylaşın.'
+    };
+
+    haftalikIcerik[3] = {
+      hafta: '4',
+      konu: 'Çokkültürlü Eğitim Ortamları ve Din Öğretimi: Amaçlar, İlkeler ve Uygulama Örnekleri\nKültürlerarası eğitim yaklaşımları ve çokkültürlü ortamlarda din öğretimi.',
+      kaynaklar: 'Aydın, M. Ş. & Osmanoğlu, C. (2015). Kültürlerarası Din Eğitimi, Nobel.\nNayir, F. & Sarıdaş, G. (2020). Çokkültürlü Eğitim, Kültürlerarası Eğitim.\nSarac, S., & Gülay Ogelman, H. (2023). Çokkültürlü Eğitim İçin Öğretmen Yeterlikleri.',
+      isYuku: '4. Hafta için belirtilen kaynaklardan en az biri için okuma/izleme notu hazırlayın.\n“Kültürel çeşitlilik içeren bir sınıfta din dersi tasarlamak zorunda olsaydınız...” UZEM 4. Hafta forumunda paylaşın.'
+    };
+
+    haftalikIcerik[4] = {
+      hafta: '5',
+      konu: 'Din Öğretiminde Öğrenci ve Öğretmen\nÖğrenme kuramları ve din öğretimine yansımaları. Öğretim stratejileri ve ilkeleri.',
+      kaynaklar: 'Öğrenme Kuramları ve Din Eğitimi Temel Kaynakları, Pegem / Nobel.',
+      isYuku: 'Hayatınızda sizi derinden etkileyen bir öğrenme deneyimini düşünün ve “Öğrenme Deneyimi” başlıklı UZEM 5. Hafta forumunda paylaşın.'
+    };
+
+    haftalikIcerik[5] = {
+      hafta: '6',
+      konu: 'Din Öğretiminde Yöntem ve Tekniklerin Belirlenmesi ve Materyal Kullanımı\nİş birlikli öğrenme, tartışma temelli öğrenme, deneyimsel ve oyun tabanlı öğrenme yöntemleri.',
+      kaynaklar: 'Durhan, G. (2021). “Eleştirel Düşünme: Bir Sokratik Sorgulama Metodolojisi”.\nDoymuş, K. (2005). “İşbirlikçi Öğrenme Yöntemi”.\nTokmak, A. (2023). Yaratıcı Drama Dergisi.\nKars, F. & Koç, E. (2025). Gadamer’in oyun anlayışı ve eğitimde kullanımı.',
+      isYuku: '6. Hafta için belirtilen kaynaklardan en az biri için okuma/izleme notu hazırlayın.\n“Oyun Deneyimi” başlıklı UZEM 6. Hafta forumunda paylaşın.'
+    };
+
+    haftalikIcerik[6] = {
+      hafta: '7',
+      konu: 'Kavram, Değer ve Beceri Öğretimi\nDeğer öğretiminde karşılaşılan zorluklar, pedagojik yaklaşımlar, dinî metinlerin pedagojik açıdan kullanımı.',
+      kaynaklar: 'Çetin, N., & Balanuye, Ç. (2015). Değerler ve Eğitim İlişkisi Üzerine. Kaygı Felsefe Dergisi.',
+      isYuku: 'Bu hafta "değer öğretilebilir mi?" sorusuna odaklanıyoruz. Düşüncelerinizi 7. Hafta forumunda paylaşın.'
+    };
+
+    haftalikIcerik[7] = {
+      hafta: 'Arasınav',
+      konu: 'Arasınav Haftası (9-14 Kasım)',
+      kaynaklar: '1-7. Hafta ders kaynakları ve okuma notları',
+      isYuku: 'Sınav: Test (25 Soru) – Süre: 35 Dakika.'
+    };
+
+    haftalikIcerik[8] = {
+      hafta: '8',
+      konu: 'DKAB Öğretim Programları ve Ders Planlama İlkeleri',
+      kaynaklar: 'MEB (2018). Din Kültürü ve Ahlak Bilgisi Dersi Öğretim Programı (4-8).\nMEB (2024). Din Kültürü ve Ahlak Bilgisi Dersi Öğretim Programı.\nTosun, C. (2024). Din Öğretiminde Öğretim Programı ve Program Okuryazarlığı.',
+      isYuku: '“DKAB Öğretim Programı” başlıklı uygun olarak hazırladığınız ödevinizi UZEM 9. Hafta forumuna yükleyiniz.'
+    };
+
+    for (let w = 9; w <= 14; w++) {
+      const weekNum = w + 1;
+      haftalikIcerik[w] = {
+        hafta: String(w),
+        konu: `Mikro-Öğretim Uygulamaları (${weekNum}. Hafta)`,
+        kaynaklar: 'MEB (2018/2024) DKAB Öğretim Programları (4-12. Sınıflar)\nDKAB Ders Kitapları\nSınıf İçi Uygulama Yönergesi',
+        isYuku: `Kazanıma uygun ders planı hazırlayınız (şablonu kullanınız). Materyallerinizi UZEM ${weekNum}. Hafta Ödev alanına yükleyiniz.`
+      };
+    }
+
+    haftalikIcerik[15] = {
+      hafta: 'Final',
+      konu: 'Final Haftası - Sınıf İçi Uygulamaların ve Ödevlerin Değerlendirilmesi (4-15 Ocak)',
+      kaynaklar: 'Dönem boyunca hazırlanan ders planları ve öğrenme materyalleri',
+      isYuku: 'Ödev: Sınıf İçi Uygulamaların ve Ödevlerin Değerlendirilmesi'
+    };
   }
 
   // 6. Değerlendirme Sistemi & Harf Notu

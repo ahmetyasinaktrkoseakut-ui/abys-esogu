@@ -2,7 +2,8 @@
 
 import { useState, useEffect, use, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download, Save, Plus, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download, Save, Plus, Link as LinkIcon , AlertTriangle, X } from 'lucide-react';
+import { degerlendirTekOdr } from '@/lib/pukoStresTesti';
 import StepPanel from '@/components/StepPanel';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
@@ -43,6 +44,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
   // Atıf (Kanıt) Yükleme Modalı
   const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
+  const [odrStressWarning, setOdrStressWarning] = useState<string | null>(null);
   const [newEvidenceName, setNewEvidenceName] = useState('');
   const [isUploadingInText, setIsUploadingInText] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -128,9 +130,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         cleanIcerikEn = cleanIcerikEn.replace(/<hr\s*\/?>/gi, '');
         cleanIcerikEn = cleanIcerikEn.replace(/Olgunluk Düzeyi Puanı.*?\d\s*\/\s*\d/gi, '');
 
-        const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-        setRaporMetni(sanitizeReportHtmlLinks(cleanIcerik, currentOrigin));
-        setRaporMetniEn(sanitizeReportHtmlLinks(cleanIcerikEn, currentOrigin));
+        setRaporMetni(cleanIcerik);
+        setRaporMetniEn(cleanIcerikEn);
         setKanitlar(raporData?.kanitlar ?? []);
         setRaporOlusturuldu(true);
         setOnayDurumu(raporData?.onay_durumu || 'bekliyor');
@@ -332,9 +333,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
                                       (k.annotated_url && phaseText.includes(k.annotated_url)) ||
                                       (k.evidence_id && phaseText.includes(k.evidence_id));
               if (!isAlreadyInline) {
-                const origin = typeof window !== 'undefined' ? window.location.origin : '';
-                const safeUrl = toProxyStorageUrl(ev.url, origin);
-                unplacedEvidenceStrings.push(`<a href="${safeUrl}" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
+                unplacedEvidenceStrings.push(`<a href="${ev.url}" target="_blank" rel="noopener noreferrer" style="color: #ea580c; text-decoration: underline;">[Kanıt ${ev.no}]</a>`);
               }
             });
             
@@ -368,11 +367,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       }
 
       const uniqueKanitlar = birlesikKanitlar;
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-      const safeBirlesik = sanitizeReportHtmlLinks(birlesikMetin ?? '', currentOrigin);
 
-      setRaporMetni(safeBirlesik);
-      setRaporMetniEn(safeBirlesik);
+      setRaporMetni(birlesikMetin ?? '');
+      setRaporMetniEn(birlesikMetin ?? '');
       setKanitlar(uniqueKanitlar ?? []);
       setRaporOlusturuldu(true);
       
@@ -453,7 +450,28 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         setRedNedeni(null);
       }
 
+
       alert(t('save_success'));
+
+      // İngilizce ÖDR Stres Testi Değerlendirmesi (Kayıt başarılı olduktan sonra bilgilendirici uyarı)
+      try {
+        const stressCheck = degerlendirTekOdr({
+          altOlcutId: resolvedParams.id,
+          kod: olcutDetay?.kod || '',
+          olcutAdi: olcutDetay?.olcut_adi || '',
+          icerikTr: raporMetni,
+          icerikEn: raporMetniEn,
+          kanitlar: kanitlar,
+        });
+
+        if (stressCheck.hasIssue && stressCheck.warningMessage) {
+          setOdrStressWarning(stressCheck.warningMessage);
+        } else {
+          setOdrStressWarning(null);
+        }
+      } catch (checkErr) {
+        console.error('ÖDR stres testi kontrol hatası:', checkErr);
+      }
       // fetchData() ÇAĞIRILMAYACAK - State koruması için sadece sessizce kaydetiyoruz
     } catch (err: any) {
       console.error(err);
@@ -567,9 +585,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
     // Hedef 'en' ise [Evidence X], 'tr' ise [Kanıt X]
     const label = target === 'en' ? `[Evidence ${index + 1}]` : `[Kanıt ${index + 1}]`;
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
-    const safeUrl = toProxyStorageUrl(doc.url, origin);
-    const anchorHTML = `&nbsp;<a href="${safeUrl}" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">${label}</a>&nbsp;`;
+    const anchorHTML = `&nbsp;<a href="${doc.url}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">${label}</a>&nbsp;`;
     
     if (target === 'tr') {
       if (editorRef.current) {
@@ -635,9 +651,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       
       // Metin içine ekle - [Kanıt X] formatında
       const newIndex = updatedKanitlar.length;
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      const safeUrl = toProxyStorageUrl(publicUrl, origin);
-      const anchorHTML = `&nbsp;<a href="${safeUrl}" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[Kanıt ${newIndex}]</a>&nbsp;`;
+      const anchorHTML = `&nbsp;<a href="${publicUrl}" target="_blank" rel="noopener noreferrer" style="color: #2563eb; font-weight: bold; text-decoration: underline; cursor: pointer;">[Kanıt ${newIndex}]</a>&nbsp;`;
       
       if (editorRef.current) {
         editorRef.current.insertContent(anchorHTML);
@@ -741,6 +755,29 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
       </div>
 
       <StepPanel activeStepId="rapor" altOlcutId={resolvedParams.id} />
+
+      {/* Stres Testi Bilgilendirici Uyarı Bannerı */}
+      {odrStressWarning && (
+        <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 text-amber-900 flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-300">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-amber-900">{odrStressWarning}</p>
+              <p className="text-[11px] text-amber-700 mt-0.5">
+                Raporunuz başarıyla kaydedildi; ancak akreditasyon stres testini kusursuz geçmek için İngilizce metni ve ilgili [Evidence N] bağlantılarını kontrol edebilirsiniz.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setOdrStressWarning(null)}
+            className="text-amber-500 hover:text-amber-800 p-1 rounded-lg hover:bg-amber-100/60 transition-colors shrink-0"
+            title="Kapat"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden mb-6 relative min-h-[400px]">
         {!raporOlusturuldu && !isGenerating ? (

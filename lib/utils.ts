@@ -10,7 +10,7 @@ export function getAssignedLetter(baslik?: string): string {
 
 export function validateFileSize(file: File): { valid: boolean; error?: string } {
   const fileExt = file.name.split('.').pop()?.toLowerCase() || '';
-  
+
   const ALLOWED_EXTENSIONS = new Set([
     'pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt', 'csv',
     'png', 'jpg', 'jpeg', 'webp',

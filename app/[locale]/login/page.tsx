@@ -40,6 +40,11 @@ export default function LoginPage() {
         })
         if (error) throw error
 
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('sb-session-active', 'true');
+          localStorage.setItem('lastActivity', Date.now().toString());
+        }
+
         let redirectTarget: string | null = null;
         if (typeof window !== 'undefined') {
           const urlParams = new URLSearchParams(window.location.search);
@@ -66,8 +71,7 @@ export default function LoginPage() {
         if (redirectTarget) {
           window.location.href = redirectTarget;
         } else {
-          router.push('/olcutler');
-          router.refresh();
+          window.location.href = `/${locale}/olcutler`;
         }
       } else {
         // SIGN UP

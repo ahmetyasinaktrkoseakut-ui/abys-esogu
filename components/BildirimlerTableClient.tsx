@@ -8,6 +8,7 @@ import { useLocale, useTranslations } from 'next-intl';
 import { getLocalizedField } from '@/lib/i18n-utils';
 import { validateUploadedFile } from '@/lib/fileValidation';
 import { usePeriod } from '@/contexts/PeriodContext';
+import { degerlendirTekOdr } from '@/lib/pukoStresTesti';
 
 const getAsamaSlug = (asama: string) => {
   if (!asama) return 'kontrol-etme';
@@ -171,7 +172,7 @@ export default function BildirimlerTableClient({ initialData, isApprover = false
         throw new Error('İlgili özdeğerlendirme raporu bulunamadı.');
       }
 
-      // Tek merkezli atomik ret ve e-posta rotasını çağır
+      // Tek merkezli atomik ret rotasını çağır
       const res = await fetch('/api/rapor/reddet', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

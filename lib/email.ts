@@ -75,10 +75,28 @@ function getGmailTransporter() {
   });
 }
 
+const AUTOMATIC_FOOTER_HTML = `
+  <div style="margin-top: 24px; padding-top: 12px; border-top: 1px solid #e2e8f0; text-align: center; font-size: 11px; color: #64748b; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+    Bu mail sistem üzerinden yönetici talebi üzerine otomatik oluşturulmuştur.
+  </div>
+`;
+
+export function ensureAutomaticFooter(html: string): string {
+  if (!html) return html;
+  if (html.includes('Bu mail sistem üzerinden yönetici talebi üzerine otomatik oluşturulmuştur')) {
+    return html;
+  }
+  if (html.includes('</body>')) {
+    return html.replace('</body>', `${AUTOMATIC_FOOTER_HTML}</body>`);
+  }
+  return `${html}${AUTOMATIC_FOOTER_HTML}`;
+}
+
 /**
  * Tekil E-Posta Gönderici (Özdeğerlendirme Raporu Ret/Revizyon Bildirimi)
  */
 export async function sendSingleEmail({ to, subject, html, attachments }: SendSingleEmailParams): Promise<SendEmailResult> {
+  const finalHtml = ensureAutomaticFooter(html);
   const { gmailUser, apiKey, from } = getEmailConfig();
   const transporter = getGmailTransporter();
 
@@ -93,7 +111,7 @@ export async function sendSingleEmail({ to, subject, html, attachments }: SendSi
         from,
         to: to.trim(),
         subject: subject.trim(),
-        html,
+        html: finalHtml,
         attachments: attachments && attachments.length > 0 ? attachments : undefined,
       });
       return { success: true, id: info.messageId };
@@ -132,7 +150,7 @@ export async function sendSingleEmail({ to, subject, html, attachments }: SendSi
           from,
           to: [to.trim()],
           subject: subject.trim(),
-          html,
+          html: finalHtml,
           ...(resendAtts ? { attachments: resendAtts } : {}),
         }),
         signal: controller.signal,
@@ -195,7 +213,7 @@ export async function sendBatchEmails(
           from,
           to: item.to.trim(),
           subject: item.subject.trim(),
-          html: item.html,
+          html: ensureAutomaticFooter(item.html),
           attachments: activeAttachments,
         });
         totalSent++;
@@ -231,7 +249,7 @@ export async function sendBatchEmails(
           from,
           to: [item.to.trim()],
           subject: item.subject.trim(),
-          html: item.html,
+          html: ensureAutomaticFooter(item.html),
           ...(resendAtts ? { attachments: resendAtts } : {}),
         };
       });
@@ -369,11 +387,11 @@ export function createRejectionEmailHtml({
 
           <!-- Alt Bilgi (Footer) -->
           <tr>
-            <td style="background-color: #f8fafc; padding: 18px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11.5px; color: #64748b;">
-              <p style="margin: 0 0 4px 0;">
-                Bu e-posta ESOGÜ İlahiyat Fakültesi ABYS Sistemi tarafından otomatik olarak gönderilmiştir.
+            <td style="background-color: #f8fafc; padding: 18px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+              <p style="margin: 0 0 6px 0; font-size: 11px; color: #64748b;">
+                Bu mail sistem üzerinden yönetici talebi üzerine otomatik oluşturulmuştur.
               </p>
-              <p style="margin: 0;">
+              <p style="margin: 0; font-size: 10.5px; color: #94a3b8;">
                 &copy; ${new Date().getFullYear()} Eskişehir Osmangazi Üniversitesi İlahiyat Fakültesi Akreditasyon Komisyonu
               </p>
             </td>
@@ -483,11 +501,11 @@ export function createAnnouncementEmailHtml({
 
           <!-- Alt Bilgi (Footer) -->
           <tr>
-            <td style="background-color: #f8fafc; padding: 18px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11.5px; color: #64748b;">
-              <p style="margin: 0 0 4px 0;">
-                Bu duyuru ESOGÜ İlahiyat Fakültesi Akreditasyon ve Kalite Komisyonu tarafından gönderilmiştir.
+            <td style="background-color: #f8fafc; padding: 18px 30px; text-align: center; border-top: 1px solid #e2e8f0; font-size: 11px; color: #64748b;">
+              <p style="margin: 0 0 6px 0; font-size: 11px; color: #64748b;">
+                Bu mail sistem üzerinden yönetici talebi üzerine otomatik oluşturulmuştur.
               </p>
-              <p style="margin: 0;">
+              <p style="margin: 0; font-size: 10.5px; color: #94a3b8;">
                 &copy; ${new Date().getFullYear()} Eskişehir Osmangazi Üniversitesi İlahiyat Fakültesi
               </p>
             </td>

@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     // 3. Raporun Varlığını ve Bilgilerini Çekme
     const { data: report, error: reportFetchError } = await supabaseAdmin
       .from('ozdegerlendirme_raporlari')
-      .select('id, alt_olcut_id, donem_id, onay_durumu, red_nedeni, olusturan_id, kullanici_id, user_id')
+      .select('id, alt_olcut_id, donem_id, onay_durumu, red_nedeni')
       .eq('id', raporId)
       .maybeSingle();
 
@@ -174,54 +174,68 @@ export async function POST(request: Request) {
     }
 
     // 9. Adım 3: Dahili Bildirimler Tablosuna Kayıt
-    // Atanan hocayı sunucu tarafında bul
-    const { data: atama } = await supabaseAdmin
+    // Atanan hocaları sunucu tarafında bul
+    const { data: atamalar } = await supabaseAdmin
       .from('kullanici_olcut_atamalari')
       .select('user_id')
-      .eq('alt_olcut_id', report.alt_olcut_id)
-      .eq('donem_id', report.donem_id)
-      .maybeSingle();
+      .eq('alt_olcut_id', Number(report.alt_olcut_id))
+      .eq('donem_id', String(report.donem_id));
 
-    const targetUserId = atama?.user_id || report.olusturan_id || report.kullanici_id || report.user_id;
+    const targetUserIds = Array.from(
+      new Set((atamalar || []).map((a: any) => a.user_id).filter(Boolean))
+    );
 
     try {
-      await supabaseAdmin.from('bildirimler').insert({
-        gonderen_id: user.id,
-        alici_id: targetUserId || null,
-        mesaj: `${altOlcut?.kod || 'Alt Ölçüt'} Değerlendirmesi REDDEDİLDİ. Neden: ${trimmedReason}`,
-        tip: 'red',
-        ilgili_kayit_id: String(report.alt_olcut_id),
-      });
+      if (targetUserIds.length > 0) {
+        await supabaseAdmin.from('bildirimler').insert(
+          targetUserIds.map((targetUserId) => ({
+            gonderen_id: user.id,
+            alici_id: targetUserId,
+            mesaj: `${altOlcut?.kod || 'Alt Ölçüt'} Değerlendirmesi REDDEDİLDİ. Neden: ${trimmedReason}`,
+            tip: 'red',
+            ilgili_kayit_id: String(report.alt_olcut_id),
+          }))
+        );
+      } else {
+        await supabaseAdmin.from('bildirimler').insert({
+          gonderen_id: user.id,
+          alici_id: null,
+          mesaj: `${altOlcut?.kod || 'Alt Ölçüt'} Değerlendirmesi REDDEDİLDİ. Neden: ${trimmedReason}`,
+          tip: 'red',
+          ilgili_kayit_id: String(report.alt_olcut_id),
+        });
+      }
     } catch (notifErr) {
       console.warn('[REJECT] Dahili bildirim kaydı uyarısı:', notifErr);
     }
 
     // 10. Adım 4: E-Posta Gönderimi (YALNIZCA TÜM VERİTABANI İŞLEMLERİ BİTTİKTEN SONRA)
-    if (targetUserId) {
-      const { data: targetProfile } = await supabaseAdmin
+    if (targetUserIds.length > 0) {
+      const { data: targetProfiles } = await supabaseAdmin
         .from('profiller')
         .select('email, ad_soyad')
-        .eq('id', targetUserId)
-        .maybeSingle();
+        .in('id', targetUserIds);
 
-      if (targetProfile?.email && targetProfile.email.includes('@')) {
-        const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://abys-ivory.vercel.app').replace(/\/+$/, '');
-        const emailHtml = createRejectionEmailHtml({
-          hocaAdi: targetProfile.ad_soyad || 'Öğretim Elemanımız',
-          olcutKodu: altOlcut?.kod || 'Alt Ölçüt',
-          olcutAdi: altOlcut?.olcut_adi || '',
-          redNedeni: trimmedReason,
-          appUrl,
-        });
+      for (const targetProfile of targetProfiles || []) {
+        if (targetProfile?.email && targetProfile.email.includes('@')) {
+          const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://abys-ivory.vercel.app').replace(/\/+$/, '');
+          const emailHtml = createRejectionEmailHtml({
+            hocaAdi: targetProfile.ad_soyad || 'Öğretim Elemanımız',
+            olcutKodu: altOlcut?.kod || 'Alt Ölçüt',
+            olcutAdi: altOlcut?.olcut_adi || '',
+            redNedeni: trimmedReason,
+            appUrl,
+          });
 
-        // Fail-safe e-posta çağrısı
-        await sendSingleEmail({
-          to: targetProfile.email,
-          subject: `[ESOGÜ ABYS] ${altOlcut?.kod || 'Ölçüt'} Özdeğerlendirme Raporu Revizyon Talebi`,
-          html: emailHtml,
-        }).catch(err => {
-          console.warn('[REJECT EMAIL] E-posta gönderiminde hata (DB işlemi korundu):', err);
-        });
+          // Fail-safe e-posta çağrısı
+          await sendSingleEmail({
+            to: targetProfile.email,
+            subject: `[ESOGÜ ABYS] ${altOlcut?.kod || 'Ölçüt'} Özdeğerlendirme Raporu Revizyon Talebi`,
+            html: emailHtml,
+          }).catch(err => {
+            console.warn('[REJECT EMAIL] E-posta gönderiminde hata (DB işlemi korundu):', err);
+          });
+        }
       }
     }
 

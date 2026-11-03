@@ -2,15 +2,13 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
-import JSZip from 'jszip';
 import {
-  UniPukoDriveManager,
-  PukoStageKey,
-  detectStageFromUrl,
-  parseStorageUrl,
-  normalizeStorageKey,
-} from '@/lib/uni-puko/drive-service';
-import { generateCriterionDocxBuffer, CriterionFormInput, ResolvedEvidenceItem } from '@/lib/uni-puko/docx-generator';
+  generateCriterionDocxBuffer,
+  generateMergedAllCriteriaDocxBuffer,
+  CriterionFormInput,
+  ResolvedEvidenceItem,
+} from '@/lib/uni-puko/docx-generator';
+import { UniPukoDriveManager, PukoStageKey, detectStageFromUrl } from '@/lib/uni-puko/drive-service';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
@@ -198,7 +196,7 @@ async function handleExport(request: NextRequest) {
 
     const driveManager = new UniPukoDriveManager(supabaseAdmin);
 
-    const buildFormForOdr = async (odr: any): Promise<{ fileName: string; buffer: Buffer }> => {
+    const buildFormInputForOdr = async (odr: any): Promise<CriterionFormInput> => {
       const altId = Number(odr.alt_olcut_id);
       const altOlcut = altOlcutMap.get(altId);
       if (!altOlcut) {
@@ -236,6 +234,8 @@ async function handleExport(request: NextRequest) {
       const pOnlem = findPuko('onlem');
       const pOlgunluk = findPuko('olgunluk');
 
+      let stageEvidenceCounter = 1;
+
       const resolveStageKanitlar = async (
         rawList: any[],
         stage: PukoStageKey
@@ -245,7 +245,8 @@ async function handleExport(request: NextRequest) {
         for (let i = 0; i < rawList.length; i++) {
           const item = rawList[i];
           const rawUrl = item?.url || '';
-          const name = item?.name || `Kanıt ${i + 1}`;
+          const assignedNo = stageEvidenceCounter++;
+          const name = item?.name || `Kanıt ${assignedNo}`;
           const driveUrl = await driveManager.resolveEvidenceDriveUrl({
             rawUrl,
             displayName: name,
@@ -253,7 +254,7 @@ async function handleExport(request: NextRequest) {
             stage,
           });
           items.push({
-            no: item?.no || item?.evidence_no || i + 1,
+            no: assignedNo,
             name,
             originalUrl: rawUrl,
             driveUrl,
@@ -267,38 +268,15 @@ async function handleExport(request: NextRequest) {
       const kontrolKanitlar = await resolveStageKanitlar(pKontrol?.kanit_dosyalari || [], 'kontrol');
       const onlemKanitlar = await resolveStageKanitlar(pOnlem?.kanit_dosyalari || [], 'onlem');
 
-      // ÖDR içindeki kanıtları çöz (Dosya adına göre kendi aşamasına veya 5_ODR_Kanitlari klasörüne yönlendir)
+      // ÖDR içindeki resmi kanıt listesini (odr.kanitlar) çöz
       const odrKanitlarRaw = Array.isArray(odr.kanitlar) ? [...odr.kanitlar] : [];
-
-      // ÖDR metni (icerik) içinde doğrudan <a href="..."> olarak gömülü depolama kanıtları varsa onları da listeye ekle
-      const existingOdrKeys = new Set(
-        odrKanitlarRaw.map((k: any) => normalizeStorageKey(k?.url || '')).filter(Boolean)
-      );
-      const anchorRegex = /<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi;
-      let anchorMatch: RegExpExecArray | null;
-      const icerikHtml = String(odr.icerik || '');
-      while ((anchorMatch = anchorRegex.exec(icerikHtml)) !== null) {
-        const href = (anchorMatch[1] || '').trim();
-        const sKey = normalizeStorageKey(href);
-        if (sKey && !existingOdrKeys.has(sKey)) {
-          existingOdrKeys.add(sKey);
-          const innerLabel = (anchorMatch[2] || '').replace(/<[^>]+>/g, '').trim();
-          const numMatch = innerLabel.match(/kan[ıi]t\s*(\d+)/i);
-          const parsedNo = numMatch ? Number(numMatch[1]) : odrKanitlarRaw.length + 1;
-          const parsedFile = parseStorageUrl(href)?.filePath.split('/').pop() || `Kanıt ${parsedNo}.pdf`;
-          odrKanitlarRaw.push({
-            no: parsedNo,
-            name: innerLabel && !innerLabel.startsWith('http') ? `${innerLabel} - ${parsedFile}` : parsedFile,
-            url: href,
-          });
-        }
-      }
 
       const odrKanitlar: ResolvedEvidenceItem[] = [];
       for (let i = 0; i < odrKanitlarRaw.length; i++) {
         const k = odrKanitlarRaw[i];
         const rawUrl = k?.url || '';
-        const name = k?.name || `Kanıt ${k?.no || i + 1}`;
+        const assignedNo = i + 1;
+        const name = k?.name || `Kanıt ${assignedNo}`;
         const detectedStage = detectStageFromUrl(rawUrl, 'odr');
         const driveUrl = await driveManager.resolveEvidenceDriveUrl({
           rawUrl,
@@ -306,33 +284,17 @@ async function handleExport(request: NextRequest) {
           iaaKodu,
           stage: detectedStage,
         });
-        const resolvedItem: ResolvedEvidenceItem = {
-          no: k?.no || i + 1,
+        odrKanitlar.push({
+          no: assignedNo,
           name,
           originalUrl: rawUrl,
           driveUrl,
-        };
-        odrKanitlar.push(resolvedItem);
-
-        // Eğer PUKÖ aşamasında dosya listesi boş kalmış ama ÖDR kanıtlarında o aşamanın dosyası varsa aşamaya da ekle
-        const sKey = normalizeStorageKey(rawUrl);
-        const hasSameFile = (list: ResolvedEvidenceItem[]) =>
-          list.some(x => (sKey && normalizeStorageKey(x.originalUrl) === sKey) || x.originalUrl === rawUrl);
-
-        if (detectedStage === 'planlama' && !hasSameFile(planlamaKanitlar)) {
-          planlamaKanitlar.push(resolvedItem);
-        } else if (detectedStage === 'uygulama' && !hasSameFile(uygulamaKanitlar)) {
-          uygulamaKanitlar.push(resolvedItem);
-        } else if (detectedStage === 'kontrol' && !hasSameFile(kontrolKanitlar)) {
-          kontrolKanitlar.push(resolvedItem);
-        } else if (detectedStage === 'onlem' && !hasSameFile(onlemKanitlar)) {
-          onlemKanitlar.push(resolvedItem);
-        }
+        });
       }
 
       const odrDate = formatTrDate(odr.olusturulma_tarihi);
 
-      const formInput: CriterionFormInput = {
+      return {
         iaaKodu,
         iaaAdi,
         hazirlamaTarihi: odrDate,
@@ -367,51 +329,45 @@ async function handleExport(request: NextRequest) {
         sorumluTarih: odrDate,
         degerlendirmeTarihi: odrDate,
       };
-
-      const buffer = generateCriterionDocxBuffer(formInput);
-      const safeKod = iaaKodu.replace(/[^A-Za-z0-9._-]/g, '_');
-      return {
-        fileName: `${safeKod}_PUKO_Kontrol_Formu.docx`,
-        buffer,
-      };
     };
 
     // Tekil İndirme Modu
     if (altOlcutIdParam && !isAll) {
-      const singleResult = await buildFormForOdr(approvedOdrs[0]);
-      return new NextResponse(new Uint8Array(singleResult.buffer), {
+      const singleInput = await buildFormInputForOdr(approvedOdrs[0]);
+      const buffer = generateCriterionDocxBuffer(singleInput);
+      const safeKod = singleInput.iaaKodu.replace(/[^A-Za-z0-9._-]/g, '_');
+      const fileName = `${safeKod}_PUKO_Kontrol_Formu.docx`;
+      return new NextResponse(new Uint8Array(buffer), {
         status: 200,
         headers: {
           'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-          'Content-Disposition': `attachment; filename="${singleResult.fileName}"`,
+          'Content-Disposition': `attachment; filename="${fileName}"`,
           'Cache-Control': 'no-store',
         },
       });
     }
 
-    // Toplu İndirme Modu (.ZIP)
+    // Toplu İndirme Modu: 29 Form Tek Bir Word Belgesinde (.docx)
     const sortedOdrs = [...approvedOdrs].sort((a, b) => {
       const kodA = altOlcutMap.get(Number(a.alt_olcut_id))?.kod || '';
       const kodB = altOlcutMap.get(Number(b.alt_olcut_id))?.kod || '';
       return kodA.localeCompare(kodB, 'tr', { numeric: true });
     });
 
-    const zip = new JSZip();
-    const rootZipFolder = zip.folder(`ESOGU_PUKO_Kontrol_Formlari_${activePeriod.donem_adi}`);
-
+    const formInputs: CriterionFormInput[] = [];
     for (const odr of sortedOdrs) {
-      const { fileName, buffer } = await buildFormForOdr(odr);
-      rootZipFolder?.file(fileName, buffer);
+      const input = await buildFormInputForOdr(odr);
+      formInputs.push(input);
     }
 
-    const zipBuffer = await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
-    const zipFileName = `ESOGU_Uni_PUKO_Kontrol_Formlari_${activePeriod.donem_adi}.zip`;
+    const mergedBuffer = generateMergedAllCriteriaDocxBuffer(formInputs);
+    const mergedFileName = `ESOGU_Ilahiyat_PUKO_Kontrol_Formlari_Tum_Olcutler.docx`;
 
-    return new NextResponse(new Uint8Array(zipBuffer), {
+    return new NextResponse(new Uint8Array(mergedBuffer), {
       status: 200,
       headers: {
-        'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="${zipFileName}"`,
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'Content-Disposition': `attachment; filename="${mergedFileName}"`,
         'Cache-Control': 'no-store',
       },
     });

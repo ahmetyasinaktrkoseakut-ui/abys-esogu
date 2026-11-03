@@ -151,18 +151,12 @@ export default async function UniPukoPage() {
 
       const uniqueKeys = new Set<string>();
       (Array.isArray(odr.kanitlar) ? odr.kanitlar : []).forEach((k: any) => {
-        const sKey = normalizeStorageKey(k?.url || '');
+        const sKey = normalizeStorageKey(k?.url || '') || (k?.url || '').trim();
         if (sKey) uniqueKeys.add(sKey);
       });
-      const anchorRegex = /<a\b[^>]*href=["']([^"']+)["'][^>]*>/gi;
-      let m: RegExpExecArray | null;
-      while ((m = anchorRegex.exec(String(odr.icerik || ''))) !== null) {
-        const sKey = normalizeStorageKey(m[1] || '');
-        if (sKey) uniqueKeys.add(sKey);
-      }
       pukos.forEach(p => {
         (Array.isArray(p.kanit_dosyalari) ? p.kanit_dosyalari : []).forEach((k: any) => {
-          const sKey = normalizeStorageKey(k?.url || '');
+          const sKey = normalizeStorageKey(k?.url || '') || (k?.url || '').trim();
           if (sKey) uniqueKeys.add(sKey);
         });
       });

@@ -71,7 +71,7 @@ export default function UniPukoClient({
     }
   };
 
-  const handleDownloadAllZip = async () => {
+  const handleDownloadAllDocx = async () => {
     if (approvedItems.length === 0) {
       toast.error('İndirilecek onaylı ölçüt bulunamadı.');
       return;
@@ -80,26 +80,26 @@ export default function UniPukoClient({
     try {
       setIsDownloadingAll(true);
       const toastId = toast.loading(
-        `Tüm onaylı ölçütler (${approvedItems.length} adet) Drive bağlantılarıyla hazırlanıyor. Lütfen bekleyin...`
+        `Tüm onaylı ölçütler (${approvedItems.length} adet) tek bir Word belgesinde birleştiriliyor. Lütfen bekleyin...`
       );
 
       const res = await fetch(`/api/uni-puko/export?all=true`);
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || 'Toplu ZIP oluşturulurken bir hata oluştu.');
+        throw new Error(errData.error || 'Toplu Word belgesi oluşturulurken bir hata oluştu.');
       }
 
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `ESOGU_Uni_PUKO_Kontrol_Formlari_${donemAdi}.zip`;
+      a.download = `ESOGU_Ilahiyat_PUKO_Kontrol_Formlari_Tum_Olcutler.docx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success(`Tüm onaylı formlar (${approvedItems.length} adet) ZIP olarak indirildi!`, { id: toastId });
+      toast.success(`Tüm onaylı formlar (${approvedItems.length} adet) tek bir Word belgesi (.docx) olarak indirildi!`, { id: toastId });
     } catch (err: any) {
       toast.error(err.message || 'Toplu indirme sırasında hata oluştu.');
     } finally {
@@ -136,22 +136,30 @@ export default function UniPukoClient({
           </a>
 
           <button
-            onClick={handleDownloadAllZip}
+            onClick={handleDownloadAllDocx}
             disabled={isDownloadingAll || approvedItems.length === 0}
             className="inline-flex items-center gap-2.5 px-6 py-3 rounded-xl bg-blue-900 hover:bg-blue-800 disabled:opacity-50 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
           >
             {isDownloadingAll ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                ZIP Hazırlanıyor...
+                Word Belgesi Birleştiriliyor...
               </>
             ) : (
               <>
-                <FolderArchive className="w-5 h-5" />
-                Tüm Onaylı Formları İndir (.ZIP) ({approvedItems.length})
+                <FileText className="w-5 h-5" />
+                Tüm Formları İndir (Tek Word Belgesi - .docx) ({approvedItems.length})
               </>
             )}
           </button>
+        </div>
+      </div>
+
+      {/* Sistem Çalışma & Senkronizasyon Bilgilendirmesi */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50/60 p-4 rounded-xl border border-blue-200/80 flex items-start gap-3">
+        <CheckCircle2 className="w-5 h-5 text-blue-700 flex-shrink-0 mt-0.5" />
+        <div className="text-xs text-blue-900 leading-relaxed">
+          <span className="font-bold">Canlı Veri &amp; Otomatik Drive Senkronizasyonu:</span> Formlar önceden sabit bir dosyada tutulmaz; indirme butonuna bastığınız anda veritabanındaki en güncel onaylı veriler canlı okunur. Eksik veya yeni yüklenen kanıtlar Google Drive ile senkronize edilerek resmi şablon üzerine işlenir ve tek bir Word belgesi halinde doğrudan indirilir.
         </div>
       </div>
 

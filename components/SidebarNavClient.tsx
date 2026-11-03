@@ -162,6 +162,12 @@ export default function SidebarNavClient({ isAdmin, isObserver = false, userId, 
                     <LineChart className="w-5 h-5 flex-shrink-0" />
                     {t('reports')}
                   </Link>
+                  {isAdmin && (
+                    <Link href="/uni-puko" className={getLinkClass('/uni-puko')}>
+                      <FileCheck className="w-5 h-5 flex-shrink-0" />
+                      Üniversite PUKÖ
+                    </Link>
+                  )}
                   <Link href="/onerilenler" className={getLinkClass('/onerilenler')}>
                     <Lightbulb className="w-5 h-5 flex-shrink-0" />
                     {t('suggestions')}

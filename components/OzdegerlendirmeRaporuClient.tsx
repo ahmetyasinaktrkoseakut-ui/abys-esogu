@@ -2,8 +2,14 @@
 
 import { useState, useEffect, use, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase/client';
-import { Loader2, Info, FileSignature, FileText, CheckCircle2, FileSearch, Download, Save, Plus, Link as LinkIcon , AlertTriangle, X, ShieldAlert } from 'lucide-react';
-import { degerlendirTekOdr, isHtmlContentEmpty } from '@/lib/pukoStresTesti';
+import { Loader2, Info, FileSignature, FileText, CheckCircle2, CheckCircle, FileSearch, Download, Save, Plus, Link as LinkIcon , AlertTriangle, X, ShieldAlert } from 'lucide-react';
+import { degerlendirTekOdr, isHtmlContentEmpty, TekOdrDegerlendirmeSonucu } from '@/lib/pukoStresTesti';
+import {
+  getirStresIstisnalari,
+  kaydetStresIstisna,
+  buildIstisnaAnahtari,
+  StresIstisnaKaydi,
+} from '@/lib/stresIstisnaService';
 import StepPanel from '@/components/StepPanel';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
@@ -51,6 +57,8 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
   // Atıf (Kanıt) Yükleme Modalı
   const [isEvidenceModalOpen, setIsEvidenceModalOpen] = useState(false);
   const [odrStressWarning, setOdrStressWarning] = useState<string | null>(null);
+  const [istisnaMap, setIstisnaMap] = useState<Map<string, StresIstisnaKaydi>>(new Map());
+  const [rawStressCheck, setRawStressCheck] = useState<TekOdrDegerlendirmeSonucu | null>(null);
   const [newEvidenceName, setNewEvidenceName] = useState('');
   const [isUploadingInText, setIsUploadingInText] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -67,6 +75,12 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     if (!selectedPeriod) return;
     try {
       setIsLoading(true);
+
+      if (selectedPeriod?.id) {
+        getirStresIstisnalari(supabase, selectedPeriod.id)
+          .then(map => setIstisnaMap(map))
+          .catch(err => console.warn('İstisnalar yüklenemedi:', err));
+      }
 
       const { data: { user } } = await supabase.auth.getUser();
       let localUserIsAdmin = false;
@@ -437,6 +451,93 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
     }
   };
 
+  const filterActiveStressIssues = (
+    check: TekOdrDegerlendirmeSonucu,
+    istisnalar: Map<string, StresIstisnaKaydi>
+  ): TekOdrDegerlendirmeSonucu => {
+    if (!selectedPeriod) return check;
+
+    const temizUncited = (check.uncitedTrEvidences || []).filter(u => {
+      const key = buildIstisnaAnahtari({
+        donemId: selectedPeriod.id,
+        altOlcutId: resolvedParams.id,
+        sorunTipi: 'kanit_fark',
+        kanitKimligi: u.url || u.dosya_adi || u.asama,
+      });
+      return !istisnalar.get(key)?.aktif;
+    });
+
+    const temizIssues = (check.issues || []).filter(issue => {
+      const key = buildIstisnaAnahtari({
+        donemId: selectedPeriod.id,
+        altOlcutId: resolvedParams.id,
+        sorunTipi: issue.sorun_tipi,
+        kanitKimligi: issue.eksik_kanitlar?.[0] || 'genel',
+      });
+      return !istisnalar.get(key)?.aktif;
+    });
+
+    const warningDetails: string[] = [];
+    temizUncited.forEach(u => {
+      const label = u.kanit_no ? `[Kanıt ${u.kanit_no}]` : '[Kanıt]';
+      warningDetails.push(`${label} ${u.dosya_adi} (${u.asama} aşaması) - Türkçe ÖDR metninde henüz atıf almamıştır.`);
+    });
+    temizIssues.forEach(issue => {
+      warningDetails.push(issue.aciklama);
+    });
+
+    const hasIssue = warningDetails.length > 0;
+    return {
+      hasIssue,
+      warningMessage: hasIssue ? warningDetails.join(' | ') : null,
+      warningDetails,
+      issues: temizIssues,
+      uncitedTrEvidences: temizUncited,
+    };
+  };
+
+  const handleBannerAcceptExceptions = async () => {
+    if (!selectedPeriod || !rawStressCheck) return;
+    try {
+      setIsActionSubmitting(true);
+      const nextMap = new Map(istisnaMap);
+
+      for (const u of rawStressCheck.uncitedTrEvidences || []) {
+        const saved = await kaydetStresIstisna({
+          supabase,
+          donemId: selectedPeriod.id,
+          altOlcutId: resolvedParams.id,
+          sorunTipi: 'kanit_fark',
+          kanitKimligi: u.url || u.dosya_adi || u.asama,
+          aktif: true,
+          gerekce: 'ÖDR ekranından istisna olarak onaylandı',
+        });
+        nextMap.set(saved.istisna_anahtari, saved);
+      }
+
+      for (const issue of rawStressCheck.issues || []) {
+        const saved = await kaydetStresIstisna({
+          supabase,
+          donemId: selectedPeriod.id,
+          altOlcutId: resolvedParams.id,
+          sorunTipi: issue.sorun_tipi,
+          kanitKimligi: issue.eksik_kanitlar?.[0] || 'genel',
+          aktif: true,
+          gerekce: 'ÖDR ekranından istisna olarak onaylandı',
+        });
+        nextMap.set(saved.istisna_anahtari, saved);
+      }
+
+      setIstisnaMap(nextMap);
+      setOdrStressWarning(null);
+      alert('Tüm uyarılar istisna olarak kabul edildi ve kaydedildi.');
+    } catch (err: any) {
+      alert(`İstisna kaydedilemedi: ${err.message}`);
+    } finally {
+      setIsActionSubmitting(false);
+    }
+  };
+
   const handleSave = async () => {
     try {
       if (!selectedPeriod) throw new Error("Aktif dönem seçili değil.");
@@ -450,7 +551,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
       if (stageRowsError) throw stageRowsError;
 
-      const stressCheck = degerlendirTekOdr({
+      const rawCheck = degerlendirTekOdr({
         altOlcutId: resolvedParams.id,
         kod: olcutDetay?.kod || '',
         olcutAdi: olcutDetay?.olcut_adi || '',
@@ -459,6 +560,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         kanitlar: kanitlar,
         pukoStages: stageRows || [],
       });
+      setRawStressCheck(rawCheck);
+
+      const stressCheck = filterActiveStressIssues(rawCheck, istisnaMap);
 
       // Eğer herhangi bir uyarı varsa inisiyatif modalını aç
       if (stressCheck.hasIssue && stressCheck.warningDetails && stressCheck.warningDetails.length > 0) {
@@ -585,7 +689,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
       setPendingApproveRecord(currentRecord);
 
-      const stressCheck = degerlendirTekOdr({
+      const rawCheck = degerlendirTekOdr({
         altOlcutId: resolvedParams.id,
         kod: olcutDetay?.kod || '',
         olcutAdi: olcutDetay?.olcut_adi || '',
@@ -594,6 +698,9 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
         kanitlar: currentRecord?.kanitlar ?? kanitlar,
         pukoStages: stageRows || [],
       });
+      setRawStressCheck(rawCheck);
+
+      const stressCheck = filterActiveStressIssues(rawCheck, istisnaMap);
 
       // Eğer uyarı varsa yönetici inisiyatifi modalını aç
       if (stressCheck.hasIssue && stressCheck.warningDetails && stressCheck.warningDetails.length > 0) {
@@ -841,7 +948,7 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
 
       {/* Stres Testi Bilgilendirici Uyarı Bannerı */}
       {odrStressWarning && (
-        <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 text-amber-900 flex items-start justify-between gap-3 shadow-sm animate-in fade-in duration-300">
+        <div className="mb-6 p-4 rounded-xl border border-amber-200 bg-amber-50/90 text-amber-900 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm animate-in fade-in duration-300">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
             <div>
@@ -851,13 +958,26 @@ export default function OzdegerlendirmeRaporuClient({ params }: OzdegerlendirmeR
               </p>
             </div>
           </div>
-          <button
-            onClick={() => setOdrStressWarning(null)}
-            className="text-amber-500 hover:text-amber-800 p-1 rounded-lg hover:bg-amber-100/60 transition-colors shrink-0"
-            title="Kapat"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            {rawStressCheck && (
+              <button
+                onClick={handleBannerAcceptExceptions}
+                disabled={isActionSubmitting}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 disabled:opacity-50"
+                title="Bu uyarıları inceledim, sorun yok / istisna olarak kabul et"
+              >
+                <CheckCircle className="w-3.5 h-3.5" />
+                Sorun Yok (İstisna Kabul Et)
+              </button>
+            )}
+            <button
+              onClick={() => setOdrStressWarning(null)}
+              className="text-amber-500 hover:text-amber-800 p-1 rounded-lg hover:bg-amber-100/60 transition-colors shrink-0"
+              title="Kapat"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 

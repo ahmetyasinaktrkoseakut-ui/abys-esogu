@@ -133,6 +133,23 @@ export function normalizeHtmlForComparison(html: string | null | undefined): str
 }
 
 /**
+ * [Kanıt N] ve [Evidence N] atıflarını zengin metin düzenleyicilerin (TipTap vb.)
+ * böldüğü etiketlerden (örn. [Evidence <strong>4</strong>] veya <a...>[</a>Evidence 4])
+ * arındırıp doğru okumak için HTML etiketlerini ve özel boşlukları temizler.
+ */
+export function normalizeHtmlForCitation(html: string | null | undefined): string {
+  if (!html) return '';
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+/**
  * Dosya adındaki işaretleme eki (_isaretli, _annotated), zaman damgası ve uzantıyı temizleyerek temel doküman kimliğini çıkarır.
  */
 export function normalizeDocKey(str: string | null | undefined): string {
@@ -684,21 +701,23 @@ export function denetleIngilizceOdr(params: {
     }
   });
 
-  // Türkçe ÖDR metninde geçen kanıt numaralarını dinamik olarak tespit et
+  // Türkçe ÖDR metninde geçen kanıt numaralarını etiketlerden arındırılmış metin üzerinden dinamik olarak tespit et
+  const trNormalized = normalizeHtmlForCitation(icerikTr);
   const trCitationRegex = /\[\s*Kan[ıi]t\s*(\d+)\s*\]/gi;
   const trCitedNumbers = new Set<number>();
   let trMatch: RegExpExecArray | null;
-  while ((trMatch = trCitationRegex.exec(icerikTr || '')) !== null) {
+  while ((trMatch = trCitationRegex.exec(trNormalized)) !== null) {
     trCitedNumbers.add(parseInt(trMatch[1], 10));
   }
 
   const anchorLinks = extractEvidenceLinks(htmlEn);
 
-  // Metindeki tüm [Evidence N] ve [Kanıt N] ifadelerini regex ile tara ve frekanslarını say
+  // Metindeki tüm [Evidence N] ve [Kanıt N] ifadelerini etiketlerden arındırılmış metin üzerinden tara ve frekanslarını say
+  const enNormalized = normalizeHtmlForCitation(htmlEn);
   const citationRegex = /\[\s*(?:Evidence|Kan[ıi]t)\s*(\d+)\s*\]/gi;
   const enFrequencies = new Map<number, number>();
   let match: RegExpExecArray | null;
-  while ((match = citationRegex.exec(htmlEn)) !== null) {
+  while ((match = citationRegex.exec(enNormalized)) !== null) {
     const num = parseInt(match[1], 10);
     enFrequencies.set(num, (enFrequencies.get(num) || 0) + 1);
   }
@@ -734,9 +753,10 @@ export function denetleIngilizceOdr(params: {
   // Anchor etiketleri dışındaki düz metin [Evidence N] ve [Kanıt N] ifadelerini tespit et
   // Çok satırlı bağlantıları da temizleyebilmek için [\s\S]*? deseni kullanılır
   const textWithoutAnchors = htmlEn.replace(/<a\b[^>]*>[\s\S]*?<\/a>/gi, ' ');
+  const cleanTextWithoutAnchors = normalizeHtmlForCitation(textWithoutAnchors);
   const plainTextNumbers = new Set<number>();
   let plainMatch: RegExpExecArray | null;
-  while ((plainMatch = citationRegex.exec(textWithoutAnchors)) !== null) {
+  while ((plainMatch = citationRegex.exec(cleanTextWithoutAnchors)) !== null) {
     plainTextNumbers.add(parseInt(plainMatch[1], 10));
   }
 

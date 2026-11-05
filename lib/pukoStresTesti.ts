@@ -723,7 +723,7 @@ export function denetleIngilizceOdr(params: {
   }
 
   // 1. Mükerrer Kanıt Denetimi: Aynı kanıt numarasının birden fazla kez geçmesi
-  for (const [num, count] of enFrequencies.entries()) {
+  enFrequencies.forEach((count, num) => {
     if (count > 1) {
       issues.push({
         alt_olcut_id: altOlcutId,
@@ -734,7 +734,7 @@ export function denetleIngilizceOdr(params: {
         eksik_kanitlar: [`[Evidence ${num}]`],
       });
     }
-  }
+  });
 
   // 2. Parite Denetimi: Türkçe raporda atıf alan kanıtların İngilizce metinde bulunması zorunludur
   trCitedNumbers.forEach(trNum => {

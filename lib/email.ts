@@ -21,6 +21,7 @@ interface SendSingleEmailParams {
   subject: string;
   html: string;
   attachments?: EmailAttachment[];
+  replyTo?: string;
 }
 
 interface BatchEmailItem {
@@ -95,7 +96,7 @@ export function ensureAutomaticFooter(html: string): string {
 /**
  * Tekil E-Posta Gönderici (Özdeğerlendirme Raporu Ret/Revizyon Bildirimi)
  */
-export async function sendSingleEmail({ to, subject, html, attachments }: SendSingleEmailParams): Promise<SendEmailResult> {
+export async function sendSingleEmail({ to, subject, html, attachments, replyTo }: SendSingleEmailParams): Promise<SendEmailResult> {
   const finalHtml = ensureAutomaticFooter(html);
   const { gmailUser, apiKey, from } = getEmailConfig();
   const transporter = getGmailTransporter();
@@ -112,6 +113,7 @@ export async function sendSingleEmail({ to, subject, html, attachments }: SendSi
         to: to.trim(),
         subject: subject.trim(),
         html: finalHtml,
+        replyTo: replyTo?.trim() || undefined,
         attachments: attachments && attachments.length > 0 ? attachments : undefined,
       });
       return { success: true, id: info.messageId };
@@ -151,6 +153,7 @@ export async function sendSingleEmail({ to, subject, html, attachments }: SendSi
           to: [to.trim()],
           subject: subject.trim(),
           html: finalHtml,
+          ...(replyTo?.trim() ? { reply_to: replyTo.trim() } : {}),
           ...(resendAtts ? { attachments: resendAtts } : {}),
         }),
         signal: controller.signal,

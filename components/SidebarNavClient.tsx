@@ -19,7 +19,7 @@ import {
   Activity
 } from 'lucide-react';
 import { LogoutButton } from './LogoutButton';
-import { Users, FileCheck, ClipboardCheck, History, Inbox } from 'lucide-react';
+import { Users, FileCheck, ClipboardCheck, History, Inbox, LifeBuoy } from 'lucide-react';
 
 export default function SidebarNavClient({ isAdmin, isObserver = false, userId, hasAssignment, isCoordinator }: { isAdmin: boolean, isObserver?: boolean, userId: string, hasAssignment: boolean, isCoordinator?: boolean }) {
   const pathname = usePathname();
@@ -190,6 +190,10 @@ export default function SidebarNavClient({ isAdmin, isObserver = false, userId, 
               )}
             </div>
             {tAnn('title')}
+          </Link>
+          <Link href="/oneri-destek" className={getLinkClass('/oneri-destek')}>
+            <LifeBuoy className="w-5 h-5 flex-shrink-0" />
+            {t('support')}
           </Link>
         </div>
       </nav>
